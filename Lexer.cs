@@ -67,7 +67,7 @@ public class Lexer
             "true" => TokenType.True,
             "false" => TokenType.False,
             "boolean" => TokenType.Boolean,
-            var someVal when new Regex(@"^\w[\w\d_]*$").IsMatch(someVal) =>
+            var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
                 TokenType.Number,
