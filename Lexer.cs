@@ -11,84 +11,60 @@ public class Lexer
         this.input = input;
     }
 
+    private static TokenType GetTokenType(string token)
+    {
+        return token switch
+        {
+            "+" => TokenType.Plus,
+            "-" => TokenType.Minus,
+            "*" => TokenType.Multiply,
+            "/" => TokenType.Divide,
+            "%" => TokenType.Remainder,
+            "(" => TokenType.LeftBracket,
+            ")" => TokenType.RightBracket,
+            "[" => TokenType.LeftSquaredBracket,
+            "]" => TokenType.RightSquaredBracket,
+            "=" => TokenType.EqComparison,
+            "," => TokenType.Comma,
+            "\n" => TokenType.EndOfLine,
+            _ => throw new NotImplementedException("The token is not implemented")
+        };
+    }
+
     public List<Token> Tokenize()
     {
+        var lineCounter = 1;
+        var lastEOLIndex = 0;
         while (currentPosition < input.Length)
         {
             char currentChar = input[currentPosition];
 
-            if (char.IsWhiteSpace(currentChar))
+            if (char.IsDigit(currentChar))
             {
-                currentPosition++; // Skip whitespace
-            }
-            else if (currentChar == '+')
-            {
-                tokens.Add(new Token(TokenType.Plus, "+"));
-                currentPosition++;
-            }
-            else if (currentChar == '-')
-            {
-                tokens.Add(new Token(TokenType.Minus, "-"));
-                currentPosition++;
-            }
-            else if (currentChar == '*')
-            {
-                tokens.Add(new Token(TokenType.Multiply, "*"));
-                currentPosition++;
-            }
-            else if (currentChar == '/')
-            {
-                tokens.Add(new Token(TokenType.Divide, "/"));
-                currentPosition++;
-            }
-            else if (currentChar == '(')
-            {
-                tokens.Add(new Token(TokenType.LeftParen, "("));
-                currentPosition++;
-            }
-            else if (currentChar == ')')
-            {
-                tokens.Add(new Token(TokenType.RightParen, ")"));
-                currentPosition++;
-            }
-            else if (char.IsDigit(currentChar))
-            {
-                // Parse numbers
-                int start = currentPosition;
-                while (currentPosition < input.Length && (char.IsDigit(input[currentPosition]) || input[currentPosition] == '.'))
+                // Then it is a digit
+                var lexemeLength = 1;
+                var isDot = false;
+
+                while (lexemeLength + currentPosition < input.Length && (char.IsDigit(input[lexemeLength + currentPosition]) ||
+                                                                    input[lexemeLength + currentPosition] == '.'))
                 {
-                    currentPosition++;
+                    lexemeLength++;
+                    if (input[lexemeLength + currentPosition] == '.')
+                    {
+                        if (isDot)
+                        {
+                            throw new Exception("Wrong float argument");
+                        }
+                        isDot = true;
+                    }
                 }
-                string numberLexeme = input.Substring(start, currentPosition - start);
-                if (double.TryParse(numberLexeme, out double numberValue))
-                {
-                    tokens.Add(new Token(TokenType.Number, numberLexeme, numberValue));
-                }
-                else
-                {
-                    // Handle invalid number
-                    throw new Exception($"Invalid number: {numberLexeme}");
-                }
-            }
-            else if (char.IsLetter(currentChar))
-            {
-                // Parse identifiers
-                int start = currentPosition;
-                while (currentPosition < input.Length && char.IsLetterOrDigit(input[currentPosition]))
-                {
-                    currentPosition++;
-                }
-                string identifierLexeme = input.Substring(start, currentPosition - start);
-                tokens.Add(new Token(TokenType.Identifier, identifierLexeme));
-            }
-            else
-            {
-                // Handle unrecognized character
-                throw new Exception($"Unrecognized character: {currentChar}");
+
+                var substring = input.Substring(currentPosition, lexemeLength);
+                tokens.Add(new Token(GetTokenType(substring), substring, new Span(lineCounter, currentPosition - lastEOLIndex, currentPosition + lexemeLength - lastEOLIndex)));
             }
         }
 
-        tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
+        // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
         return tokens;
     }
 }

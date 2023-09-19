@@ -14,7 +14,7 @@ public enum TokenType
     Return, Real,
     In, Assert,
     While, Type,
-    Record, True_token, False, Boolean,
+    Record, True, False, Boolean,
 
     // Tokens with values
     Identifier, Number, Float,
@@ -43,7 +43,8 @@ public enum TokenType
     // Arithmetic operators
     Plus,
     Minus,
-    Division,
+    Multiply,
+    Divide,
     Remainder,
     
     // Brackets
