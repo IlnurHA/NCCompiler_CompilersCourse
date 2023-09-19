@@ -89,7 +89,7 @@ public class Lexer
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
-            if (currentChar == ' ')
+            if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
             {
                 _currentPosition++;
                 continue;
@@ -126,11 +126,21 @@ public class Lexer
                        (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
                         _input[lexemeLength + _currentPosition] == '.'))
                 {
+                    if (_input[lexemeLength + _currentPosition] == '.')
+                    {
+                        if (isDot) throw new Exception("Wrong float argument");
+                        
+                        if (lexemeLength + _currentPosition + 1 < _input.Length &&
+                            char.IsDigit(_input[_currentPosition + lexemeLength + 1]))
+                        {
+                            isDot = true;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                     lexemeLength++;
-                    if (_input[lexemeLength + _currentPosition] != '.') continue;
-                    if (isDot) throw new Exception("Wrong float argument");
-
-                    isDot = true;
                 }
             }
             else if (char.IsLetter(currentChar))
