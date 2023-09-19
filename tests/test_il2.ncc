@@ -1,0 +1,19 @@
+routine max_real(arr: array[]real): real is
+  var ans: real is arr[1]
+
+  for i in 2..arr.size loop
+    if ans < arr[i] then
+      ans := arr[i]
+    end
+  end
+  return ans
+end
+
+routine main() is
+  var arr: array[5]real is [1.5, 2.2, 3.1, 0.2, -0.5]
+
+  var max_value: real is max_real(arr)
+  // Should be 3.1
+
+  assert max_value, 3.1
+end

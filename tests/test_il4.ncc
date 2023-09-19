@@ -1,0 +1,38 @@
+routine special_function(arr: array[]integer): array[]integer is
+  /* returns copy of given array, where each integer
+    either reduced by 7 times (if it divisible by 7)
+    or turned to remainder of the division (if it isn't divisible by 7) */
+
+  var new_arr: array[arr.size]integer
+  var counter: integer is 1
+
+  for num from arr loop
+    var divisible_part: integer is num / 7
+    // division of integers returns number
+    // of times a second factor contains in a first factor
+    // example: 45 / 7 = 6 (45 is the first factor, 7 is the second factor)
+    // The second factor contains 6 times (7 * 6 = 42)
+    // 45 - 42 = 3 is remainder
+    
+    var remainder_part: integer is num % 7
+
+    if remainder_part /= 0 then 
+      new_arr[counter] := remainder_part
+    else
+      new_arr[counter] := divisible_part
+    end
+    counter := counter + 1
+  end
+
+  return new_arr
+end
+
+routine main() is
+  var arr: array[8]integer is [1, 14, 15, 46, 35, 49, 51, -16]
+
+  var new_arr: array[8]integer is special_function(arr)
+  var array_to_check is [1, 2, 1, 4, 5, 7, 2, 5]
+
+  assert new_arr, array_to_check // Should be OK
+  // new_arr should be [1, 2, 1, 4, 5, 7, 2, 5]
+end

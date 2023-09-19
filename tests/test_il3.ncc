@@ -1,0 +1,36 @@
+routine main() is 
+  var xor_var: bool is true xor false // true
+  assert xor_var, true // OK
+
+  // =============================
+
+  var reals: real is 1 + 2 // 3.0
+  assert reals, 3.0 // OK
+  
+  var reals_2: real is 5 * 5 // 25.0
+  assert reals_2, 25.0 // OK
+  
+  var reals_3: real is true // 1.0
+  assert reals_3, 1.0 // OK
+  
+  var reals_4: real is false // 0.0
+  assert reals_4, 0.0 // OK
+  
+  // =============================
+
+  var int_to_bool: bool is 1 // true
+  assert int_to_bool, true // OK
+  
+  var int_to_bool2: bool is 0 // false
+  assert int_to_bool2, false // OK
+
+  var bools_err: bool is 25 // err
+  var bools_err_2: bool is 1.0 // err
+  var bools_err_2: bool is 0.0 // err
+  
+  var ints: integer is 5.0 + 2.3 // 7
+  assert ints, 7 // OK
+
+  var ints_2: integer is 5.0 + 2.7 // 8
+  assert ints_2, 8 // OK
+end

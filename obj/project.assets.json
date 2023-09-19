@@ -8,19 +8,19 @@
     "net7.0": []
   },
   "packageFolders": {
-    "/home/kamil/.nuget/packages/": {}
+    "C:\\Users\\Ilnur\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/kamil/RiderProjects/NCCompiler_CompilersCourse/NCCompiler_CompilersCourse.csproj",
+      "projectUniqueName": "C:\\Users\\Ilnur\\RiderProjects\\NCCompiler_CompilersCourse\\NCCompiler_CompilersCourse.csproj",
       "projectName": "NCCompiler_CompilersCourse",
-      "projectPath": "/home/kamil/RiderProjects/NCCompiler_CompilersCourse/NCCompiler_CompilersCourse.csproj",
-      "packagesPath": "/home/kamil/.nuget/packages/",
-      "outputPath": "/home/kamil/RiderProjects/NCCompiler_CompilersCourse/obj/",
+      "projectPath": "C:\\Users\\Ilnur\\RiderProjects\\NCCompiler_CompilersCourse\\NCCompiler_CompilersCourse.csproj",
+      "packagesPath": "C:\\Users\\Ilnur\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Ilnur\\RiderProjects\\NCCompiler_CompilersCourse\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/kamil/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Ilnur\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net7.0"
@@ -59,7 +59,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/7.0.111/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.401\\RuntimeIdentifierGraph.json"
       }
     }
   }

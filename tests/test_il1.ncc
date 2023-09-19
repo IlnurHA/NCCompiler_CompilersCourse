@@ -1,0 +1,28 @@
+routine insertion_sort(array_to_sort: array[]integer): array[]integer is
+  var j: integer
+  var key: integer
+  for i in 2..array_to_sort.size loop
+    key := array_to_sort[i]
+    j := i - 1
+
+    while j > 0 and array_to_sort[j] > key loop
+      array_to_sort[j + 1] := array_to_sort[j]
+      j = j - 1
+    end
+
+    array_to_sort[j + 1] := key
+  end
+
+  return array_to_sort
+end
+
+
+routine main() is
+  var array_to_sort: array[10] integer is [5, 6, 7, 9, 10, 1, 2, 3, 8, 4]
+
+  array_to_sort := insertion_sort(array_to_sort)
+  // Should return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  var array_to_check: array[10]integer is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  assert array_to_sort, array_to_check // OK
+end
