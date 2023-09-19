@@ -39,7 +39,7 @@ public class Lexer
             ">=" => TokenType.GeComparison,
             "<" => TokenType.LtComparisom,
             "<=" => TokenType.LeComparison,
-            "<>" => TokenType.NeComparison,
+            "/=" => TokenType.NeComparison,
             "//" => TokenType.SinglelineComment,
             "/*" => TokenType.MultilineCommentStart,
             "*/" => TokenType.MultilineCommentEnd,
@@ -89,11 +89,6 @@ public class Lexer
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
-            if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
-            {
-                _currentPosition++;
-                continue;
-            }
 
             if (inSingleLineComment || inMultiLineComment)
             {
@@ -114,6 +109,12 @@ public class Lexer
                     _currentPosition++;
                     continue;
                 }
+            }
+            
+            if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
+            {
+                _currentPosition++;
+                continue;
             }
             
             if (char.IsDigit(currentChar))
