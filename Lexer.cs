@@ -60,10 +60,10 @@ public class Lexer
             else if (char.IsLetter(currentChar))
             {
                 // Then it is a identifier or keyword
-
                 while (
                     lexemeLength + _currentPosition < _input.Length &&
-                    char.IsLetterOrDigit(_input[lexemeLength + _currentPosition])
+                    (char.IsLetterOrDigit(_input[lexemeLength + _currentPosition]) ||
+                    _input[lexemeLength + _currentPosition] == '_')
                 ) lexemeLength++;
             }
             else if (currentChar == '\n')
