@@ -38,15 +38,17 @@ public class Lexer
         while (currentPosition < input.Length)
         {
             char currentChar = input[currentPosition];
+            var lexemeLength = 1;
 
             if (char.IsDigit(currentChar))
             {
                 // Then it is a digit
-                var lexemeLength = 1;
+
                 var isDot = false;
 
-                while (lexemeLength + currentPosition < input.Length && (char.IsDigit(input[lexemeLength + currentPosition]) ||
-                                                                    input[lexemeLength + currentPosition] == '.'))
+                while (lexemeLength + currentPosition < input.Length &&
+                       (char.IsDigit(input[lexemeLength + currentPosition]) ||
+                        input[lexemeLength + currentPosition] == '.'))
                 {
                     lexemeLength++;
                     if (input[lexemeLength + currentPosition] == '.')
@@ -55,13 +57,25 @@ public class Lexer
                         {
                             throw new Exception("Wrong float argument");
                         }
+
                         isDot = true;
                     }
                 }
-
-                var substring = input.Substring(currentPosition, lexemeLength);
-                tokens.Add(new Token(GetTokenType(substring), substring, new Span(lineCounter, currentPosition - lastEOLIndex, currentPosition + lexemeLength - lastEOLIndex)));
             }
+            else if (char.IsLetter(currentChar))
+            {
+                // Then it is a identifier or keyword
+
+                while (
+                    lexemeLength + currentPosition < input.Length &&
+                    char.IsLetterOrDigit(input[lexemeLength + currentPosition])
+                ) lexemeLength++;
+            }
+
+            var substring = input.Substring(currentPosition, lexemeLength);
+            tokens.Add(new Token(GetTokenType(substring), substring,
+                new Span(lineCounter, currentPosition - lastEOLIndex,
+                    currentPosition + lexemeLength - lastEOLIndex)));
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
