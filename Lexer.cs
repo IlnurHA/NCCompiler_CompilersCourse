@@ -66,13 +66,45 @@ public class Lexer
                     _input[lexemeLength + _currentPosition] == '_')
                 ) lexemeLength++;
             }
-            else if (currentChar == '\n')
+            else
             {
-                lastEolIndex = _currentPosition;
-                _currentPosition++;
-            }
 
-            var substring = _input.Substring(_currentPosition, lexemeLength);
+                if (currentChar == '/' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token("/="), "/=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '/' && input[currentPosition + 1] == '/')
+                {
+                    tokens.Add(new Token("//"), "//", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '/' && input[currentPosition + 1] == '*')
+                {
+                    tokens.Add(new Token("/*"), "/*", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '*' && input[currentPosition + 1] == '/')
+                {
+                    tokens.Add(new Token("*/"), "*/", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                }
+                else if (currentChar == ':' && input[currentPosition + 1] == '=')
+                { 
+                    tokens.Add(new Token(":="), ":=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '>' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token(">="), ">=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '<' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token("<="), "<=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '.' && input[currentPosition + 1] == '.')
+                {
+                    tokens.Add(new Token(".."), "..", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                }
+                else
+                {
+                    if (currentChar == '\n')
+                    {
+                        lineCounter++;
+                        lastEOLIndex = currentChar;
+                    }
+                    tokens.Add(new Token(currentChar.ToString()), currentChar.ToString(), new Span(lineCounter, currentLinePosition, currentLinePosition))
+                  }
+               var substring = _input.Substring(_currentPosition, lexemeLength);
             _tokens.Add(
                 new Token(
                     type: GetTokenType(substring),
@@ -85,6 +117,7 @@ public class Lexer
                 )
             );
         }
+            }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
         return _tokens;
