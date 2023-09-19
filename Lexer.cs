@@ -95,6 +95,11 @@ public class Lexer
                 }
                 else
                 {
+                    if (currentChar == '\n')
+                    {
+                        lineCounter++;
+                        lastEOLIndex = currentChar;
+                    }
                     tokens.Add(new Token(currentChar.ToString()), currentChar.ToString(), new Span(lineCounter, currentLinePosition, currentLinePosition))
                 }
             }
