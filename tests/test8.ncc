@@ -1,0 +1,12 @@
+routine abs(a: real): real is
+    if a >= 0 then
+    else
+        a := -a
+    return a
+end
+
+routine main() is
+    assert abs(-4.4), 4.4 // OK
+    assert abs(0.0), 0.0 // OK
+    assert abs(3.14), 3.14 // OK
+end

@@ -1,0 +1,26 @@
+routine factors(n: integer): array[] integer is
+    /* a function that decomposes a number into prime factors */
+    var d: integer is 2
+    var ans: array[64]integer
+    var i: integer is 1
+    while d*d <= n loop
+        if n%d = 0 then
+            ans[i] := d
+            i := i+1
+            n := n / d
+        else
+            d := d + 1
+        end
+    end
+    if n > 1 then
+        ans[i] := n
+        i := i+1
+    end
+    return ans
+end
+
+routine main() is
+      var n: integer is 25
+      var result: array[64] is factors(n)
+      assert result, [5, 5]
+end
