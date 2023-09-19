@@ -3,52 +3,52 @@ namespace NCCompiler_CompilersCourse;
 public enum TokenType
 {
     // Tokens without values
-    routine_token,
-    array_token,
-    integer_token,
-    is_token, var_token,
-    size_token, for_token,
-    from_token, loop_token,
-    if_token, then_token,
-    else_token, end_token,
-    return_token, real_token,
-    in_token, assert_token,
-    while_token, type_token,
-    record_token, true_token, false_token, boolean_token,
+    Routine,
+    Array,
+    Integer,
+    Is, Var,
+    Size, For,
+    From, Loop,
+    If, Then,
+    Else, End,
+    Return, Real,
+    In, Assert,
+    While, Type,
+    Record, True_token, False, Boolean,
 
     // Tokens with values
-    identifier, number, float,
+    Identifier, Number, Float,
     
     // Other tokens
-    end_of_line,
-    colon, dot, two_dots,
-    comma,
+    EndOfLine,
+    Colon, Dot, TwoDots,
+    Comma,
     
     // Comments
-    multiline_comment_start,
-    multiline_comment_end,
-    singleline_comment,
+    MultilineCommentStart,
+    MultilineCommentEnd,
+    SinglelineComment,
     
-    assignment_operator,
+    AssignmentOperator,
     
     // Boolean operators
-    and, or, xor,
-    eq_comparison,
-    gr_comparison,
-    greq_comparison,
-    l_comparisom,
-    leq_comparison,
-    neq_comparison,
+    And, Or, Xor,
+    EqComparison,
+    GtComparison,
+    GeComparison,
+    LtComparisom,
+    LeComparison,
+    NeComparison,
     
     // Arithmetic operators
-    plus,
-    minus,
-    division,
-    remainder,
+    Plus,
+    Minus,
+    Division,
+    Remainder,
     
     // Brackets
-    left_bracket,
-    right_bracket,
-    left_squared_bracket,
-    right_squared_bracket,
+    LeftBracket,
+    RightBracket,
+    LeftSquaredBracket,
+    RightSquaredBracket,
 }
