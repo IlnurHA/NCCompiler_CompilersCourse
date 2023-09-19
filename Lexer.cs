@@ -35,12 +35,37 @@ public class Lexer
     {
         int lineCounter = 1;
         var lastEolIndex = 0;
+        
+        var inSingleLineComment = false;
+        var inMultiLineComment = false;
+        
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
-            if (char.IsDigit(currentChar))
+            if (inSingleLineComment || inMultiLineComment)
+            {
+                if (currentChar == '\n' && inSingleLineComment)
+                {
+                    inSingleLineComment = false;
+                } 
+                else if (currentChar == '*' && input[_currentPosition + 1] == '/' && inMultiLineComment)
+                {
+                    inMultiLineComment = false;
+                }
+                else {
+                    if (currentChar == '\n')
+                    {
+                        lineCounter++;
+                        lastEolIndex = currentPosition;
+                    }
+                    _currentPosition++;
+                    continue;
+                }
+            }
+            
+            if (char.IsDigit(currentChar) && (is))
             {
                 // Then it is a digit
 
@@ -70,19 +95,29 @@ public class Lexer
             {
                 if (_currentPosition + 1 < input.Length &&
                     ((currentChar == '/' && input[_currentPosition + 1] == '=') ||
-                     (currentChar == '/' && input[_currentPosition + 1] == '/') ||
-                     (currentChar == '/' && input[_currentPosition + 1] == '*') ||
                      (currentChar == '*' && input[_currentPosition + 1] == '/') ||
                      (currentChar == ':' && input[_currentPosition + 1] == '=') ||
                      (currentChar == '>' && input[_currentPosition + 1] == '=') ||
                      (currentChar == '<' && input[_currentPosition + 1] == '=') ||
                      (currentChar == '.' && input[_currentPosition + 1] == '.')))
                 {
-                    lexemeLength = 2
+                    lexemeLength = 2;
+                }
+                else if ((_currentPosition + 1 < input.Length) &&
+                         (currentChar == '/' && input[_currentPosition + 1] == '*'))
+                {
+                    lexemeLength = 2;
+                    inMultiLineComment = true;
+                }
+                else if (_currentPosition + 1 < input.Length &&
+                         (currentChar == '/' && input[_currentPosition + 1] == '/'))
+                {
+                    lexemeLength = 2;
+                    inSingleLineComment = true
                 }
                 else
                 {
-                    lexemeLength = 1
+                    lexemeLength = 1;
                 }
             }
 
