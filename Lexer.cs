@@ -33,7 +33,7 @@ public class Lexer
 
     public List<Token> Tokenize()
     {
-        const int lineCounter = 1;
+        int lineCounter = 1;
         var lastEolIndex = 0;
         while (_currentPosition < _input.Length)
         {
@@ -66,24 +66,43 @@ public class Lexer
                     _input[lexemeLength + _currentPosition] == '_')
                 ) lexemeLength++;
             }
-            else if (currentChar == '\n')
+            else
             {
-                lastEolIndex = _currentPosition;
-                _currentPosition++;
+                if (_currentPosition + 1 < input.Length &&
+                    ((currentChar == '/' && input[_currentPosition + 1] == '=') ||
+                     (currentChar == '/' && input[_currentPosition + 1] == '/') ||
+                     (currentChar == '/' && input[_currentPosition + 1] == '*') ||
+                     (currentChar == '*' && input[_currentPosition + 1] == '/') ||
+                     (currentChar == ':' && input[_currentPosition + 1] == '=') ||
+                     (currentChar == '>' && input[_currentPosition + 1] == '=') ||
+                     (currentChar == '<' && input[_currentPosition + 1] == '=') ||
+                     (currentChar == '.' && input[_currentPosition + 1] == '.')))
+                {
+                    lexemeLength = 2
+                }
+                else
+                {
+                    lexemeLength = 1
+                }
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            _tokens.Add(
-                new Token(
-                    type: GetTokenType(substring),
-                    lexeme: substring,
-                    span: new Span(
-                        lineNum: lineCounter,
-                        posBegin: _currentPosition - lastEolIndex,
-                        posEnd: _currentPosition + lexemeLength - lastEolIndex
+                _tokens.Add(
+                    new Token(
+                        type: GetTokenType(substring),
+                        lexeme: substring,
+                        span: new Span(
+                            lineNum: lineCounter,
+                            posBegin: _currentPosition - lastEolIndex,
+                            posEnd: _currentPosition + lexemeLength - lastEolIndex
+                        )
                     )
-                )
-            );
+                );
+            if (currentChar == '\n')
+            {
+                lineCounter++;
+                lastEolIndex = currentPosition;
+            }
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
