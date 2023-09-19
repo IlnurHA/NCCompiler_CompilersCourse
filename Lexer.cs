@@ -81,11 +81,36 @@ public class Lexer
     {
         var lineCounter = 1;
         var lastEolIndex = 0;
+        
+        var inSingleLineComment = false;
+        var inMultiLineComment = false;
+        
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
+            if (inSingleLineComment || inMultiLineComment)
+            {
+                if (currentChar == '\n' && inSingleLineComment)
+                {
+                    inSingleLineComment = false;
+                } 
+                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
+                {
+                    inMultiLineComment = false;
+                }
+                else {
+                    if (currentChar == '\n')
+                    {
+                        lineCounter++;
+                        lastEolIndex = _currentPosition;
+                    }
+                    _currentPosition++;
+                    continue;
+                }
+            }
+            
             if (char.IsDigit(currentChar))
             {
                 // Then it is a digit
@@ -109,15 +134,13 @@ public class Lexer
                 while (
                     lexemeLength + _currentPosition < _input.Length &&
                     (char.IsLetterOrDigit(_input[lexemeLength + _currentPosition]) ||
-                     _input[lexemeLength + _currentPosition] == '_')
+                    _input[lexemeLength + _currentPosition] == '_')
                 ) lexemeLength++;
             }
             else
             {
                 if (_currentPosition + 1 < _input.Length &&
                     ((currentChar == '/' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '/' && _input[_currentPosition + 1] == '/') ||
-                     (currentChar == '/' && _input[_currentPosition + 1] == '*') ||
                      (currentChar == '*' && _input[_currentPosition + 1] == '/') ||
                      (currentChar == ':' && _input[_currentPosition + 1] == '=') ||
                      (currentChar == '>' && _input[_currentPosition + 1] == '=') ||
@@ -126,6 +149,18 @@ public class Lexer
                 {
                     lexemeLength = 2;
                 }
+                else if ((_currentPosition + 1 < _input.Length) &&
+                         (currentChar == '/' && _input[_currentPosition + 1] == '*'))
+                {
+                    lexemeLength = 2;
+                    inMultiLineComment = true;
+                }
+                else if (_currentPosition + 1 < _input.Length &&
+                         (currentChar == '/' && _input[_currentPosition + 1] == '/'))
+                {
+                    lexemeLength = 2;
+                    inSingleLineComment = true;
+                }
                 else
                 {
                     lexemeLength = 1;
@@ -133,24 +168,22 @@ public class Lexer
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            _tokens.Add(
-                new Token(
-                    type: GetTokenType(substring),
-                    lexeme: substring,
-                    span: new Span(
-                        lineNum: lineCounter,
-                        posBegin: _currentPosition - lastEolIndex,
-                        posEnd: _currentPosition + lexemeLength - lastEolIndex
+                _tokens.Add(
+                    new Token(
+                        type: GetTokenType(substring),
+                        lexeme: substring,
+                        span: new Span(
+                            lineNum: lineCounter,
+                            posBegin: _currentPosition - lastEolIndex,
+                            posEnd: _currentPosition + lexemeLength - lastEolIndex
+                        )
                     )
-                )
-            );
+                );
             if (currentChar == '\n')
             {
                 lineCounter++;
                 lastEolIndex = _currentPosition;
             }
-
-            _currentPosition++;
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
