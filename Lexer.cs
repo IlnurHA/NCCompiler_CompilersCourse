@@ -62,6 +62,42 @@ public class Lexer
                 var substring = input.Substring(currentPosition, lexemeLength);
                 tokens.Add(new Token(GetTokenType(substring), substring, new Span(lineCounter, currentPosition - lastEOLIndex, currentPosition + lexemeLength - lastEOLIndex)));
             }
+            else if (!char.IsLetter(currentChar))
+            {
+                var currentLinePosition = currentPosition - lastEOLIndex;
+                var currentLineExtendedPosition = currentLinePosition + 1;
+                
+                if (currentChar == '/' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token("/="), "/=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '/' && input[currentPosition + 1] == '/')
+                {
+                    tokens.Add(new Token("//"), "//", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '/' && input[currentPosition + 1] == '*')
+                {
+                    tokens.Add(new Token("/*"), "/*", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '*' && input[currentPosition + 1] == '/')
+                {
+                    tokens.Add(new Token("*/"), "*/", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                }
+                else if (currentChar == ':' && input[currentPosition + 1] == '=')
+                { 
+                    tokens.Add(new Token(":="), ":=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '>' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token(">="), ">=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '<' && input[currentPosition + 1] == '=')
+                {
+                    tokens.Add(new Token("<="), "<=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                } else if (currentChar == '.' && input[currentPosition + 1] == '.')
+                {
+                    tokens.Add(new Token(".."), "..", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
+                }
+                else
+                {
+                    tokens.Add(new Token(currentChar.ToString()), currentChar.ToString(), new Span(lineCounter, currentLinePosition, currentLinePosition))
+                }
+            }
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
