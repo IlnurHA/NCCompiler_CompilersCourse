@@ -3,11 +3,18 @@ namespace NCCompiler_CompilersCourse;
 public enum TokenType
 {
     // Tokens without values
-    routine, array, integer, is,
-    var, size, for, from, loop,
-    if, then, else, end, return, real,
-    in, assert, while, and, or, xor, type,
-    record, true, false, boolean,
+    routine_token,
+    array_token,
+    integer_token,
+    is_token, var_token,
+    size_token, for_token,
+    from_token, loop_token,
+    if_token, then_token,
+    else_token, end_token,
+    return_token, real_token,
+    in_token, assert_token,
+    while_token, type_token,
+    record_token, true_token, false_token, boolean_token,
 
     // Tokens with values
     identifier, number, float,
@@ -25,6 +32,7 @@ public enum TokenType
     assignment_operator,
     
     // Boolean operators
+    and, or, xor,
     eq_comparison,
     gr_comparison,
     greq_comparison,
