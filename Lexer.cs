@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace NCCompiler_CompilersCourse;
 
 public class Lexer
@@ -24,16 +26,60 @@ public class Lexer
             ")" => TokenType.RightBracket,
             "[" => TokenType.LeftSquaredBracket,
             "]" => TokenType.RightSquaredBracket,
-            "=" => TokenType.EqComparison,
             "," => TokenType.Comma,
             "\n" => TokenType.EndOfLine,
-            _ => throw new NotImplementedException("The token is not implemented")
+            ":" => TokenType.Colon,
+            "." => TokenType.Dot,
+            ".." => TokenType.TwoDots,
+            "and" => TokenType.And,
+            "or" => TokenType.Or,
+            "xor" => TokenType.Xor,
+            "=" => TokenType.EqComparison,
+            ">" => TokenType.GtComparison,
+            ">=" => TokenType.GeComparison,
+            "<" => TokenType.LtComparisom,
+            "<=" => TokenType.LeComparison,
+            "/=" => TokenType.NeComparison,
+            "//" => TokenType.SinglelineComment,
+            "/*" => TokenType.MultilineCommentStart,
+            "*/" => TokenType.MultilineCommentEnd,
+            ":=" => TokenType.AssignmentOperator,
+            "routine" => TokenType.Routine,
+            "array" => TokenType.Array,
+            "integer" => TokenType.Integer,
+            "is" => TokenType.Is,
+            "var" => TokenType.Var,
+            "size" => TokenType.Size,
+            "for" => TokenType.For,
+            "from" => TokenType.From,
+            "loop" => TokenType.Loop,
+            "if" => TokenType.If,
+            "then" => TokenType.Then,
+            "else" => TokenType.Else,
+            "end" => TokenType.End,
+            "return" => TokenType.Return,
+            "real" => TokenType.Real,
+            "in" => TokenType.In,
+            "assert" => TokenType.Assert,
+            "while" => TokenType.While,
+            "type" => TokenType.Type,
+            "record" => TokenType.Record,
+            "true" => TokenType.True,
+            "false" => TokenType.False,
+            "boolean" => TokenType.Boolean,
+            var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
+                TokenType.Identifier,
+            var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
+                TokenType.Number,
+            var someVal when new Regex(@"^-?\d+\.?\d+$").IsMatch(someVal) =>
+                TokenType.Float,
+            _ => throw new NotImplementedException($"The {token} is not implemented")
         };
     }
 
     public List<Token> Tokenize()
     {
-        int lineCounter = 1;
+        var lineCounter = 1;
         var lastEolIndex = 0;
         
         var inSingleLineComment = false;
@@ -50,7 +96,7 @@ public class Lexer
                 {
                     inSingleLineComment = false;
                 } 
-                else if (currentChar == '*' && input[_currentPosition + 1] == '/' && inMultiLineComment)
+                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
                 {
                     inMultiLineComment = false;
                 }
@@ -58,14 +104,20 @@ public class Lexer
                     if (currentChar == '\n')
                     {
                         lineCounter++;
-                        lastEolIndex = currentPosition;
+                        lastEolIndex = _currentPosition;
                     }
                     _currentPosition++;
                     continue;
                 }
             }
             
-            if (char.IsDigit(currentChar) && (is))
+            if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
+            {
+                _currentPosition++;
+                continue;
+            }
+            
+            if (char.IsDigit(currentChar))
             {
                 // Then it is a digit
 
@@ -75,11 +127,21 @@ public class Lexer
                        (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
                         _input[lexemeLength + _currentPosition] == '.'))
                 {
+                    if (_input[lexemeLength + _currentPosition] == '.')
+                    {
+                        if (isDot) throw new Exception("Wrong float argument");
+                        
+                        if (lexemeLength + _currentPosition + 1 < _input.Length &&
+                            char.IsDigit(_input[_currentPosition + lexemeLength + 1]))
+                        {
+                            isDot = true;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                     lexemeLength++;
-                    if (_input[lexemeLength + _currentPosition] != '.') continue;
-                    if (isDot) throw new Exception("Wrong float argument");
-
-                    isDot = true;
                 }
             }
             else if (char.IsLetter(currentChar))
@@ -93,27 +155,27 @@ public class Lexer
             }
             else
             {
-                if (_currentPosition + 1 < input.Length &&
-                    ((currentChar == '/' && input[_currentPosition + 1] == '=') ||
-                     (currentChar == '*' && input[_currentPosition + 1] == '/') ||
-                     (currentChar == ':' && input[_currentPosition + 1] == '=') ||
-                     (currentChar == '>' && input[_currentPosition + 1] == '=') ||
-                     (currentChar == '<' && input[_currentPosition + 1] == '=') ||
-                     (currentChar == '.' && input[_currentPosition + 1] == '.')))
+                if (_currentPosition + 1 < _input.Length &&
+                    ((currentChar == '/' && _input[_currentPosition + 1] == '=') ||
+                     (currentChar == '*' && _input[_currentPosition + 1] == '/') ||
+                     (currentChar == ':' && _input[_currentPosition + 1] == '=') ||
+                     (currentChar == '>' && _input[_currentPosition + 1] == '=') ||
+                     (currentChar == '<' && _input[_currentPosition + 1] == '=') ||
+                     (currentChar == '.' && _input[_currentPosition + 1] == '.')))
                 {
                     lexemeLength = 2;
                 }
-                else if ((_currentPosition + 1 < input.Length) &&
-                         (currentChar == '/' && input[_currentPosition + 1] == '*'))
+                else if ((_currentPosition + 1 < _input.Length) &&
+                         (currentChar == '/' && _input[_currentPosition + 1] == '*'))
                 {
                     lexemeLength = 2;
                     inMultiLineComment = true;
                 }
-                else if (_currentPosition + 1 < input.Length &&
-                         (currentChar == '/' && input[_currentPosition + 1] == '/'))
+                else if (_currentPosition + 1 < _input.Length &&
+                         (currentChar == '/' && _input[_currentPosition + 1] == '/'))
                 {
                     lexemeLength = 2;
-                    inSingleLineComment = true
+                    inSingleLineComment = true;
                 }
                 else
                 {
@@ -136,8 +198,10 @@ public class Lexer
             if (currentChar == '\n')
             {
                 lineCounter++;
-                lastEolIndex = currentPosition;
+                lastEolIndex = _currentPosition;
             }
+
+            _currentPosition += lexemeLength;
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker

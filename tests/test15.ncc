@@ -1,0 +1,35 @@
+type my_record is (
+  record
+    var a: integer
+    var b: integer
+  end
+)
+
+
+routine main() is
+  var rec1: my_record
+  rec1.a := 5
+  rec1.b := 7
+
+  var rec2: my_record
+  rec2.a := 77
+  rec2.b := 33
+
+  var rec3: my_record
+  rec3.a := 5
+  rec3.b := 7
+
+  assert rec1, rec3 // OK
+  assert rec1, rec2 // err
+
+  var arr1: array[3]integer is [1, 2, 3]
+  var arr2: array[3]integer is [4, 5, 6]
+  var arr3: array[3]integer is [1, 2, 3]
+
+  assert arr1, arr3 // OK
+  assert arr1, arr2 // err
+
+  /*   Usually user-defined types (recordType and arrayType)
+    are reference types (variable just reference to object).
+    However, for assert it will check value by value */
+end

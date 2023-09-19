@@ -1,32 +1,33 @@
-﻿type my_record is (
-  record
-    var a: integer
-    var b: integer
+﻿routine main() is
+  var n: integer
+  n := 10
+  var arr: array[n] integer
+
+  for i in 1..n loop
+    arr[i] := i
   end
-)
+  
+  var l: integer is 1
+  var r: integer is n
+  var mid: integer
 
+  var x: integer is 3
 
-routine main() is
-  var rec1: my_record
-  rec1.a = 5
-  rec1.b = 7
-
-  var rec2: my_record
-  rec2.a = 77
-  rec2.b = 33
-
-  var rec3: my_record
-  rec3.a = 5
-  rec3.b = 7
-
-  assert rec1, rec3
-  assert rec1, rec2
-
-  var arr1: array[3]integer is [1, 2, 3]
-  var arr2: array[3]integer is [4, 5, 6]
-  var arr3: array[3]integer is [1, 2, 3]
-
-  assert arr1, arr3
-  assert arr1, arr2
-
+  /* Binary search of x in arr */
+  while l <= r loop
+ 
+          mid := l + (r - l) / 2
+ 
+          if arr[mid] = x then
+              return mid
+          else 
+      if arr[mid] < x:
+                  l := mid + 1
+      else
+                  r := mid - 1
+      end
+     end
+  end
+  assert res, 3 // OK
+  // mid should be 3
 end

@@ -1,0 +1,5 @@
+routine main() is
+    assert not 1, false // OK
+    assert not 0, true // OK
+    var t: boolean is not 5 // error
+end
