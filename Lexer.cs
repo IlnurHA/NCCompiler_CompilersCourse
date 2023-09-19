@@ -2,13 +2,13 @@ namespace NCCompiler_CompilersCourse;
 
 public class Lexer
 {
-    private readonly string input;
-    private int currentPosition = 0;
-    private List<Token> tokens = new List<Token>();
+    private readonly string _input;
+    private int _currentPosition;
+    private readonly List<Token> _tokens = new();
 
     public Lexer(string input)
     {
-        this.input = input;
+        _input = input;
     }
 
     private static TokenType GetTokenType(string token)
@@ -33,40 +33,42 @@ public class Lexer
 
     public List<Token> Tokenize()
     {
-        var lineCounter = 1;
-        var lastEOLIndex = 0;
-        while (currentPosition < input.Length)
+        const int lineCounter = 1;
+        var lastEolIndex = 0;
+        while (_currentPosition < _input.Length)
         {
-            char currentChar = input[currentPosition];
+            var currentChar = _input[_currentPosition];
+            var lexemeLength = 1;
 
             if (char.IsDigit(currentChar))
             {
                 // Then it is a digit
-                var lexemeLength = 1;
+
                 var isDot = false;
 
-                while (lexemeLength + currentPosition < input.Length && (char.IsDigit(input[lexemeLength + currentPosition]) ||
-                                                                    input[lexemeLength + currentPosition] == '.'))
+                while (lexemeLength + _currentPosition < _input.Length &&
+                       (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
+                        _input[lexemeLength + _currentPosition] == '.'))
                 {
                     lexemeLength++;
-                    if (input[lexemeLength + currentPosition] == '.')
-                    {
-                        if (isDot)
-                        {
-                            throw new Exception("Wrong float argument");
-                        }
-                        isDot = true;
-                    }
-                }
+                    if (_input[lexemeLength + _currentPosition] != '.') continue;
+                    if (isDot) throw new Exception("Wrong float argument");
 
-                var substring = input.Substring(currentPosition, lexemeLength);
-                tokens.Add(new Token(GetTokenType(substring), substring, new Span(lineCounter, currentPosition - lastEOLIndex, currentPosition + lexemeLength - lastEOLIndex)));
+                    isDot = true;
+                }
             }
-            else if (!char.IsLetter(currentChar))
+            else if (char.IsLetter(currentChar))
             {
-                var currentLinePosition = currentPosition - lastEOLIndex;
-                var currentLineExtendedPosition = currentLinePosition + 1;
-                
+                // Then it is a identifier or keyword
+                while (
+                    lexemeLength + _currentPosition < _input.Length &&
+                    (char.IsLetterOrDigit(_input[lexemeLength + _currentPosition]) ||
+                    _input[lexemeLength + _currentPosition] == '_')
+                ) lexemeLength++;
+            }
+            else
+            {
+
                 if (currentChar == '/' && input[currentPosition + 1] == '=')
                 {
                     tokens.Add(new Token("/="), "/=", new Span(lineCounter, currentLinePosition, currentLineExtendedPosition))
@@ -101,11 +103,23 @@ public class Lexer
                         lastEOLIndex = currentChar;
                     }
                     tokens.Add(new Token(currentChar.ToString()), currentChar.ToString(), new Span(lineCounter, currentLinePosition, currentLinePosition))
-                }
-            }
+                  }
+               var substring = _input.Substring(_currentPosition, lexemeLength);
+            _tokens.Add(
+                new Token(
+                    type: GetTokenType(substring),
+                    lexeme: substring,
+                    span: new Span(
+                        lineNum: lineCounter,
+                        posBegin: _currentPosition - lastEolIndex,
+                        posEnd: _currentPosition + lexemeLength - lastEolIndex
+                    )
+                )
+            );
         }
+            }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
-        return tokens;
+        return _tokens;
     }
 }
