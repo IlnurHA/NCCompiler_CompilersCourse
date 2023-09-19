@@ -4,13 +4,18 @@ class Program
 {
     public static void Main(string[] args)
     {
-        string inputExpression = "x + 42 * (y - 3.14)";
-        Lexer lexer = new Lexer(inputExpression);
-        List<Token> tokens = lexer.Tokenize();
-
-        foreach (Token token in tokens)
+        string fullPathToTests =
+            Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "tests");
+        var allTests = Directory.EnumerateFiles(fullPathToTests, "*.ncc");
+        foreach (var filename in allTests)
         {
-            Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}");
+            string contents = File.ReadAllText(filename);
+            Lexer lexer = new Lexer(contents);
+            List<Token> tokens = lexer.Tokenize();
+            foreach (Token token in tokens)
+            {
+                Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}");
+            }
         }
     }
 }
