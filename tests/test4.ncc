@@ -1,0 +1,17 @@
+﻿/* Routine to check that number is prime */
+routine is_prime(num: integer) is
+  if num = 1 or num = 2 then
+    return true
+  end
+  for i in reverse 2..(num - 1) loop
+    if num % i = 0 then
+      return false
+    end
+  end
+  return true
+end
+
+routine main() is
+  assert is_prime(10), false // OK
+  assert is_prime(5), true // OK
+end
