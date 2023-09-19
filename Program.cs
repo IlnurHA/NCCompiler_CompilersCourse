@@ -4,10 +4,12 @@ class Program
 {
     public static void Main(string[] args)
     {
-        
-        string? fileName;
-        while ((fileName = Console.ReadLine()) == null) { }
+        // /home/kamil/RiderProjects/NCCompiler_CompilersCourse/tests/test1.ncc
+        string? fileName = Console.ReadLine();
+        // while ((fileName = Console.ReadLine()) == null) { }
+        // Console.WriteLine(fileName);
         string contents = File.ReadAllText(fileName);
+        // Console.WriteLine(contents);
         Lexer lexer = new Lexer(contents);
         List<Token> tokens = lexer.Tokenize();
         foreach (Token token in tokens)

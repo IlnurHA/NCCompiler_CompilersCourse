@@ -67,13 +67,13 @@ public class Lexer
             "true" => TokenType.True,
             "false" => TokenType.False,
             "boolean" => TokenType.Boolean,
-            var someVal when new Regex(@"^\w[\w\d_-]*$").IsMatch(someVal) =>
+            var someVal when new Regex(@"^\w[\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
                 TokenType.Number,
             var someVal when new Regex(@"^-?\d+\.?\d+$").IsMatch(someVal) =>
                 TokenType.Float,
-            _ => throw new NotImplementedException("The token is not implemented")
+            _ => throw new NotImplementedException($"The {token} is not implemented")
         };
     }
 
@@ -89,6 +89,11 @@ public class Lexer
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
+            if (currentChar == ' ')
+            {
+                _currentPosition++;
+                continue;
+            }
 
             if (inSingleLineComment || inMultiLineComment)
             {
@@ -184,6 +189,8 @@ public class Lexer
                 lineCounter++;
                 lastEolIndex = _currentPosition;
             }
+
+            _currentPosition += lexemeLength;
         }
 
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker

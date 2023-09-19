@@ -14,4 +14,9 @@ public class Token
         Value = value;
         Span = span;
     }
+    
+    public override string ToString()
+    {
+        return $"Type: {Type}, Lexeme: \"{Lexeme}\", Value: {Value}";
+    }
 }
