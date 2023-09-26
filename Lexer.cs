@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace NCCompiler_CompilersCourse;
@@ -81,10 +82,10 @@ public class Lexer
     {
         var lineCounter = 1;
         var lastEolIndex = 0;
-        
+
         var inSingleLineComment = false;
         var inMultiLineComment = false;
-        
+
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
@@ -95,28 +96,30 @@ public class Lexer
                 if (currentChar == '\n' && inSingleLineComment)
                 {
                     inSingleLineComment = false;
-                } 
+                }
                 else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
                 {
                     inMultiLineComment = false;
                 }
-                else {
+                else
+                {
                     if (currentChar == '\n')
                     {
                         lineCounter++;
                         lastEolIndex = _currentPosition;
                     }
+
                     _currentPosition++;
                     continue;
                 }
             }
-            
+
             if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
             {
                 _currentPosition++;
                 continue;
             }
-            
+
             if (char.IsDigit(currentChar))
             {
                 // Then it is a digit
@@ -130,7 +133,7 @@ public class Lexer
                     if (_input[lexemeLength + _currentPosition] == '.')
                     {
                         if (isDot) throw new Exception("Wrong float argument");
-                        
+
                         if (lexemeLength + _currentPosition + 1 < _input.Length &&
                             char.IsDigit(_input[_currentPosition + lexemeLength + 1]))
                         {
@@ -141,6 +144,7 @@ public class Lexer
                             break;
                         }
                     }
+
                     lexemeLength++;
                 }
             }
@@ -150,7 +154,7 @@ public class Lexer
                 while (
                     lexemeLength + _currentPosition < _input.Length &&
                     (char.IsLetterOrDigit(_input[lexemeLength + _currentPosition]) ||
-                    _input[lexemeLength + _currentPosition] == '_')
+                     _input[lexemeLength + _currentPosition] == '_')
                 ) lexemeLength++;
             }
             else
@@ -184,17 +188,19 @@ public class Lexer
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-                _tokens.Add(
-                    new Token(
-                        type: GetTokenType(substring),
-                        lexeme: substring,
-                        span: new Span(
-                            lineNum: lineCounter,
-                            posBegin: _currentPosition - lastEolIndex,
-                            posEnd: _currentPosition + lexemeLength - lastEolIndex
-                        )
-                    )
-                );
+            var token_type = GetTokenType(substring);
+            _tokens.Add(
+                new Token(
+                    type: token_type,
+                    lexeme: substring,
+                    span: new Span(
+                        lineNum: lineCounter,
+                        posBegin: _currentPosition - lastEolIndex,
+                        posEnd: _currentPosition + lexemeLength - lastEolIndex
+                    ),
+                    value: token_type is TokenType.Number or TokenType.Float ? double.Parse(substring, new CultureInfo("en-US").NumberFormat) : null
+                )
+            );
             if (currentChar == '\n')
             {
                 lineCounter++;
