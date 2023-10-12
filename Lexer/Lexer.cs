@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace NCCompiler_CompilersCourse;
+namespace NCCompiler_CompilersCourse.Lexer;
 
 public class Lexer
 {
@@ -209,7 +209,6 @@ public class Lexer
 
             _currentPosition += lexemeLength;
         }
-
         // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
         return _tokens;
     }

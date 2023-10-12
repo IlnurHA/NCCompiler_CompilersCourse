@@ -1,4 +1,4 @@
-namespace NCCompiler_CompilersCourse;
+namespace NCCompiler_CompilersCourse.Lexer;
 
 public class Token
 {

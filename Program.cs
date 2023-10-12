@@ -1,4 +1,6 @@
-﻿namespace NCCompiler_CompilersCourse;
+﻿using NCCompiler_CompilersCourse.Lexer;
+
+namespace NCCompiler_CompilersCourse;
 
 class Program
 {
@@ -10,7 +12,7 @@ class Program
         // Console.WriteLine(fileName);
         string contents = File.ReadAllText(fileName);
         // Console.WriteLine(contents);
-        Lexer lexer = new Lexer(contents);
+        Lexer.Lexer lexer = new Lexer.Lexer(contents);
         List<Token> tokens = lexer.Tokenize();
         foreach (Token token in tokens)
         {

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "gVFi7KHk2madg+QArII3rFOPUdQDfwlAHP089d55aFdF0WDetDwNaO4pXen4tw783bXunFZWPMoN1tbPEktb8A==",
+  "dgSpecHash": "bOEKgPexfTqQb+uk98KFMDukArU8YMS2y1o2mV1mFLhp8HN5bLS8zh+WT7tF8g8lm/1aLmHBfGP2OjByY8khZg==",
   "success": true,
-  "projectFilePath": "/home/kamil/RiderProjects/NCCompiler_CompilersCourse/NCCompiler_CompilersCourse.csproj",
+  "projectFilePath": "C:\\Users\\almet\\RiderProjects\\NCCompiler_CompilersCourse\\NCCompiler_CompilersCourse.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
