@@ -15,6 +15,7 @@ public enum TokenType
     In, Assert,
     While, Type,
     Record, True, False, Boolean,
+    Sorted, Foreach, Reversed,
 
     // Tokens with values
     Identifier, Number, Float,
@@ -31,7 +32,7 @@ public enum TokenType
     EqComparison,
     GtComparison,
     GeComparison,
-    LtComparisom,
+    LtComparison,
     LeComparison,
     NeComparison,
     
