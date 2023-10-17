@@ -13,7 +13,7 @@ class Program
         string contents = File.ReadAllText(fileName);
         // Console.WriteLine(contents);
         Lexer.Lexer lexer = new Lexer.Lexer(contents);
-        List<Token> tokens = lexer.Tokenize();
+        List<Token> tokens = lexer.GetTokens();
         foreach (Token token in tokens)
         {
             Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}");

@@ -1,17 +1,20 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using NCCompiler_CompilersCourse.Parser;
+using QUT.Gppg;
 
 namespace NCCompiler_CompilersCourse.Lexer;
 
-public class Lexer
+class Lexer : AbstractScanner<Node, LexLocation>
 {
     private readonly string _input;
     private int _currentPosition;
-    private readonly List<Token> _tokens = new();
 
     public Lexer(string input)
     {
         _input = input;
+        yylloc = new LexLocation();
+        yylval
     }
 
     private static TokenType GetTokenType(string token)
@@ -78,35 +81,109 @@ public class Lexer
         };
     }
 
-    public List<Token> Tokenize()
+    Tokens GppgTokensType(TokenType tokenType)
     {
-        var lineCounter = 1;
-        var lastEolIndex = 0;
+        return tokenType switch
+        {
+            TokenType.Plus => Tokens.PLUS,
+            TokenType.Minus => Tokens.MINUS,
+            TokenType.Multiply => Tokens.MULTIPLY,
+            TokenType.Divide => Tokens.DIVIDE,
+            TokenType.Remainder => Tokens.REMAINDER,
+            TokenType.LeftBracket => Tokens.LEFT_BRACKET,
+            TokenType.RightBracket => Tokens.RIGHT_BRACKET,
+            TokenType.LeftSquaredBracket => Tokens.LEFT_SQUARED_BRACKET,
+            TokenType.RightSquaredBracket => Tokens.RIGHT_SQUARED_BRACKET,
+            TokenType.Comma => Tokens.COMMA,
+            TokenType.EndOfLine => Tokens.EOL,
+            TokenType.Colon => Tokens.COLON,
+            TokenType.Dot => Tokens.DOT,
+            TokenType.TwoDots => Tokens.TWO_DOTS,
+            TokenType.And => Tokens.AND,
+            TokenType.Or => Tokens.OR,
+            TokenType.Xor => Tokens.XOR,
+            TokenType.EqComparison => Tokens.EQ_COMPARISON,
+            TokenType.GtComparison => Tokens.GT_COMPARISON,
+            TokenType.GeComparison => Tokens.GE_COMPARISON,
+            TokenType.LtComparisom => Tokens.LT_COMPARISON,
+            TokenType.LeComparison => Tokens.LE_COMPARISON,
+            TokenType.NeComparison => Tokens.NE_COMPARISON,
+            // TokenType.SinglelineComment => Tokens.SINGL,
+            // TokenType.MultilineCommentStart => Tokens.MultilineCommentStart,
+            // TokenType.MultilineCommentEnd => Tokens.MultilineCommentEnd,
+            TokenType.AssignmentOperator => Tokens.ASSIGNMENT_OPERATOR,
+            TokenType.Routine => Tokens.ROUTINE,
+            TokenType.Array => Tokens.ARRAY,
+            TokenType.Integer => Tokens.INTEGER,
+            TokenType.Is => Tokens.IS,
+            TokenType.Var => Tokens.VAR,
+            TokenType.Size => Tokens.SIZE,
+            TokenType.For => Tokens.FOR,
+            TokenType.From => Tokens.FROM,
+            TokenType.Loop => Tokens.LOOP,
+            TokenType.If => Tokens.IF,
+            TokenType.Then => Tokens.THEN,
+            TokenType.Else => Tokens.ELSE,
+            TokenType.End => Tokens.END,
+            TokenType.Return => Tokens.RETURN,
+            TokenType.Real => Tokens.REAL,
+            TokenType.In => Tokens.IN,
+            TokenType.Assert => Tokens.ASSERT,
+            TokenType.While => Tokens.WHILE,
+            TokenType.Type => Tokens.TYPE,
+            TokenType.Record => Tokens.RECORD,
+            TokenType.True => Tokens.TRUE,
+            TokenType.False => Tokens.FALSE,
+            TokenType.Boolean => Tokens.BOOLEAN,
+            TokenType.Identifier => Tokens.IDENTIFIER,
+            TokenType.Number => Tokens.NUMBER,
+            TokenType.Float => Tokens.FLOAT,
+            _ => throw new Exception($"Unknown type {tokenType}")
+        };
+    }
 
-        var inSingleLineComment = false;
-        var inMultiLineComment = false;
+    private int _lineCounter = 1;
+    private int _lastEolIndex;
 
+    private bool _inSingleLineComment;
+    private bool _inMultiLineComment;
+
+    public List<Token> GetTokens()
+    {
+        List<Token> tokens = new List<Token>();
+        Token? token = NextToken();
+        while (token != null)
+        {
+            tokens.Add(token);
+            token = NextToken();
+        }
+
+        return tokens;
+    }
+
+    public Token? NextToken()
+    {
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
-            if (inSingleLineComment || inMultiLineComment)
+            if (_inSingleLineComment || _inMultiLineComment)
             {
-                if (currentChar == '\n' && inSingleLineComment)
+                if (currentChar == '\n' && _inSingleLineComment)
                 {
-                    inSingleLineComment = false;
+                    _inSingleLineComment = false;
                 }
-                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
+                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && _inMultiLineComment)
                 {
-                    inMultiLineComment = false;
+                    _inMultiLineComment = false;
                 }
                 else
                 {
                     if (currentChar == '\n')
                     {
-                        lineCounter++;
-                        lastEolIndex = _currentPosition;
+                        _lineCounter++;
+                        _lastEolIndex = _currentPosition;
                     }
 
                     _currentPosition++;
@@ -173,13 +250,13 @@ public class Lexer
                          (currentChar == '/' && _input[_currentPosition + 1] == '*'))
                 {
                     lexemeLength = 2;
-                    inMultiLineComment = true;
+                    _inMultiLineComment = true;
                 }
                 else if (_currentPosition + 1 < _input.Length &&
                          (currentChar == '/' && _input[_currentPosition + 1] == '/'))
                 {
                     lexemeLength = 2;
-                    inSingleLineComment = true;
+                    _inSingleLineComment = true;
                 }
                 else
                 {
@@ -188,28 +265,72 @@ public class Lexer
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            var token_type = GetTokenType(substring);
-            _tokens.Add(
-                new Token(
-                    type: token_type,
-                    lexeme: substring,
-                    span: new Span(
-                        lineNum: lineCounter,
-                        posBegin: _currentPosition - lastEolIndex,
-                        posEnd: _currentPosition + lexemeLength - lastEolIndex
-                    ),
-                    value: token_type is TokenType.Number or TokenType.Float ? double.Parse(substring, new CultureInfo("en-US").NumberFormat) : null
-                )
-            );
+            var tokenType = GetTokenType(substring);
+            // _tokens.Add(
+            // new Token(
+            //     type: tokenType,
+            //     lexeme: substring,
+            //     span: new Span(
+            //         lineNum: lineCounter,
+            //         posBegin: _currentPosition - lastEolIndex,
+            //         posEnd: _currentPosition + lexemeLength - lastEolIndex
+            //     ),
+            //     value: tokenType is TokenType.Number or TokenType.Float
+            //         ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
+            //         : null
+            // )
+            // );
             if (currentChar == '\n')
             {
-                lineCounter++;
-                lastEolIndex = _currentPosition;
+                _lineCounter++;
+                _lastEolIndex = _currentPosition;
             }
 
             _currentPosition += lexemeLength;
+            return new Token(
+                type: tokenType,
+                lexeme: substring,
+                span: new Span(
+                    lineNum: _lineCounter,
+                    posBegin: _currentPosition - _lastEolIndex,
+                    posEnd: _currentPosition + lexemeLength - _lastEolIndex
+                ),
+                value: tokenType is TokenType.Number or TokenType.Float
+                    ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
+                    : null
+            );
         }
-        // tokens.Add(new Token(TokenType.EOF, "")); // End of file marker
-        return _tokens;
+
+        return null; // End of file marker
+    }
+
+
+    public override int yylex()
+    {
+        try
+        {
+            var token = NextToken();
+            if (token == null)
+            {
+                return (int)Tokens.EOF;
+            }
+
+            yylloc = new LexLocation((int)token.Span.LineNum, (int)token.Span.LineNum, token.Span.PosBegin,
+                token.Span.PosEnd);
+            return (int)GppgTokensType(token.Type);
+        }
+        catch (Exception exception)
+        {
+            yyerror(exception.ToString());
+            return (int)Tokens.error;
+        }
+    }
+
+    public sealed override LexLocation yylloc { get; set; }
+
+    public override void yyerror(string format, params object[] args)
+    {
+        Console.Error.WriteLine( format, args );
+        base.yyerror(format, args);
     }
 }
