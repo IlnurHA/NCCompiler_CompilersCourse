@@ -5,7 +5,10 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using QUT.Gppg;
@@ -183,7 +186,15 @@ namespace NCCompiler_CompilersCourse.Parser {
             return new Leaf( name );
         }
 
-        public static Node MakeConstLeaf(double value) {
+        public static Node MakeIntLeaf(double value) {
+            return new Leaf( value );
+        }
+        
+        public static Node MakeBoolLeaf(double value) {
+            return new Leaf( value );
+        }
+        
+        public static Node MakeDoubleLeaf(double value) {
             return new Leaf( value );
         }
 
@@ -216,7 +227,7 @@ Commands are separated by newlines, or by semicolons ';'.  Valid commands are --
                     Console.WriteLine( "regs[{0}] = '{1}' = {2}", i, (char)(i + (int)'a'), regs[i].Unparse());
         }
 
-        private void AssignExpression( Node dst, Node expr ) {
+        private void AssignExpression( Leaf dst, Node expr ) {
             Leaf destination = dst as Leaf;
             regs[destination.Index] = expr;
         }
@@ -261,7 +272,7 @@ Commands are separated by newlines, or by semicolons ';'.  Valid commands are --
     //  Start of Node Definitions
     // ==================================================================================
 
-    internal enum NodeTag { error, name, literal, plus, minus, mul, div, rem, and, or, xor, not, negation, ge, gt, le, lt, eq, ne }
+    internal enum NodeTag { error, name, bool_literal, int_literal, double_literal, plus, minus, mul, div, rem, and, or, xor, not, negation, ge, gt, le, lt, eq, ne, _if }
 
     internal abstract class Node {
         readonly NodeTag tag;
@@ -269,7 +280,7 @@ Commands are separated by newlines, or by semicolons ';'.  Valid commands are --
         public NodeTag Tag => tag;
 
         protected Node(NodeTag tag ) { this.tag = tag; }
-        public abstract double Eval( Parser p );
+        public abstract Object Eval( Parser p );
         public abstract string Unparse();
 
         public void Prolog() {
@@ -283,14 +294,114 @@ Commands are separated by newlines, or by semicolons ';'.  Valid commands are --
 
     internal class Leaf : Node {
         private readonly string _name;
-        private readonly double _value;
+        private readonly Object _value;
         internal Leaf( string name ) : base( NodeTag.name ) { _name = name; }
-        internal Leaf(double value ) : base(NodeTag.literal ) { _value = value; }
+        internal Leaf(Boolean value) : base(NodeTag.bool_literal ) { _value = value; }
+        internal Leaf(Int32 value) : base(NodeTag.int_literal ) { _value = value; }
+        internal Leaf(Double value) : base(NodeTag.double_literal ) { _value = value; }
+        
+        public string Index { get { return _name; } }
+
+        public override Object Eval( Parser p ) {
+            try {
+                Prolog();
+                if (Tag == NodeTag.name)
+                    return p.regs[_name].Eval(p);
+                else
+                    return _value;
+            }
+            finally {
+                Epilog();
+            }
+        }
+
+        public override string Unparse() {
+            if (Tag == NodeTag.name)
+                return _name;
+            else
+                return _value.ToString();
+        }
+    }
+    
+    internal class ModifiablePrimaryNode : Node
+    {
+        private readonly Leaf _leaf;
+        private readonly SizeNode _size;
+        private readonly ModifiablePrimaryNode _modifiablePrimaryNode;
+        private readonly ExpressionNode _exprNode;
+
+        public ModifiablePrimaryNode(IdentifierNode identifier) : base(primary_identifier)
+        {
+            this._identifier = _identifier;
+        }
+        
+        public ModifiablePrimaryNode(ModifiablePrimaryNode identifier, ) : base(primary_identifier)
+        {
+            this._identifier = _identifier;
+        }
+
+        public override object Eval(Parser p)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string Unparse()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    
+    internal class ArrayNode : Node {
+        private readonly string _name;
+        private readonly ArrayList _value;
+        internal ArrayLeaf( string name ) : base( NodeTag.name ) { _name = name; }
+        
+        internal ArrayLeaf( ArrayList list) : base(NodeTag.literal ) { _value = list; }
+        internal ArrayLeaf( int size) : base(NodeTag.literal ) { _value = new ArrayList(size); }
 
         public override double Eval( Parser p ) {
             try {
                 Prolog();
                 if (Tag == NodeTag.name)
+                    return p.regs[_name].Eval(p);
+                else
+                    return _value;
+            }
+            finally {
+                Epilog();
+            }
+        }
+
+        public override string Unparse() {
+            if (Tag == NodeTag.name)
+                return _name;
+            else
+                return _value.ToString();
+        }
+    }
+    
+    internal class IfNode : Node {
+        private readonly Node _condition;
+        private readonly Node _if_body;
+        private readonly Node? _else_body;
+
+        internal IfNode(Node condition, Node ifBody) : base(NodeTag._if)
+        {
+            _condition = condition;
+            _if_body = ifBody;
+        }
+        
+        internal IfNode(Node condition, Node ifBody, Node elseBody) : base(NodeTag._if)
+        {
+            _condition = condition;
+            _if_body = ifBody;
+            _else_body = elseBody;
+        }
+
+        public override double Eval( Parser p ) {
+            try {
+                Prolog();
+                if (Tag == NodeTag._if)
                     return p.regs[_name].Eval(p);
                 else
                     return _value;
@@ -468,7 +579,7 @@ Commands are separated by newlines, or by semicolons ';'.  Valid commands are --
                 case NodeTag.gt: op = ">"; break;
                 case NodeTag.ge: op = ">="; break;
                 case NodeTag.ne: op = "/="; break;
-                case NodeTag.eq: op = "<="; break;
+                case NodeTag.eq: op = "="; break;
             }
             return $"({_lhs.Unparse()} {op} {_rhs.Unparse()})";
         }
