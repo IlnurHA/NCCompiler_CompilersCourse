@@ -30,82 +30,56 @@
 
 %YYSTYPE RealTree.Node
 
-%token LITERAL  
-%token LETTER
-%token PRINT
-%token EVAL
-%token RESET
-%token EXIT
-%token HELP
-%token EOL
+// Tokens without values
+%token ROUTINE ARRAY INTEGER IS VAR SIZE FOR FROM LOOP IF THEN ELSE END RETURN REAL IN ASSERT WHILE TYPE RECORD TRUE FALSE BOOLEAN
 
-%token ROUTINE
-%token ARRAY
-%token INTEGER
-%token IS
-%token VAR
-%token SIZE
-%token FOR
-%token FROM
-%token LOOP
-%token IF
-%token THEN
-%token ELSE
-%token END
-%token RETURN
-%token REAL
-%token IN
-%token ASSERT
-%token WHILE
-%token TYPE
-%token RECORD
-%token TRUE
-%token FALSE
-%token BOOLEAN
+// Tokens with values
+%token IDENTIFIER NUMBER FLOAT
 
-Identifier
-Number
-Float
+// Other tokens
+%token EOL COLON DOT TWO_DOTS COMMA
 
-%left '+' '-'
-%left '*' '/' '%'
-%left UMINUS
+%token ASSIGNMENT_OPERATOR
 
+// Boolean operators
+%token AND OR XOR EQ_COMPARISON GT_COMPARISON GE_COMPARISON LT_COMPARISON LE_COMPARISON NE_COMPARISON NOT
+
+// Arithmetic operators
+%left PLUS MINUS MULTIPLY DIVIDE REMAINDER
+
+// Brackets
+%token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
+ 
 %%
-
-list    :   /*empty */
-        |   list stat EOL
-        |   list error EOL    { yyerrok(); }
-        ;
-
-stat
-	: /* empty */
-	| HELP				{ this.PrintHelp(); }
-	| RESET				{ this.ClearRegisters(); }
-	| PRINT				{ this.PrintRegisters(); }
-	| EXIT				{ this.CallExit(); }
-	| EVAL expr			{ this.Display($2); }
-	| LITERAL			{ $$ = $1; }
-	| LETTER '=' expr	{ this.AssignExpression($1, $3); }
-	;
-
-expr
-	: '(' expr ')'		{ $$ = $2; }
-	|  EVAL'(' expr ')' { $$ = MakeConstLeaf(Eval($3)); }
-    |  expr '*' expr	{ $$ = MakeBinary(NodeTag.mul, $1, $3); }
-	|  expr '/' expr	{ $$ = MakeBinary(NodeTag.div, $1, $3); }
-	|  expr '%' expr	{ $$ = MakeBinary(NodeTag.rem, $1, $3); }
-	|  expr '+' expr	{ $$ = MakeBinary(NodeTag.plus, $1, $3); }
-	|  expr '-' expr	{ $$ = MakeBinary(NodeTag.minus, $1, $3); }
-	|  LETTER           // $$ is automatically lexer.yylval
-	|  LITERAL          // $$ is automatically lexer.yylval
-	|  '-' expr %prec UMINUS {
-				$$ = MakeUnary(NodeTag.negate, $2);
-			}
-	;
-
+   Program : /* empty */ | SimpleDeclaration | RoutineDeclaration
+       ;
+ 
+   SimpleDeclaration : VariableDeclaration | TypeDeclaration
+       ;
+ 
+   VariableDeclaration
+       : VAR Identifier COLON Type [ IS Expression ]
+       | VAR Identifier   IS Expression
+       ;
+ 
+   TypeDeclaration
+       : TYPE Identifier IS Type
+       ;
+ 
+   RoutineDeclaration
+       : ROUTINE Indentifier LEFT_BRACKET Parameters RIGHT_BRACKET [ COLON Type ] IS
+           BODY
+         END
+       ;
+   
+   Parameters   : ParameterDeclaration { COMMA ParameterDeclaration }
+       ;
+ 
+   ParameterDeclaration : Identifier COLON Identifier
+       ;
+   
+   Type : PrimitiveType | ArrayType | RecordType | Identifier
+       ;
+ 
 %%
-/*
- * All the code is in the helper file RealTreeHelper.cs
- */ 
 
