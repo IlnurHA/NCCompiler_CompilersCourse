@@ -7,8 +7,19 @@
   "targets": {
     ".NETCoreApp,Version=v7.0": {
       "NCCompiler_CompilersCourse/1.0.0": {
+        "dependencies": {
+          "QUT.ShiftReduceParser": "1.4.6.0"
+        },
         "runtime": {
           "NCCompiler_CompilersCourse.dll": {}
+        }
+      },
+      "QUT.ShiftReduceParser/1.4.6.0": {
+        "runtime": {
+          "QUT.ShiftReduceParser.dll": {
+            "assemblyVersion": "1.4.6.0",
+            "fileVersion": "1.4.6.0"
+          }
         }
       }
     }
@@ -16,6 +27,11 @@
   "libraries": {
     "NCCompiler_CompilersCourse/1.0.0": {
       "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "QUT.ShiftReduceParser/1.4.6.0": {
+      "type": "reference",
       "serviceable": false,
       "sha512": ""
     }

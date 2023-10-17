@@ -42,3 +42,5 @@ C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\obj\Debug\net7.0\refint\
 C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\obj\Debug\net7.0\NCCompiler_CompilersCourse.pdb
 C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\obj\Debug\net7.0\NCCompiler_CompilersCourse.genruntimeconfig.cache
 C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\obj\Debug\net7.0\ref\NCCompiler_CompilersCourse.dll
+C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\bin\Debug\net7.0\QUT.ShiftReduceParser.dll
+C:\Users\almet\RiderProjects\NCCompiler_CompilersCourse\obj\Debug\net7.0\NCCompiler_CompilersCourse.csproj.CopyComplete

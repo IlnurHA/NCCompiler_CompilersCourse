@@ -44,7 +44,7 @@
 %token AND OR XOR EQ_COMPARISON GT_COMPARISON GE_COMPARISON LT_COMPARISON LE_COMPARISON NE_COMPARISON NOT
 
 // Arithmetic operators
-%left PLUS MINUS MULTIPLY DIVIDE REMAINDER
+%left IDENTIFIER MINUS MULTIPLY DIVIDE REMAINDER
 
 // Brackets
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
@@ -151,7 +151,7 @@ Simple     : Factor
     ;
 
 Factor     : Summand
-    | Factor PLUS Summand
+    | Factor IDENTIFIER Summand
     | Factor MINUS Summand
     ;
 
@@ -168,22 +168,23 @@ Primary   : Sign INTEGER
     | LEFT_BRACKET Expressions RIGHT_BRACKET
     ;
 
-Sign : PLUS | MINUS
+Sign : IDENTIFIER {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
+    | MINUS {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
     ;
 
-Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET
+Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }
     ;
 
-ModifiablePrimary   : ModifiablePrimaryWithoutSize
-        | ModifiablePrimaryWithoutSize DOT SIZE
+ModifiablePrimary   : ModifiablePrimaryWithoutSize {$$ = Node.MakeUnary(NodeTag.ModifiablePrimary, $1); }
+        | ModifiablePrimaryWithoutSize DOT SIZE {$$ = Node.MakeBinary(NodeTag.ModifiablePrimary, $1, $3); }
         ;
 
-ModifiablePrimaryWithoutSize   : IDENTIFIER
-        | ModifiablePrimaryWithoutSize DOT IDENTIFIER
-        | ModifiablePrimaryWithoutSize LEFT_BRACKET Expression RIGHT_BRACKET
+ModifiablePrimaryWithoutSize   : IDENTIFIER {$$ = Node.MakeIdentifierLeaf($1); }
+        | ModifiablePrimaryWithoutSize DOT IDENTIFIER {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
+        | ModifiablePrimaryWithoutSize LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         ;
           
-Assert : ASSERT Expression COMMA Expression
+Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeBinary(NodeTag.Assert, $2, $4); }
     ;
 %%
 

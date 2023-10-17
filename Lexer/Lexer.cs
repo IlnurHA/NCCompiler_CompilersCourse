@@ -14,7 +14,6 @@ class Lexer : AbstractScanner<Node, LexLocation>
     {
         _input = input;
         yylloc = new LexLocation();
-        yylval
     }
 
     private static TokenType GetTokenType(string token)
