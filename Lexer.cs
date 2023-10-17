@@ -40,9 +40,6 @@ public class Lexer
             "<" => TokenType.LtComparisom,
             "<=" => TokenType.LeComparison,
             "/=" => TokenType.NeComparison,
-            "//" => TokenType.SinglelineComment,
-            "/*" => TokenType.MultilineCommentStart,
-            "*/" => TokenType.MultilineCommentEnd,
             ":=" => TokenType.AssignmentOperator,
             "routine" => TokenType.Routine,
             "array" => TokenType.Array,
@@ -99,6 +96,8 @@ public class Lexer
                 else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
                 {
                     inMultiLineComment = false;
+					_currentPosition += 2;
+					continue;
                 }
                 else {
                     if (currentChar == '\n')
@@ -168,14 +167,16 @@ public class Lexer
                 else if ((_currentPosition + 1 < _input.Length) &&
                          (currentChar == '/' && _input[_currentPosition + 1] == '*'))
                 {
-                    lexemeLength = 2;
                     inMultiLineComment = true;
+					_currentPosition += 2;
+					continue;
                 }
                 else if (_currentPosition + 1 < _input.Length &&
                          (currentChar == '/' && _input[_currentPosition + 1] == '/'))
                 {
-                    lexemeLength = 2;
                     inSingleLineComment = true;
+					_currentPosition += 2;
+					continue;
                 }
                 else
                 {

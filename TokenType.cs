@@ -23,12 +23,7 @@ public enum TokenType
     EndOfLine,
     Colon, Dot, TwoDots,
     Comma,
-    
-    // Comments
-    MultilineCommentStart,
-    MultilineCommentEnd,
-    SinglelineComment,
-    
+ 
     AssignmentOperator,
     
     // Boolean operators
