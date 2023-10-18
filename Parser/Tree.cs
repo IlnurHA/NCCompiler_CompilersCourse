@@ -124,6 +124,11 @@
         {
             Active = false;
         }
+
+        public virtual string Unparse()
+        {
+            return "\n\t";
+        }
     }
 
     internal class Leaf : Node
@@ -193,6 +198,29 @@
         {
             _lhs = l;
             _rhs = r;
+        }
+        
+        public override string Unparse() {
+            string op = "";
+            switch (Tag) {
+                case NodeTag.Lt: op = "<"; break;
+                case NodeTag.Le: op = "<="; break;
+                case NodeTag.Gt: op = ">"; break;
+                case NodeTag.Ge: op = ">="; break;
+                case NodeTag.Ne: op = "/="; break;
+                case NodeTag.Eq: op = "="; break;
+                case NodeTag.And:   op = "and"; break;
+                case NodeTag.Or: op = "or"; break;
+                case NodeTag.Xor:  op = "xor"; break;
+                case NodeTag.Div:   op = "/"; break;
+                case NodeTag.Minus: op = "-"; break;
+                case NodeTag.Plus:  op = "+"; break;
+                case NodeTag.Rem:   op = "%"; break;
+                case NodeTag.Mul:   op = "*"; break;
+                case NodeTag.Cast:   op = "cast"; break;
+                case NodeTag.ModifiablePrimary:   op = "."; break;
+            }
+            return $"{op}{base.Unparse()}({_lhs.Unparse()})({_rhs.Unparse()})";
         }
     }
 }
