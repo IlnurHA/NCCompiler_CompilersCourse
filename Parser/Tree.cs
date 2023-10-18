@@ -3,11 +3,20 @@
     internal enum NodeTag
     {
         Program,
+		ProgramSimpleDeclaration,
+		ProgramRoutineDeclaration,
+		SimpleVarDeclaration,
+		SimpleTypeDeclaration,
         SimpleDeclaration,
+		VariableDeclarationFull,
+		VariableDeclarationIdenType,
+		VariableDeclarationIdenExpr,
         VariableDeclaration,
         TypeDeclaration,
         RoutineDeclaration,
+		RoutineDeclarationWithType,
         Parameters,
+		ParametersContinuous,
         ParameterDeclaration,
         Type,
         PrimitiveType,
@@ -15,16 +24,20 @@
         VariableDeclarations,
         ArrayType,
         Body,
+		BodySimpleDeclaration,
+		BodyStatement,
         Statement,
         Assignment,
         RoutineCall,
         Expressions,
+		ExpressionsContinuous,
         WhileLoop,
         ForLoop,
         Range,
         RangeReverse,
         ForeachLoop,
         IfStatement,
+		IfElseStatement,
         Expression,
         Relation,
         Simple,
@@ -71,6 +84,11 @@
         public static Node MakeTernary(NodeTag tag, Node n1, Node n2, Node n3)
         {
             return new TernaryNode(tag, n1, n2, n3);
+        }
+
+		public static Node MakeQuaternary(NodeTag tag, Node n1, Node n2, Node n3, Node n4)
+        {
+            return new QuaternaryNode(tag, n1, n2, n3, n4);
         }
 
         public static Node MakeUnary(NodeTag tag, Node child)
@@ -164,6 +182,22 @@
             _n1 = n1;
             _n2 = n2;
             _n3 = n3;
+        }
+    }
+
+	internal class QuaternaryNode : Node
+    {
+        private readonly Node _n1;
+        private readonly Node _n2;
+        private readonly Node _n3;
+        private readonly Node _n4;
+
+        public QuaternaryNode(NodeTag nodeTag, Node n1, Node n2, Node n3, Node n4) : base(nodeTag)
+        {
+            _n1 = n1;
+            _n2 = n2;
+            _n3 = n3;
+			_n4 = n4;
         }
     }
 

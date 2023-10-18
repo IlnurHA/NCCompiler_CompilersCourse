@@ -50,83 +50,103 @@
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
-Program : /* empty */ | Program SimpleDeclaration | Program RoutineDeclaration
+Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeBinary(NodeTag.ProgramSimpleDeclaration, $1, $2); }
+    | Program RoutineDeclaration                    {Node.MakeBinary(NodeTag.ProgramRoutineDeclaration, $1, $2);}
     ;
 
-SimpleDeclaration : VariableDeclaration | TypeDeclaration
+SimpleDeclaration   : VariableDeclaration   { $$ = $1; }
+                    | TypeDeclaration       { $$ = $1; }
     ;
 
 VariableDeclaration
     :
-    VAR IDENTIFIER COLON Type IS Expression
-    | VAR IDENTIFIER COLON Type
-    | VAR IDENTIFIER IS Expression
+    VAR IDENTIFIER COLON Type IS Expression { $$ = Node.MakeTernary(NodeTag.VariableDeclarationFull, $2, $4, $6); }
+    | VAR IDENTIFIER COLON Type             { $$ = Node.MakeBinary(NodeTag.VariableDeclarationIdenType, $2, $4); }
+    | VAR IDENTIFIER IS Expression          { $$ = Node.MakeBinary(NodeTag.VariableDeclarationIdenExpr, $2, $4); }
     ;
 
 TypeDeclaration
-    : TYPE IDENTIFIER IS Type
+    : TYPE IDENTIFIER IS Type               { $$ = Node.MakeBinary(NodeTag.TypeDeclaration, $2, $4); }
     ;
 
 RoutineDeclaration
     : ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET COLON Type IS Body END
+    { $$ = Node.MakeQuaternary(NodeTag.RoutineDeclarationWithType, $2, $4, $7, $9); }
+    
     | ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET IS Body END
+    { $$ = Node.MakeTernary(NodeTag.RoutineDeclaration, $2, $4, $7); }
     ;
   
-Parameters   : ParameterDeclaration | Parameters COMMA ParameterDeclaration
-    ;
+Parameters      : ParameterDeclaration                  { $$ = $1; }
+                | Parameters COMMA ParameterDeclaration { $$ = Node.MakeBinary(NodeTag.ParametersContinuous, $1, $3); }
+                ;
 
-ParameterDeclaration : IDENTIFIER COLON IDENTIFIER
+ParameterDeclaration : IDENTIFIER COLON Type      {$$ = Node.MakeBinary(NodeTag.ParameterDeclaration, $1, $3);}
     ;
   
-Type : PrimitiveType | ArrayType | RecordType | IDENTIFIER
+Type : PrimitiveType    {$$ = $1;}
+    | ArrayType         {$$ = $1;}
+    | RecordType        {$$ = $1;}
+    | IDENTIFIER
     ;
   
 PrimitiveType : INTEGER | REAL | BOOLEAN
     ;
   
-RecordType :   RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END
-    | RECORD VariableDeclarations END
+RecordType  : RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END    { $$ = Node.MakeUnary(NodeTag.RecordType, $3); }
+            | RECORD VariableDeclarations END                               { $$ = Node.MakeUnary(NodeTag.RecordType, $2); }
     ;
   
 VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
+    { $$ = Node.MakeBinary(NodeTag.VariableDeclarations, $1, $2)}
     ;
 
-ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type
+ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeBinary(NodeTag.ArrayType, $3,  $5); }
     ;
 
+Body :  /* empty */
+        | Body SimpleDeclaration    { $$ = Node.MakeBinary(NodeTag.BodySimpleDeclaration); }
+        | Body Statement            { $$ = Node.MakeBinary(NodeTag.BodyStatement); }
+        ;
 
-Body :  /* empty */ | Body SimpleDeclaration | Body Statement
+Statement   : Assignment    { $$ = $1; }
+            | RoutineCall   { $$ = $1; }
+            | WhileLoop     { $$ = $1; }
+            | ForLoop       { $$ = $1; }
+            | ForeachLoop   { $$ = $1; }
+            | IfStatement   { $$ = $1; }
+            | Assert        { $$ = $1; }
+            ;
+
+Assignment : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.MakeBinary(NodeTag.Assignment, $1,  $3); }
     ;
 
-Statement : Assignment | RoutineCall | WhileLoop | ForLoop | ForeachLoop | IfStatement | Assert
+RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeBinary(NodeTag.RoutineCall, $1, $3); }
+                | IDENTIFIER
+                ;
+
+Expressions     : Expression                    { $$ = $1; }
+                | Expressions COMMA Expression  { $$ = Node.MakeBinary(NodeTag.ExpressionsContinuous, $1, $3); }
+                ;
+
+WhileLoop   : WHILE Expression LOOP Body END    { $$ = Node.MakeBinary(NodeTag.WhileLoop, $2, $4); }
     ;
 
-Assignment : ModifiablePrimary ASSIGNMENT_OPERATOR Expression
+ForLoop : FOR IDENTIFIER Range LOOP Body END    { $$ = Node.MakeTernary(NodeTag.ForLoop, $2, $3, $5); }
     ;
 
-RoutineCall :   IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET
-    | IDENTIFIER
-    ;
-
-Expressions : Expression | Expressions COMMA Expression
-    ;
-
-WhileLoop : WHILE Expression LOOP Body END
-    ;
-
-ForLoop : FOR IDENTIFIER Range LOOP Body END
-    ;
-
-Range :   IN REVERSE Expression TWO_DOTS Expression
-    | IN Expression TWO_DOTS Expression
+Range :
+    IN REVERSE Expression TWO_DOTS Expression   { $$ = Node.MakeTernary(NodeTag.RangeReverse, $3, $5); }
+    | IN Expression TWO_DOTS Expression         { $$ = Node.MakeTernary(NodeTag.Range, $2, $4); }
     ;
 
 ForeachLoop : FOREACH IDENTIFIER FROM ModifiablePrimary LOOP Body END
+            { $$ = Node.MakeTernary(NodeTag.ForeachLoop, $2, $4, $6); }
     ;
 
-IfStatement :   IF Expression THEN Body ELSE Body END
-    | IF Expression THEN Body END
-    ;
+IfStatement     : IF Expression THEN Body ELSE Body END { $$ = Node.MakeTernary(NodeTag.IfElseStatement, $2, $4, $6); }
+                | IF Expression THEN Body END           { $$ = Node.MakeBinary(NodeTag.IfStatement, $2, $4); }
+                ;
 
 Expression :   Relation
     | Expression AND Relation
