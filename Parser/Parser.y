@@ -171,39 +171,43 @@ Simple     : Factor {$$ = $1;}
     | Simple REMAINDER Factor {$$ = Node.MakeBinary(NodeTag.Rem, $1, $3);}
     ;
 
-Factor     : Summand {$$ = $1;}
-    | Factor PLUS Summand {$$ = Node.MakeBinary(NodeTag.Plus, $1, $3);}
-    | Factor MINUS Summand {$$ = Node.MakeBinary(NodeTag.Minus, $1, $3);}
+Factor     : Summand { $$ = $1;}
+    | Factor PLUS Summand { $$ = Node.MakeBinary(NodeTag.Plus, $1, $3);}
+    | Factor MINUS Summand { $$ = Node.MakeBinary(NodeTag.Minus, $1, $3);}
     ;
 
-Summand : Primary {$$ = $1;}
-    | LEFT_BRACKET Expression RIGHT_BRACKET {$$ = $2;}
+Summand : Primary { $$ = $1;}
+    | LEFT_BRACKET Expression RIGHT_BRACKET { $$ = $2;}
     ;
 
 Primary   : Sign INTEGER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
-    | NOT INTEGER {$$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
+    | NOT INTEGER { $$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
     | INTEGER
-    | Sign REAL {$$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
+    | Sign REAL { $$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
     | REAL
     | TRUE | FALSE
-    | ModifiablePrimary {$$ = $1;}
-    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET {$$ = MakeUnary(NodeTag.ArrayConst, $1, $2);}
+    | ModifiablePrimary { $$ = $1;}
+    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = MakeUnary(NodeTag.ArrayConst, $1, $2);}
     ;
 
 Sign : PLUS
     | MINUS
     ;
 
-Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }
+Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }
     ;
 
-ModifiablePrimary   : ModifiablePrimaryWithoutSize {$$ = Node.MakeUnary(NodeTag.ModifiablePrimary, $1); }
-        | ModifiablePrimaryWithoutSize DOT SIZE {$$ = Node.MakeBinary(NodeTag.ModifiablePrimary, $1, $3); }
+ModifiablePrimary   : ModifiablePrimaryWithoutSize  { $$ = $1; }
+        | ModifiablePrimaryWithoutSize DOT SIZE     { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingSize, $1, $3); }
         ;
 
 ModifiablePrimaryWithoutSize   : IDENTIFIER
-        | ModifiablePrimaryWithoutSize DOT IDENTIFIER {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
-        | ModifiablePrimaryWithoutSize LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
+        | ModifiablePrimaryWithoutSize DOT IDENTIFIER
+        { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
+        
+        
+        | ModifiablePrimaryWithoutSize LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET
+        { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingValueFromArray, $1, $3); }
         ;
           
 Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeBinary(NodeTag.Assert, $2, $4); }
