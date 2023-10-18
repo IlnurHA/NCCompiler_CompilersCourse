@@ -255,7 +255,30 @@
                 case NodeTag.Rem:   op = "%"; break;
                 case NodeTag.Mul:   op = "*"; break;
                 case NodeTag.Cast:   op = "cast"; break;
-                case NodeTag.ModifiablePrimary:   op = "."; break;
+                case NodeTag.ModifiablePrimaryGettingSize:   op = "get-size"; break;
+                case NodeTag.ModifiablePrimaryGettingField:   op = "get-field"; break;
+                case NodeTag.Assert:   op = "assert"; break;
+                case NodeTag.ModifiablePrimaryGettingValueFromArray:   op = "[i]"; break;
+                case NodeTag.SignToDouble:   op = "apply-sign"; break;
+                case NodeTag.SignToInteger:   op = "apply-sign"; break;
+                case NodeTag.NotInteger:   op = "not"; break;
+                case NodeTag.IfStatement:   op = "if"; break;
+                case NodeTag.WhileLoop:   op = "while"; break;
+                case NodeTag.Range:   op = "range"; break;
+                case NodeTag.RangeReverse:   op = "reverse-range"; break;
+                case NodeTag.ExpressionsContinuous:   op = "expressions"; break;
+                case NodeTag.RoutineCall:   op = "call"; break;
+                case NodeTag.Assignment:   op = "assign"; break;
+                case NodeTag.BodySimpleDeclaration:   op = "body"; break;
+                case NodeTag.BodyStatement:   op = "body"; break;
+                case NodeTag.ArrayType:   op = "array"; break;
+                case NodeTag.ParameterDeclaration:   op = "param"; break;
+                case NodeTag.ParametersContinuous:   op = "params"; break;
+                case NodeTag.TypeDeclaration:   op = "type-decl"; break;
+                case NodeTag.VariableDeclarationIdenExpr:   op = "ident-expr"; break;
+                case NodeTag.VariableDeclarationIdenType:   op = "ident-type"; break;
+                case NodeTag.ProgramRoutineDeclaration:   op = "program-routine"; break;
+                case NodeTag.ProgramSimpleDeclaration:   op = "program-simple"; break;
             }
             return $"{op}{base.Unparse()}({_lhs.Unparse()})({_rhs.Unparse()})";
         }
