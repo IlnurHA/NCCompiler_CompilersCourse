@@ -3,11 +3,20 @@
     internal enum NodeTag
     {
         Program,
+		ProgramSimpleDeclaration,
+		ProgramRoutineDeclaration,
+		SimpleVarDeclaration,
+		SimpleTypeDeclaration,
         SimpleDeclaration,
+		VariableDeclarationFull,
+		VariableDeclarationIdenType,
+		VariableDeclarationIdenExpr,
         VariableDeclaration,
         TypeDeclaration,
         RoutineDeclaration,
+		RoutineDeclarationWithType,
         Parameters,
+		ParametersContinuous,
         ParameterDeclaration,
         Type,
         PrimitiveType,
@@ -15,16 +24,20 @@
         VariableDeclarations,
         ArrayType,
         Body,
+		BodySimpleDeclaration,
+		BodyStatement,
         Statement,
         Assignment,
         RoutineCall,
         Expressions,
+		ExpressionsContinuous,
         WhileLoop,
         ForLoop,
         Range,
         RangeReverse,
         ForeachLoop,
         IfStatement,
+		IfElseStatement,
         Expression,
         Relation,
         Simple,
@@ -34,12 +47,19 @@
         Sign,
         Cast,
         ModifiablePrimary,
+		ModifiablePrimaryGettingSize,
         ModifiablePrimaryWithoutSize,
+		ModifiablePrimaryGettingField,
+		ModifiablePrimaryGettingValueFromArray,
         Assert,
         Identifier,
         IntegerLiteral,
         RealLiteral,
         BooleanLiteral,
+        SignToInteger,
+        SignToDouble,
+        NotInteger,
+        ArrayConst,
         And,
         Or,
         Xor,
@@ -71,6 +91,11 @@
         public static Node MakeTernary(NodeTag tag, Node n1, Node n2, Node n3)
         {
             return new TernaryNode(tag, n1, n2, n3);
+        }
+
+		public static Node MakeQuaternary(NodeTag tag, Node n1, Node n2, Node n3, Node n4)
+        {
+            return new QuaternaryNode(tag, n1, n2, n3, n4);
         }
 
         public static Node MakeUnary(NodeTag tag, Node child)
@@ -140,6 +165,10 @@
         {
             Active = false;
         }
+
+		public string Unparse() {
+			return "\n\t";
+		}
     }
 
     internal class Leaf : Node
@@ -205,6 +234,47 @@
             _n2 = n2;
             _n3 = n3;
         }
+
+		public string Unparse() {
+			switch (base._tag) {
+				case NodeTag.VariableDeclarationFull:
+					return $"VariableDeclarationFull{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})";
+				case NodeTag.RoutineDeclaration:
+					return $"RoutineDeclaration{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})";
+				case NodeTag.ForLoop:
+					return $"ForLoop{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})";
+				case NodeTag.ForeachLoop:
+					return $"ForeachLoop{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})";
+				case NodeTag.IfElseStatement:
+					return $"IfElseStatement{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})";
+				case _:
+					throw new Exception("Not implemented");
+			}
+		}
+    }
+
+	internal class QuaternaryNode : Node
+    {
+        private readonly Node _n1;
+        private readonly Node _n2;
+        private readonly Node _n3;
+        private readonly Node _n4;
+
+        public QuaternaryNode(NodeTag nodeTag, Node n1, Node n2, Node n3, Node n4) : base(nodeTag)
+        {
+            _n1 = n1;
+            _n2 = n2;
+            _n3 = n3;
+			_n4 = n4;
+        }
+		public string Unparse() {
+			switch (base._tag) {
+				case NodeTag.RoutineDeclarationWithType:
+					return $"RoutineDeclarationWithType{base.Unparse()}({_n1.Unparse()})({_n2.Unparse()})({_n3.Unparse()})({_n4.Unparse()})";
+				case _:
+					throw new Exception("Not implemented");
+			}
+		}
     }
 
 // MakeBinaryNode(NodeTag.modifiablePrimaryNode, )
@@ -218,6 +288,23 @@
         {
             _child = c;
         }
+		public string Unparse() {
+			string op;
+			switch (base._tag) {
+				case NodeTag.RecordType:
+					op = "RecordType";
+					break;
+				case NodeTag.NotInteger:
+					op = "NotInteger";
+					break;
+				case NodeTag.ArrayConst:
+					op = "ArrayConst";
+					break;
+				case _:
+					throw new Exception("Not implemented");
+			}
+			return $"{op}{base.Unparse()}{_child.Unparse()}";
+		}
     }
 
     internal class BinaryNode : Node
