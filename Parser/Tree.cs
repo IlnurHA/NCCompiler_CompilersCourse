@@ -40,6 +40,10 @@
         IntegerLiteral,
         RealLiteral,
         BooleanLiteral,
+        SignToInteger,
+        SignToDouble,
+        NotInteger,
+        ArrayConst,
         And,
         Or,
         Xor,
@@ -87,12 +91,12 @@
         {
             return new Leaf(value);
         }
-        
+
         public static Node MakeDoubleLeaf(double value)
         {
             return new Leaf(value);
         }
-        
+
         public static Node MakeBoolLeaf(Boolean value)
         {
             return new Leaf(value);
