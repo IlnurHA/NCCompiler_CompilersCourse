@@ -44,16 +44,16 @@
 %token AND OR XOR EQ_COMPARISON GT_COMPARISON GE_COMPARISON LT_COMPARISON LE_COMPARISON NE_COMPARISON NOT
 
 // Arithmetic operators
-%left IDENTIFIER MINUS MULTIPLY DIVIDE REMAINDER
+%left PLUS MINUS MULTIPLY DIVIDE REMAINDER
 
 // Brackets
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
-Program : /* empty */ | Program SimpleDeclaration | Program RoutineDeclaration
+Program : /* empty */ | Program SimpleDeclaration {$2} | Program RoutineDeclaration
     ;
 
-SimpleDeclaration : VariableDeclaration | TypeDeclaration
+SimpleDeclaration : VariableDeclaration {$$ = $1} | TypeDeclaration {$$ = $1}
     ;
 
 VariableDeclaration
@@ -151,7 +151,7 @@ Simple     : Factor
     ;
 
 Factor     : Summand
-    | Factor IDENTIFIER Summand
+    | Factor PLUS Summand
     | Factor MINUS Summand
     ;
 
@@ -168,7 +168,7 @@ Primary   : Sign INTEGER
     | LEFT_BRACKET Expressions RIGHT_BRACKET
     ;
 
-Sign : IDENTIFIER {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
+Sign : PLUS {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
     | MINUS {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
     ;
 
@@ -179,7 +179,7 @@ ModifiablePrimary   : ModifiablePrimaryWithoutSize {$$ = Node.MakeUnary(NodeTag.
         | ModifiablePrimaryWithoutSize DOT SIZE {$$ = Node.MakeBinary(NodeTag.ModifiablePrimary, $1, $3); }
         ;
 
-ModifiablePrimaryWithoutSize   : IDENTIFIER {$$ = Node.MakeIdentifierLeaf($1); }
+ModifiablePrimaryWithoutSize   : IDENTIFIER
         | ModifiablePrimaryWithoutSize DOT IDENTIFIER {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         | ModifiablePrimaryWithoutSize LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         ;
