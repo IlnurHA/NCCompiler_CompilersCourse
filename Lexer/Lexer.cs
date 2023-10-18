@@ -9,6 +9,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
 {
     private readonly string _input;
     private int _currentPosition;
+    private List<Token> _tokens = new();
 
     public Lexer(string input)
     {
@@ -20,8 +21,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
     {
         return token switch
         {
-            "+" => TokenType.Plus,
-            "-" => TokenType.Minus,
+            // "+" => TokenType.Plus,
+            // "-" => TokenType.Minus,
             "*" => TokenType.Multiply,
             "/" => TokenType.Divide,
             "%" => TokenType.Remainder,
@@ -263,22 +264,35 @@ class Lexer : AbstractScanner<Node, LexLocation>
                 }
             }
 
+            TokenType tokenType;
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            var tokenType = GetTokenType(substring);
-            // _tokens.Add(
-            // new Token(
-            //     type: tokenType,
-            //     lexeme: substring,
-            //     span: new Span(
-            //         lineNum: lineCounter,
-            //         posBegin: _currentPosition - lastEolIndex,
-            //         posEnd: _currentPosition + lexemeLength - lastEolIndex
-            //     ),
-            //     value: tokenType is TokenType.Number or TokenType.Float
-            //         ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
-            //         : null
-            // )
-            // );
+            if (_tokens.Count != 0)
+            {
+                var prevToken = _tokens.Last();
+
+                if (substring is "+" or "-")
+                {
+                    switch (prevToken.Type)
+                    {
+                        case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
+                            or TokenType.RightSquaredBracket:
+                            tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
+                            break;
+                        default:
+                            tokenType = substring == "+" ? TokenType.UnaryPlus : TokenType.UnaryMinus;
+                            break;
+                    }
+                }
+                else
+                {
+                    tokenType = GetTokenType(substring);
+                }
+            }
+            else
+            {
+                tokenType = GetTokenType(substring);
+            }
+
             if (currentChar == '\n')
             {
                 _lineCounter++;
@@ -286,7 +300,9 @@ class Lexer : AbstractScanner<Node, LexLocation>
             }
 
             _currentPosition += lexemeLength;
-            return new Token(
+
+
+            var token = new Token(
                 type: tokenType,
                 lexeme: substring,
                 span: new Span(
@@ -298,6 +314,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
                     : null
             );
+            _tokens.Add(token);
+            return token;
         }
 
         return null; // End of file marker
@@ -316,11 +334,29 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
             yylloc = new LexLocation((int)token.Span.LineNum, (int)token.Span.LineNum, token.Span.PosBegin,
                 token.Span.PosEnd);
-            if (token.Type == TokenType.Identifier)
+            switch (token.Type)
             {
-                yylval = Node.MakeIdentifierLeaf(token.Lexeme);
+                case TokenType.Identifier:
+                    yylval = Node.MakeIdentifierLeaf(token.Lexeme);
+                    break;
+                case TokenType.UnaryPlus or TokenType.UnaryMinus:
+                    yylval = Node.MakeUnaryOperationLeaf(token.Lexeme);
+                    break;
+                case TokenType.Number:
+                    yylval = Node.MakeIntLeaf(Convert.ToInt32(token.Value!));
+                    break;
+                case TokenType.Float:
+                    yylval = Node.MakeDoubleLeaf(Convert.ToDouble(token.Value!));
+                    break;
+                case TokenType.True or TokenType.False:
+                    yylval = Node.MakeBoolLeaf(Convert.ToBoolean(token.Value!));
+                    break;
+                case TokenType.Integer or TokenType.Real or TokenType.Boolean:
+                    yylval = Node.MakePrimitiveTypeLeaf(token.Lexeme);
+                    break;
             }
-            
+
+
             return (int)GppgTokensType(token.Type);
         }
         catch (Exception exception)
@@ -334,7 +370,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
     public override void yyerror(string format, params object[] args)
     {
-        Console.Error.WriteLine( format, args );
+        Console.Error.WriteLine(format, args);
         base.yyerror(format, args);
     }
 }

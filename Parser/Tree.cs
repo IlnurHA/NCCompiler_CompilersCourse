@@ -58,7 +58,7 @@
         True,
         False,
         Error,
-        
+        Unary,
     }
 
     internal abstract class Node
@@ -87,15 +87,35 @@
         {
             return new Leaf(value);
         }
+
+        public static Node MakeIntLeaf(string operation, Int32 value)
+        {
+            return operation == "+" ? new Leaf(value) : new Leaf(-value);
+        }
         
         public static Node MakeDoubleLeaf(double value)
         {
             return new Leaf(value);
         }
         
+        public static Node MakeDoubleLeaf(string operation, double value)
+        {
+            return operation == "+" ? new Leaf(value) : new Leaf(-value);
+        }
+        
         public static Node MakeBoolLeaf(Boolean value)
         {
             return new Leaf(value);
+        }
+        
+        public static Node MakeUnaryOperationLeaf(String operation)
+        {
+            return new UnaryOperationLeaf(operation);
+        }
+
+        public static Node MakePrimitiveTypeLeaf(String primitiveType)
+        {
+            return new Leaf(primitiveType);
         }
 
         readonly NodeTag _tag;
@@ -150,6 +170,26 @@
         public string Index
         {
             get { return _name; }
+        }
+    }
+
+    internal class UnaryOperationLeaf : Node
+    {
+        private readonly string _operation;
+
+        internal UnaryOperationLeaf(string operation) : base(NodeTag.Unary)
+        {
+            _operation = operation;
+        }
+    }
+
+    internal class PrimitiveTypeLeaf : Node
+    {
+        private readonly string _primitiveType;
+
+        internal PrimitiveTypeLeaf(string primitiveType) : base(NodeTag.PrimitiveType)
+        {
+            _primitiveType = primitiveType;
         }
     }
 

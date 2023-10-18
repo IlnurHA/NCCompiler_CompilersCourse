@@ -46,6 +46,8 @@ public enum TokenType
     Multiply,
     Divide,
     Remainder,
+    UnaryMinus,
+    UnaryPlus,
     
     // Brackets
     LeftBracket,

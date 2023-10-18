@@ -105,7 +105,7 @@ Assignment : ModifiablePrimary ASSIGNMENT_OPERATOR Expression
     ;
 
 RoutineCall :   IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET
-    | IDENTIFIER
+    | IDENTIFIER {$$ = $1}
     ;
 
 Expressions : Expression | Expressions COMMA Expression
@@ -179,7 +179,7 @@ ModifiablePrimary   : ModifiablePrimaryWithoutSize {$$ = Node.MakeUnary(NodeTag.
         | ModifiablePrimaryWithoutSize DOT SIZE {$$ = Node.MakeBinary(NodeTag.ModifiablePrimary, $1, $3); }
         ;
 
-ModifiablePrimaryWithoutSize   : IDENTIFIER
+ModifiablePrimaryWithoutSize   : IDENTIFIER {$$ = $1}
         | ModifiablePrimaryWithoutSize DOT IDENTIFIER {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         | ModifiablePrimaryWithoutSize LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         ;
