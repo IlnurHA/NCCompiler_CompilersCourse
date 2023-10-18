@@ -51,7 +51,7 @@
  
 %%
 Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeBinary(NodeTag.ProgramSimpleDeclaration, $1, $2); }
-    | Program RoutineDeclaration                    {Node.MakeBinary(NodeTag.ProgramRoutineDeclaration, $1, $2);}
+    | Program RoutineDeclaration                    { $$ = Node.MakeBinary(NodeTag.ProgramRoutineDeclaration, $1, $2);}
     ;
 
 SimpleDeclaration   : VariableDeclaration   { $$ = $1; }
@@ -136,8 +136,8 @@ ForLoop : FOR IDENTIFIER Range LOOP Body END    { $$ = Node.MakeTernary(NodeTag.
         ;
 
 Range :
-    IN REVERSE Expression TWO_DOTS Expression   { $$ = Node.MakeTernary(NodeTag.RangeReverse, $3, $5); }
-    | IN Expression TWO_DOTS Expression         { $$ = Node.MakeTernary(NodeTag.Range, $2, $4); }
+    IN REVERSE Expression TWO_DOTS Expression   { $$ = Node.MakeBinary(NodeTag.RangeReverse, $3, $5); }
+    | IN Expression TWO_DOTS Expression         { $$ = Node.MakeBinary(NodeTag.Range, $2, $4); }
     ;
 
 ForeachLoop : FOREACH IDENTIFIER FROM ModifiablePrimary LOOP Body END
