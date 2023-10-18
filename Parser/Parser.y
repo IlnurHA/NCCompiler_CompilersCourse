@@ -128,7 +128,8 @@ IfStatement :   IF Expression THEN Body ELSE Body END
     | IF Expression THEN Body END
     ;
 
-Expression :   Relation {$$ = $1;}
+Expression : /* empty */  
+    | Relation {$$ = $1;}
     | Expression AND Relation {$$ = Node.MakeBinary(NodeTag.And, $1, $3);}
     | Expression OR Relation {$$ = Node.MakeBinary(NodeTag.Or, $1, $3);}
     | Expression XOR Relation {$$ = Node.MakeBinary(NodeTag.Xor, $1, $3);}
