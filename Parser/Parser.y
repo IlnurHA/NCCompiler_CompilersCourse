@@ -50,10 +50,10 @@
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
-Program : /* empty */ | Program SimpleDeclaration {$2} | Program RoutineDeclaration
+Program : /* empty */ | Program SimpleDeclaration {$$ = $2;} | Program RoutineDeclaration {$$ = $2;}
     ;
 
-SimpleDeclaration : VariableDeclaration {$$ = $1} | TypeDeclaration {$$ = $1}
+SimpleDeclaration : VariableDeclaration {$$ = $1;} | TypeDeclaration {$$ = $1;}
     ;
 
 VariableDeclaration
@@ -128,48 +128,49 @@ IfStatement :   IF Expression THEN Body ELSE Body END
     | IF Expression THEN Body END
     ;
 
-Expression :   Relation
-    | Expression AND Relation
-    | Expression OR Relation
-    | Expression XOR Relation
+Expression :   Relation {$$ = $1;}
+    | Expression AND Relation {$$ = Node.MakeBinary(NodeTag.And, $1, $3);}
+    | Expression OR Relation {$$ = Node.MakeBinary(NodeTag.Or, $1, $3);}
+    | Expression XOR Relation {$$ = Node.MakeBinary(NodeTag.Xor, $1, $3);}
     | Cast
     ;
 
-Relation   : Simple
-    | Relation EQ_COMPARISON Simple
-    | Relation GT_COMPARISON Simple
-    | Relation GE_COMPARISON Simple
-    | Relation LT_COMPARISON Simple
-    | Relation LE_COMPARISON Simple
-    | Relation NE_COMPARISON Simple
+Relation   : Simple {$$ = $1;}
+    | Relation EQ_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Eq, $1, $3);}
+    | Relation GT_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Gt, $1, $3);}
+    | Relation GE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Ge, $1, $3);}
+    | Relation LT_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Lt, $1, $3);}
+    | Relation LE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Le, $1, $3);}
+    | Relation NE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Ne, $1, $3);}
     ;
 
-Simple     : Factor
-    | Simple MULTIPLY Factor
-    | Simple DIVIDE Factor
-    | Simple REMAINDER Factor
+Simple     : Factor {$$ = $1;}
+    | Simple MULTIPLY Factor {$$ = Node.MakeBinary(NodeTag.Mul, $1, $3);}
+    | Simple DIVIDE Factor {$$ = Node.MakeBinary(NodeTag.Div, $1, $3);}
+    | Simple REMAINDER Factor {$$ = Node.MakeBinary(NodeTag.Rem, $1, $3);}
     ;
 
-Factor     : Summand
-    | Factor PLUS Summand
-    | Factor MINUS Summand
+Factor     : Summand {$$ = $1;}
+    | Factor PLUS Summand {$$ = Node.MakeBinary(NodeTag.Plus, $1, $3);}
+    | Factor MINUS Summand {$$ = Node.MakeBinary(NodeTag.Minus, $1, $3);}
     ;
 
-Summand : Primary | LEFT_BRACKET Expression RIGHT_BRACKET
+Summand : Primary {$$ = $1;}
+    | LEFT_BRACKET Expression RIGHT_BRACKET {$$ = $2;}
     ;
 
-Primary   : Sign INTEGER
-    | NOT INTEGER
+Primary   : Sign INTEGER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
+    | NOT INTEGER {$$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
     | INTEGER
-    | Sign REAL
+    | Sign REAL {$$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
     | REAL
     | TRUE | FALSE
-    | ModifiablePrimary
-    | LEFT_BRACKET Expressions RIGHT_BRACKET
+    | ModifiablePrimary {$$ = $1;}
+    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET {$$ = MakeUnary(NodeTag.ArrayConst, $1, $2);}
     ;
 
-Sign : PLUS {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
-    | MINUS {$$ = Node.MakeUnary(NodeTag.Sign, $1); }
+Sign : PLUS
+    | MINUS
     ;
 
 Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }
@@ -181,7 +182,7 @@ ModifiablePrimary   : ModifiablePrimaryWithoutSize {$$ = Node.MakeUnary(NodeTag.
 
 ModifiablePrimaryWithoutSize   : IDENTIFIER
         | ModifiablePrimaryWithoutSize DOT IDENTIFIER {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
-        | ModifiablePrimaryWithoutSize LEFT_BRACKET Expression RIGHT_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
+        | ModifiablePrimaryWithoutSize LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET {$$ = Node.MakeBinary(NodeTag.ModifiablePrimaryWithoutSize, $1, $3); }
         ;
           
 Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeBinary(NodeTag.Assert, $2, $4); }
