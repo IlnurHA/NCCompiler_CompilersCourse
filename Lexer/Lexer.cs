@@ -316,6 +316,11 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
             yylloc = new LexLocation((int)token.Span.LineNum, (int)token.Span.LineNum, token.Span.PosBegin,
                 token.Span.PosEnd);
+            if (token.Type == TokenType.Identifier)
+            {
+                yylval = Node.MakeIdentifierLeaf(token.Lexeme);
+            }
+            
             return (int)GppgTokensType(token.Type);
         }
         catch (Exception exception)
