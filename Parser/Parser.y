@@ -77,7 +77,8 @@ RoutineDeclaration
     { $$ = Node.MakeTernary(NodeTag.RoutineDeclaration, $2, $4, $7); }
     ;
   
-Parameters      : ParameterDeclaration                  { $$ = $1; }
+Parameters      : 
+                | ParameterDeclaration                  { $$ = $1; }
                 | Parameters COMMA ParameterDeclaration { $$ = Node.MakeBinary(NodeTag.ParametersContinuous, $1, $3); }
                 ;
 
@@ -98,7 +99,7 @@ RecordType  : RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END    { $$
     ;
   
 VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
-    { $$ = Node.MakeBinary(NodeTag.VariableDeclarations, $1, $2)}
+    { $$ = Node.MakeBinary(NodeTag.VariableDeclarations, $1, $2); }
     ;
 
 ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeBinary(NodeTag.ArrayType, $3,  $5); }
@@ -116,6 +117,7 @@ Statement   : Assignment    { $$ = $1; }
             | ForeachLoop   { $$ = $1; }
             | IfStatement   { $$ = $1; }
             | Assert        { $$ = $1; }
+            | RETURN Expression { $$ = Node.MakeUnary(NodeTag.Return, $2); }
             ;
 
 Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.MakeBinary(NodeTag.Assignment, $1,  $3); }
@@ -154,6 +156,7 @@ Expression : /* empty */
     | Expression OR Relation {$$ = Node.MakeBinary(NodeTag.Or, $1, $3);}
     | Expression XOR Relation {$$ = Node.MakeBinary(NodeTag.Xor, $1, $3);}
     | Cast
+    | RoutineCall { $$ = $1; }
     ;
 
 Relation   : Simple {$$ = $1;}
@@ -180,14 +183,14 @@ Summand : Primary { $$ = $1;}
     | LEFT_BRACKET Expression RIGHT_BRACKET { $$ = $2;}
     ;
 
-Primary   : Sign INTEGER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
-    | NOT INTEGER { $$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
-    | INTEGER
-    | Sign REAL { $$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
-    | REAL
+Primary   : Sign NUMBER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
+    | NOT NUMBER { $$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
+    | NUMBER
+    | Sign FLOAT { $$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
+    | FLOAT
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
-    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = MakeUnary(NodeTag.ArrayConst, $1, $2);}
+    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeUnary(NodeTag.ArrayConst, $2);}
     ;
 
 Sign : PLUS
@@ -202,6 +205,7 @@ ModifiablePrimary   : ModifiablePrimaryWithoutSize  { $$ = $1; }
         ;
 
 ModifiablePrimaryWithoutSize   : IDENTIFIER
+        | RoutineCall { $$ = $1; }
         | ModifiablePrimaryWithoutSize DOT IDENTIFIER
         { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
         
@@ -213,4 +217,6 @@ ModifiablePrimaryWithoutSize   : IDENTIFIER
 Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeBinary(NodeTag.Assert, $2, $4); }
     ;
 %%
+
+public Parser(Lexer.Lexer s) : base(s) { }
 

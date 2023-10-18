@@ -48,6 +48,11 @@ public enum TokenType
     Remainder,
     UnaryMinus,
     UnaryPlus,
+    Reverse,
+    Sorted,
+    Foreach,
+    Reversed,
+    
     
     // Brackets
     LeftBracket,

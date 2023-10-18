@@ -71,6 +71,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
             "true" => TokenType.True,
             "false" => TokenType.False,
             "boolean" => TokenType.Boolean,
+            "reverse" => TokenType.Reverse,
+            "foreach" => TokenType.Foreach,
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
@@ -138,6 +140,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
             TokenType.Identifier => Tokens.IDENTIFIER,
             TokenType.Number => Tokens.NUMBER,
             TokenType.Float => Tokens.FLOAT,
+            TokenType.Reverse => Tokens.REVERSE,
+            TokenType.Foreach => Tokens.FOREACH,
             _ => throw new Exception($"Unknown type {tokenType}")
         };
     }
@@ -326,12 +330,16 @@ class Lexer : AbstractScanner<Node, LexLocation>
     {
         try
         {
-            var token = NextToken();
-            if (token == null)
+            Token? token;
+            do
             {
-                return (int)Tokens.EOF;
-            }
-
+                token = NextToken();
+                if (token == null)
+                {
+                    return (int)Tokens.EOF;
+                }
+            } while (token.Type is TokenType.SinglelineComment or TokenType.MultilineCommentEnd
+                     or TokenType.MultilineCommentStart);
             yylloc = new LexLocation((int)token.Span.LineNum, (int)token.Span.LineNum, token.Span.PosBegin,
                 token.Span.PosEnd);
             switch (token.Type)
