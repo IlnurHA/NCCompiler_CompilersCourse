@@ -169,7 +169,12 @@
 
         public virtual string Unparse()
         {
-            return "\n\t";
+            string res = "\n\t";
+            // for (int i = 0; i < depth; ++i)
+            // {
+            //     res += "\n\t";
+            // }
+            return res;
         }
     }
 
@@ -178,6 +183,10 @@
         private readonly string _name;
         private readonly Object _value;
 
+        public string Unparse()
+        {
+            return $"LeafNode: {Tag}, {_name}, {_value}";
+        }
         internal Leaf(string name) : base(NodeTag.Identifier)
         {
             _name = name;
@@ -212,6 +221,11 @@
         {
             _operation = operation;
         }
+        
+        public string Unparse()
+        {
+            return $"LeafNode: {Tag}, {_operation}";
+        }
     }
 
     internal class PrimitiveTypeLeaf : Node
@@ -221,6 +235,11 @@
         internal PrimitiveTypeLeaf(string primitiveType) : base(NodeTag.PrimitiveType)
         {
             _primitiveType = primitiveType;
+        }
+        
+        public string Unparse()
+        {
+            return $"LeafNode: {Tag}, {_primitiveType}";
         }
     }
 

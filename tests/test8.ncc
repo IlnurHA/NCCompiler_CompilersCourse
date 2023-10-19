@@ -1,7 +1,8 @@
 routine abs(a: real): real is
     if a >= 0 then
     else
-        a := -a
+        a := a * -1
+    end
     return a
 end
 

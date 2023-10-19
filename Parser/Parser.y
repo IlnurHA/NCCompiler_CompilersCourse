@@ -41,7 +41,8 @@
 %token ASSIGNMENT_OPERATOR
 
 // Boolean operators
-%token AND OR XOR EQ_COMPARISON GT_COMPARISON GE_COMPARISON LT_COMPARISON LE_COMPARISON NE_COMPARISON NOT
+%left AND OR XOR EQ_COMPARISON GT_COMPARISON GE_COMPARISON LT_COMPARISON LE_COMPARISON NE_COMPARISON 
+%token NOT UNARY_MINUS UNARY_PLUS
 
 // Arithmetic operators
 %left PLUS MINUS MULTIPLY DIVIDE REMAINDER
@@ -191,10 +192,12 @@ Primary   : Sign NUMBER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
     | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeUnary(NodeTag.ArrayConst, $2);}
+    // | NOT TRUE {}
+    // | NOT FALSE {}
     ;
 
-Sign : PLUS
-    | MINUS
+Sign : UNARY_PLUS
+    | UNARY_MINUS
     ;
 
 Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }

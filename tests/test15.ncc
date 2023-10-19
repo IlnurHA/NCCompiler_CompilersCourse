@@ -1,9 +1,8 @@
-type my_record is (
+type my_record is
   record
     var a: integer
     var b: integer
   end
-)
 
 
 routine main() is

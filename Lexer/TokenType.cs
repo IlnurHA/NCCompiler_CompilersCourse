@@ -52,6 +52,7 @@ public enum TokenType
     Sorted,
     Foreach,
     Reversed,
+    Not,
     
     
     // Brackets

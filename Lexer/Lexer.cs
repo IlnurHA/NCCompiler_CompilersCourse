@@ -73,6 +73,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
             "boolean" => TokenType.Boolean,
             "reverse" => TokenType.Reverse,
             "foreach" => TokenType.Foreach,
+            "not" => TokenType.Not,
+            
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
@@ -142,6 +144,9 @@ class Lexer : AbstractScanner<Node, LexLocation>
             TokenType.Float => Tokens.FLOAT,
             TokenType.Reverse => Tokens.REVERSE,
             TokenType.Foreach => Tokens.FOREACH,
+            TokenType.UnaryPlus => Tokens.UNARY_PLUS,
+            TokenType.UnaryMinus => Tokens.UNARY_MINUS,
+            TokenType.Not => Tokens.NOT,
             _ => throw new Exception($"Unknown type {tokenType}")
         };
     }
@@ -279,7 +284,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     switch (prevToken.Type)
                     {
                         case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
-                            or TokenType.RightSquaredBracket:
+                            or TokenType.RightSquaredBracket or TokenType.Size :
                             tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
                             break;
                         default:
@@ -379,6 +384,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
     public override void yyerror(string format, params object[] args)
     {
         Console.Error.WriteLine(format, args);
+        // Console.Error.WriteLine($"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
         base.yyerror(format, args);
     }
 }

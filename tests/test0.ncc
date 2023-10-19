@@ -1,4 +1,3 @@
 routine main() is
-      var n: integer is 25
-      var result: array[64]integer is factors(n)
+    a := -a
 end
