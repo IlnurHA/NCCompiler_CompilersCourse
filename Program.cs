@@ -14,7 +14,7 @@ class Program
         List<Token> tokens = lexer.Tokenize();
         foreach (Token token in tokens)
         {
-            Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}");
+            Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}, Span - Line: {token.Span.LineNum}, Range: {token.Span.PosBegin}:{token.Span.PosEnd}");
         }
     }
 }

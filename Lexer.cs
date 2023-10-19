@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -7,6 +8,7 @@ public class Lexer
 {
     private readonly string _input;
     private int _currentPosition;
+    private int _lineCounter, _lastEolIndex;
     private readonly List<Token> _tokens = new();
 
     public Lexer(string input)
@@ -78,44 +80,54 @@ public class Lexer
         };
     }
 
+    private bool IsCharToken(string tokenToCheck)
+    {
+        if (_currentPosition + (tokenToCheck.Length - 1) >= _input.Length) return false;
+
+        string substring = _input.Substring(_currentPosition, tokenToCheck.Length);
+
+        return substring.Equals(tokenToCheck);
+    }
+
+    private bool IsCharTokens(params string[] tokensToCheck)
+    {
+        return tokensToCheck.Any(IsCharToken);
+    }
+
+    private void SkipUntilToken(string token, bool skipToken)
+    {
+        do
+        {
+            if (IsCharToken(token))
+            {
+                if (skipToken) _currentPosition += token.Length;
+                return;
+            }
+            UpdateLine();
+            _currentPosition++;
+        } while (_input.Length > _currentPosition);
+    }
+
+    private void UpdateLine()
+    {
+        if (!IsCharToken("\n")) return;
+        _lineCounter++;
+        _lastEolIndex = _currentPosition;
+    }
+
     public List<Token> Tokenize()
     {
-        var lineCounter = 1;
-        var lastEolIndex = 0;
-
-        var inSingleLineComment = false;
-        var inMultiLineComment = false;
+        _lineCounter = 1;
+        _lastEolIndex = 0;
 
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
-            if (inSingleLineComment || inMultiLineComment)
-            {
-                if (currentChar == '\n' && inSingleLineComment)
-                {
-                    inSingleLineComment = false;
-                }
-                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && inMultiLineComment)
-                {
-                    inMultiLineComment = false;
-                }
-                else
-                {
-                    if (currentChar == '\n')
-                    {
-                        lineCounter++;
-                        lastEolIndex = _currentPosition;
-                    }
-
-                    _currentPosition++;
-                    continue;
-                }
-            }
-
             if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
             {
+                UpdateLine();
                 _currentPosition++;
                 continue;
             }
@@ -125,26 +137,11 @@ public class Lexer
                 // Then it is a digit
 
                 var isDot = false;
-
                 while (lexemeLength + _currentPosition < _input.Length &&
                        (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
-                        _input[lexemeLength + _currentPosition] == '.'))
+                        (_input[lexemeLength + _currentPosition] == '.' && !isDot)))
                 {
-                    if (_input[lexemeLength + _currentPosition] == '.')
-                    {
-                        if (isDot) throw new Exception("Wrong float argument");
-
-                        if (lexemeLength + _currentPosition + 1 < _input.Length &&
-                            char.IsDigit(_input[_currentPosition + lexemeLength + 1]))
-                        {
-                            isDot = true;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
+                    if (_input[lexemeLength + _currentPosition] == '.') isDot = true;
                     lexemeLength++;
                 }
             }
@@ -159,27 +156,19 @@ public class Lexer
             }
             else
             {
-                if (_currentPosition + 1 < _input.Length &&
-                    ((currentChar == '/' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '*' && _input[_currentPosition + 1] == '/') ||
-                     (currentChar == ':' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '>' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '<' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '.' && _input[_currentPosition + 1] == '.')))
+                if (IsCharTokens("/=", ":=", ">=", "<=", ".."))
                 {
                     lexemeLength = 2;
                 }
-                else if ((_currentPosition + 1 < _input.Length) &&
-                         (currentChar == '/' && _input[_currentPosition + 1] == '*'))
+                else if (IsCharToken("/*"))
                 {
-                    lexemeLength = 2;
-                    inMultiLineComment = true;
+                    SkipUntilToken("*/", true);
+                    continue;
                 }
-                else if (_currentPosition + 1 < _input.Length &&
-                         (currentChar == '/' && _input[_currentPosition + 1] == '/'))
+                else if (IsCharToken("//"))
                 {
-                    lexemeLength = 2;
-                    inSingleLineComment = true;
+                    SkipUntilToken("\n", false);
+                    continue;
                 }
                 else
                 {
@@ -188,25 +177,23 @@ public class Lexer
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            var token_type = GetTokenType(substring);
+            var tokenType = GetTokenType(substring);
             _tokens.Add(
                 new Token(
-                    type: token_type,
+                    type: tokenType,
                     lexeme: substring,
                     span: new Span(
-                        lineNum: lineCounter,
-                        posBegin: _currentPosition - lastEolIndex,
-                        posEnd: _currentPosition + lexemeLength - lastEolIndex
+                        lineNum: _lineCounter,
+                        posBegin: _currentPosition - _lastEolIndex,
+                        posEnd: _currentPosition + lexemeLength - _lastEolIndex
                     ),
-                    value: token_type is TokenType.Number or TokenType.Float ? double.Parse(substring, new CultureInfo("en-US").NumberFormat) : null
+                    value: tokenType is TokenType.Number or TokenType.Float
+                        ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
+                        : null
                 )
             );
-            if (currentChar == '\n')
-            {
-                lineCounter++;
-                lastEolIndex = _currentPosition;
-            }
-
+            
+            UpdateLine();
             _currentPosition += lexemeLength;
         }
 
