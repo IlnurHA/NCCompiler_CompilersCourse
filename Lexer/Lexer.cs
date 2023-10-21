@@ -148,11 +148,44 @@ class Lexer : AbstractScanner<Node, LexLocation>
         };
     }
 
-    private int _lineCounter = 1;
+    private int _lineCounter;
     private int _lastEolIndex;
 
-    private bool _inSingleLineComment;
-    private bool _inMultiLineComment;
+    private bool IsCharToken(string tokenToCheck)
+    {
+        if (_currentPosition + (tokenToCheck.Length - 1) >= _input.Length) return false;
+
+        string substring = _input.Substring(_currentPosition, tokenToCheck.Length);
+
+        return substring.Equals(tokenToCheck);
+    }
+
+    private bool IsCharTokens(params string[] tokensToCheck)
+    {
+        return tokensToCheck.Any(IsCharToken);
+    }
+
+    private void SkipUntilToken(string token, bool skipToken)
+    {
+        do
+        {
+            if (IsCharToken(token))
+            {
+                if (skipToken) _currentPosition += token.Length;
+                return;
+            }
+
+            UpdateLine();
+            _currentPosition++;
+        } while (_input.Length > _currentPosition);
+    }
+
+    private void UpdateLine()
+    {
+        if (!IsCharToken("\n")) return;
+        _lineCounter++;
+        _lastEolIndex = _currentPosition;
+    }
 
     public List<Token> GetTokens()
     {
@@ -169,36 +202,17 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
     public Token? NextToken()
     {
+        _lineCounter = 1;
+        _lastEolIndex = 0;
+
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
-            if (_inSingleLineComment || _inMultiLineComment)
-            {
-                if (currentChar == '\n' && _inSingleLineComment)
-                {
-                    _inSingleLineComment = false;
-                }
-                else if (currentChar == '*' && _input[_currentPosition + 1] == '/' && _inMultiLineComment)
-                {
-                    _inMultiLineComment = false;
-                }
-                else
-                {
-                    if (currentChar == '\n')
-                    {
-                        _lineCounter++;
-                        _lastEolIndex = _currentPosition;
-                    }
-
-                    _currentPosition++;
-                    continue;
-                }
-            }
-
             if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
             {
+                UpdateLine();
                 _currentPosition++;
                 continue;
             }
@@ -208,26 +222,11 @@ class Lexer : AbstractScanner<Node, LexLocation>
                 // Then it is a digit
 
                 var isDot = false;
-
                 while (lexemeLength + _currentPosition < _input.Length &&
                        (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
-                        _input[lexemeLength + _currentPosition] == '.'))
+                        (_input[lexemeLength + _currentPosition] == '.' && !isDot)))
                 {
-                    if (_input[lexemeLength + _currentPosition] == '.')
-                    {
-                        if (isDot) throw new Exception("Wrong float argument");
-
-                        if (lexemeLength + _currentPosition + 1 < _input.Length &&
-                            char.IsDigit(_input[_currentPosition + lexemeLength + 1]))
-                        {
-                            isDot = true;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
+                    if (_input[lexemeLength + _currentPosition] == '.') isDot = true;
                     lexemeLength++;
                 }
             }
@@ -242,27 +241,19 @@ class Lexer : AbstractScanner<Node, LexLocation>
             }
             else
             {
-                if (_currentPosition + 1 < _input.Length &&
-                    ((currentChar == '/' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '*' && _input[_currentPosition + 1] == '/') ||
-                     (currentChar == ':' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '>' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '<' && _input[_currentPosition + 1] == '=') ||
-                     (currentChar == '.' && _input[_currentPosition + 1] == '.')))
+                if (IsCharTokens("/=", ":=", ">=", "<=", ".."))
                 {
                     lexemeLength = 2;
                 }
-                else if ((_currentPosition + 1 < _input.Length) &&
-                         (currentChar == '/' && _input[_currentPosition + 1] == '*'))
+                else if (IsCharToken("/*"))
                 {
-                    lexemeLength = 2;
-                    _inMultiLineComment = true;
+                    SkipUntilToken("*/", true);
+                    continue;
                 }
-                else if (_currentPosition + 1 < _input.Length &&
-                         (currentChar == '/' && _input[_currentPosition + 1] == '/'))
+                else if (IsCharToken("//"))
                 {
-                    lexemeLength = 2;
-                    _inSingleLineComment = true;
+                    SkipUntilToken("\n", false);
+                    continue;
                 }
                 else
                 {
@@ -270,45 +261,9 @@ class Lexer : AbstractScanner<Node, LexLocation>
                 }
             }
 
-            TokenType tokenType;
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            if (_tokens.Count != 0)
-            {
-                var prevToken = _tokens.Last();
-
-                if (substring is "+" or "-")
-                {
-                    switch (prevToken.Type)
-                    {
-                        case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
-                            or TokenType.RightSquaredBracket or TokenType.Size:
-                            tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
-                            break;
-                        default:
-                            tokenType = substring == "+" ? TokenType.UnaryPlus : TokenType.UnaryMinus;
-                            break;
-                    }
-                }
-                else
-                {
-                    tokenType = GetTokenType(substring);
-                }
-            }
-            else
-            {
-                tokenType = GetTokenType(substring);
-            }
-
-            if (currentChar == '\n')
-            {
-                _lineCounter++;
-                _lastEolIndex = _currentPosition;
-            }
-
-            _currentPosition += lexemeLength;
-
-
-            var token = new Token(
+            var tokenType = GetTokenType(substring);
+            var newToken = new Token(
                 type: tokenType,
                 lexeme: substring,
                 span: new Span(
@@ -320,11 +275,12 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
                     : null
             );
-            _tokens.Add(token);
-            return token;
+            UpdateLine();
+            _currentPosition += lexemeLength;
+            return newToken;
         }
 
-        return null; // End of file marker
+        return null;
     }
 
 
@@ -366,7 +322,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     yylval = new LeafNode<string>(NodeTag.PrimitiveType, token.Lexeme);
                     break;
             }
-            
+
             return (int) GppgTokensType(token.Type);
         }
         catch (Exception exception)
@@ -381,7 +337,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
     public override void yyerror(string format, params object[] args)
     {
         Console.Error.WriteLine(format, args);
-        Console.Error.WriteLine($"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
+        Console.Error.WriteLine(
+            $"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
         base.yyerror(format, args);
     }
 }
