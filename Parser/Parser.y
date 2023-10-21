@@ -221,5 +221,5 @@ Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeComplexNode(NodeTag.A
     ;
 %%
 
-public Parser(Lexer.Lexer s) : base(s) { }
+public Parser(Lexer.Scanner s) : base(s) { }
 

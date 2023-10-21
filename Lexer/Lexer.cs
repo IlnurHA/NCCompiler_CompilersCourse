@@ -5,7 +5,7 @@ using QUT.Gppg;
 
 namespace NCCompiler_CompilersCourse.Lexer;
 
-class Lexer : AbstractScanner<Node, LexLocation>
+class Lexer
 {
     private readonly string _input;
     private int _currentPosition;
@@ -14,7 +14,6 @@ class Lexer : AbstractScanner<Node, LexLocation>
     public Lexer(string input)
     {
         _input = input;
-        yylloc = new LexLocation();
     }
 
     private static TokenType GetTokenType(string token)
@@ -85,7 +84,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
         };
     }
 
-    Tokens GppgTokensType(TokenType tokenType)
+    public Tokens GppgTokensType(TokenType tokenType)
     {
         return tokenType switch
         {
@@ -307,13 +306,23 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
         return null;
     }
+}
 
+class Scanner : AbstractScanner<Node, LexLocation>
+{
+    private Lexer _lexer;
 
+    public Scanner(Lexer lexer)
+    {
+        _lexer = lexer;
+        yylloc = new LexLocation();
+    }
+    
     public override int yylex()
     {
         try
         {
-            Token? token = NextToken();
+            Token? token = _lexer.NextToken();
 
             if (token == null)
             {
@@ -344,7 +353,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     break;
             }
 
-            return (int) GppgTokensType(token.Type);
+            return (int) _lexer.GppgTokensType(token.Type);
         }
         catch (Exception exception)
         {
@@ -352,9 +361,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
             return (int) Tokens.error;
         }
     }
-
     public sealed override LexLocation yylloc { get; set; }
-
+    
     public override void yyerror(string format, params object[] args)
     {
         Console.Error.WriteLine(format, args);

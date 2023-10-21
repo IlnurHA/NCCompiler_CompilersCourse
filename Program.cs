@@ -11,8 +11,8 @@ class Program
         // Console.WriteLine(fileName);
         string contents = File.ReadAllText(fileName);
         // Console.WriteLine(contents);
-        Lexer.Lexer lexer = new Lexer.Lexer(contents);
-        Parser.Parser parser = new Parser.Parser(lexer);
+        Lexer.Scanner scanner = new Lexer.Scanner(new Lexer.Lexer(contents));
+        Parser.Parser parser = new Parser.Parser(scanner);
         var res = parser.Parse();
         Console.WriteLine(res);
     }
