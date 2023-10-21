@@ -74,12 +74,17 @@ RoutineDeclaration
     : ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET COLON Type IS Body END
     { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclarationWithType, $2, $4, $7, $9); }
     
+    | ROUTINE IDENTIFIER LEFT_BRACKET RIGHT_BRACKET COLON Type IS Body END
+         { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclarationWithType, $2, $6, $8); }
+    
     | ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET IS Body END
     { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclaration, $2, $4, $7); }
+    
+    | ROUTINE IDENTIFIER LEFT_BRACKET RIGHT_BRACKET IS Body END
+        { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclaration, $2, $6); }
     ;
   
-Parameters      : 
-                | ParameterDeclaration                  { $$ = $1; }
+Parameters      : ParameterDeclaration                  { $$ = $1; }
                 | Parameters COMMA ParameterDeclaration { $$ = Node.MakeComplexNode(NodeTag.ParametersContinuous, $1, $3); }
                 ;
 
