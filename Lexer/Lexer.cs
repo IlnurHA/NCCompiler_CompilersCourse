@@ -41,12 +41,12 @@ class Lexer : AbstractScanner<Node, LexLocation>
             "=" => TokenType.EqComparison,
             ">" => TokenType.GtComparison,
             ">=" => TokenType.GeComparison,
-            "<" => TokenType.LtComparisom,
+            "<" => TokenType.LtComparison,
             "<=" => TokenType.LeComparison,
             "/=" => TokenType.NeComparison,
-            "//" => TokenType.SinglelineComment,
-            "/*" => TokenType.MultilineCommentStart,
-            "*/" => TokenType.MultilineCommentEnd,
+            // "//" => TokenType.SinglelineComment,
+            // "/*" => TokenType.MultilineCommentStart,
+            // "*/" => TokenType.MultilineCommentEnd,
             ":=" => TokenType.AssignmentOperator,
             "routine" => TokenType.Routine,
             "array" => TokenType.Array,
@@ -109,7 +109,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
             TokenType.EqComparison => Tokens.EQ_COMPARISON,
             TokenType.GtComparison => Tokens.GT_COMPARISON,
             TokenType.GeComparison => Tokens.GE_COMPARISON,
-            TokenType.LtComparisom => Tokens.LT_COMPARISON,
+            TokenType.LtComparison => Tokens.LT_COMPARISON,
             TokenType.LeComparison => Tokens.LE_COMPARISON,
             TokenType.NeComparison => Tokens.NE_COMPARISON,
             TokenType.AssignmentOperator => Tokens.ASSIGNMENT_OPERATOR,
@@ -148,8 +148,8 @@ class Lexer : AbstractScanner<Node, LexLocation>
         };
     }
 
-    private int _lineCounter;
-    private int _lastEolIndex;
+    private int _lineCounter = 1;
+    private int _lastEolIndex = 0;
 
     private bool IsCharToken(string tokenToCheck)
     {
@@ -202,9 +202,6 @@ class Lexer : AbstractScanner<Node, LexLocation>
 
     public Token? NextToken()
     {
-        _lineCounter = 1;
-        _lastEolIndex = 0;
-
         while (_currentPosition < _input.Length)
         {
             var currentChar = _input[_currentPosition];
@@ -262,9 +259,36 @@ class Lexer : AbstractScanner<Node, LexLocation>
             }
 
             var substring = _input.Substring(_currentPosition, lexemeLength);
-            var tokenType = GetTokenType(substring);
+
+            TokenType? tokenType = null;
+
+
+            if (_tokens.Count != 0)
+            {
+                var prevToken = _tokens.Last();
+
+                if (IsCharTokens("+", "-"))
+                {
+                    switch (prevToken.Type)
+                    {
+                        case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
+                            or TokenType.RightSquaredBracket or TokenType.Size:
+                            tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
+                            break;
+                        default:
+                            tokenType = substring == "+" ? TokenType.UnaryPlus : TokenType.UnaryMinus;
+                            break;
+                    }
+                }
+            }
+
+            if (!tokenType.HasValue)
+            {
+                tokenType = GetTokenType(substring);
+            }
+
             var newToken = new Token(
-                type: tokenType,
+                type: tokenType.GetValueOrDefault(),
                 lexeme: substring,
                 span: new Span(
                     lineNum: _lineCounter,
@@ -277,6 +301,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
             );
             UpdateLine();
             _currentPosition += lexemeLength;
+            _tokens.Add(newToken);
             return newToken;
         }
 
@@ -288,18 +313,14 @@ class Lexer : AbstractScanner<Node, LexLocation>
     {
         try
         {
-            Token? token;
-            do
-            {
-                token = NextToken();
-                if (token == null)
-                {
-                    return (int) Tokens.EOF;
-                }
-            } while (token.Type is TokenType.SinglelineComment or TokenType.MultilineCommentEnd
-                     or TokenType.MultilineCommentStart);
+            Token? token = NextToken();
 
-            yylloc = new LexLocation((int) token.Span.LineNum, (int) token.Span.LineNum, token.Span.PosBegin,
+            if (token == null)
+            {
+                return (int) Tokens.EOF;
+            }
+
+            yylloc = new LexLocation((int) token.Span.LineNum, token.Span.PosBegin, (int) token.Span.LineNum,
                 token.Span.PosEnd);
             switch (token.Type)
             {

@@ -12,16 +12,8 @@ class Program
         string contents = File.ReadAllText(fileName);
         // Console.WriteLine(contents);
         Lexer.Lexer lexer = new Lexer.Lexer(contents);
-        List<Token> tokens = lexer.GetTokens();
-        foreach (Token token in tokens)
-        {
-            Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}, Span - Line: {token.Span.LineNum}, Range: {token.Span.PosBegin}:{token.Span.PosEnd}");
-        }
-        
-        // List<Token> tokens = lexer.GetTokens();
-        // foreach (Token token in tokens)
-        // {
-        // Console.WriteLine($"Type: {token.Type}, Lexeme: \"{token.Lexeme}\", Value: {token.Value}");
-        // }
+        Parser.Parser parser = new Parser.Parser(lexer);
+        var res = parser.Parse();
+        Console.WriteLine(res);
     }
 }

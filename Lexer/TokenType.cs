@@ -24,10 +24,10 @@ public enum TokenType
     Colon, Dot, TwoDots,
     Comma,
     
-    // Comments
-    MultilineCommentStart,
-    MultilineCommentEnd,
-    SinglelineComment,
+    // // Comments
+    // MultilineCommentStart,
+    // MultilineCommentEnd,
+    // SinglelineComment,
     
     AssignmentOperator,
     
@@ -36,7 +36,7 @@ public enum TokenType
     EqComparison,
     GtComparison,
     GeComparison,
-    LtComparisom,
+    LtComparison,
     LeComparison,
     NeComparison,
     
