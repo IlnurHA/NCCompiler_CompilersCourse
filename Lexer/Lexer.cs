@@ -74,7 +74,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
             "reverse" => TokenType.Reverse,
             "foreach" => TokenType.Foreach,
             "not" => TokenType.Not,
-            
+
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
@@ -112,9 +112,6 @@ class Lexer : AbstractScanner<Node, LexLocation>
             TokenType.LtComparisom => Tokens.LT_COMPARISON,
             TokenType.LeComparison => Tokens.LE_COMPARISON,
             TokenType.NeComparison => Tokens.NE_COMPARISON,
-            // TokenType.SinglelineComment => Tokens.SINGL,
-            // TokenType.MultilineCommentStart => Tokens.MultilineCommentStart,
-            // TokenType.MultilineCommentEnd => Tokens.MultilineCommentEnd,
             TokenType.AssignmentOperator => Tokens.ASSIGNMENT_OPERATOR,
             TokenType.Routine => Tokens.ROUTINE,
             TokenType.Array => Tokens.ARRAY,
@@ -284,7 +281,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
                     switch (prevToken.Type)
                     {
                         case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
-                            or TokenType.RightSquaredBracket or TokenType.Size :
+                            or TokenType.RightSquaredBracket or TokenType.Size:
                             tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
                             break;
                         default:
@@ -341,41 +338,41 @@ class Lexer : AbstractScanner<Node, LexLocation>
                 token = NextToken();
                 if (token == null)
                 {
-                    return (int)Tokens.EOF;
+                    return (int) Tokens.EOF;
                 }
             } while (token.Type is TokenType.SinglelineComment or TokenType.MultilineCommentEnd
                      or TokenType.MultilineCommentStart);
-            yylloc = new LexLocation((int)token.Span.LineNum, (int)token.Span.LineNum, token.Span.PosBegin,
+
+            yylloc = new LexLocation((int) token.Span.LineNum, (int) token.Span.LineNum, token.Span.PosBegin,
                 token.Span.PosEnd);
             switch (token.Type)
             {
                 case TokenType.Identifier:
-                    yylval = Node.MakeIdentifierLeaf(token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.Identifier, token.Lexeme);
                     break;
                 case TokenType.UnaryPlus or TokenType.UnaryMinus:
-                    yylval = Node.MakeUnaryOperationLeaf(token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.Unary, token.Lexeme);
                     break;
                 case TokenType.Number:
-                    yylval = Node.MakeIntLeaf(Convert.ToInt32(token.Value!));
+                    yylval = new LeafNode<Int32>(NodeTag.IntegerLiteral, Convert.ToInt32(token.Value!));
                     break;
                 case TokenType.Float:
-                    yylval = Node.MakeDoubleLeaf(Convert.ToDouble(token.Value!));
+                    yylval = new LeafNode<Double>(NodeTag.RealLiteral, Convert.ToDouble(token.Value!));
                     break;
                 case TokenType.True or TokenType.False:
-                    yylval = Node.MakeBoolLeaf(Convert.ToBoolean(token.Value!));
+                    yylval = new LeafNode<Boolean>(NodeTag.BooleanLiteral, Convert.ToBoolean(token.Value!));
                     break;
                 case TokenType.Integer or TokenType.Real or TokenType.Boolean:
-                    yylval = Node.MakePrimitiveTypeLeaf(token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.PrimitiveType, token.Lexeme);
                     break;
             }
-
-
-            return (int)GppgTokensType(token.Type);
+            
+            return (int) GppgTokensType(token.Type);
         }
         catch (Exception exception)
         {
             yyerror(exception.ToString());
-            return (int)Tokens.error;
+            return (int) Tokens.error;
         }
     }
 
@@ -384,7 +381,7 @@ class Lexer : AbstractScanner<Node, LexLocation>
     public override void yyerror(string format, params object[] args)
     {
         Console.Error.WriteLine(format, args);
-        // Console.Error.WriteLine($"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
+        Console.Error.WriteLine($"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
         base.yyerror(format, args);
     }
 }

@@ -51,8 +51,8 @@
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
-Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeBinary(NodeTag.ProgramSimpleDeclaration, $1, $2); }
-    | Program RoutineDeclaration                    { $$ = Node.MakeBinary(NodeTag.ProgramRoutineDeclaration, $1, $2);}
+Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeComplexNode(NodeTag.ProgramSimpleDeclaration, $1, $2); }
+    | Program RoutineDeclaration                    { $$ = Node.MakeComplexNode(NodeTag.ProgramRoutineDeclaration, $1, $2);}
     ;
 
 SimpleDeclaration   : VariableDeclaration   { $$ = $1; }
@@ -61,29 +61,29 @@ SimpleDeclaration   : VariableDeclaration   { $$ = $1; }
 
 VariableDeclaration
     :
-    VAR IDENTIFIER COLON Type IS Expression { $$ = Node.MakeTernary(NodeTag.VariableDeclarationFull, $2, $4, $6); }
-    | VAR IDENTIFIER COLON Type             { $$ = Node.MakeBinary(NodeTag.VariableDeclarationIdenType, $2, $4); }
-    | VAR IDENTIFIER IS Expression          { $$ = Node.MakeBinary(NodeTag.VariableDeclarationIdenExpr, $2, $4); }
+    VAR IDENTIFIER COLON Type IS Expression { $$ = Node.MakeComplexNode(NodeTag.VariableDeclarationFull, $2, $4, $6); }
+    | VAR IDENTIFIER COLON Type             { $$ = Node.MakeComplexNode(NodeTag.VariableDeclarationIdenType, $2, $4); }
+    | VAR IDENTIFIER IS Expression          { $$ = Node.MakeComplexNode(NodeTag.VariableDeclarationIdenExpr, $2, $4); }
     ;
 
 TypeDeclaration
-    : TYPE IDENTIFIER IS Type               { $$ = Node.MakeBinary(NodeTag.TypeDeclaration, $2, $4); }
+    : TYPE IDENTIFIER IS Type               { $$ = Node.MakeComplexNode(NodeTag.TypeDeclaration, $2, $4); }
     ;
 
 RoutineDeclaration
     : ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET COLON Type IS Body END
-    { $$ = Node.MakeQuaternary(NodeTag.RoutineDeclarationWithType, $2, $4, $7, $9); }
+    { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclarationWithType, $2, $4, $7, $9); }
     
     | ROUTINE IDENTIFIER LEFT_BRACKET Parameters RIGHT_BRACKET IS Body END
-    { $$ = Node.MakeTernary(NodeTag.RoutineDeclaration, $2, $4, $7); }
+    { $$ = Node.MakeComplexNode(NodeTag.RoutineDeclaration, $2, $4, $7); }
     ;
   
 Parameters      : 
                 | ParameterDeclaration                  { $$ = $1; }
-                | Parameters COMMA ParameterDeclaration { $$ = Node.MakeBinary(NodeTag.ParametersContinuous, $1, $3); }
+                | Parameters COMMA ParameterDeclaration { $$ = Node.MakeComplexNode(NodeTag.ParametersContinuous, $1, $3); }
                 ;
 
-ParameterDeclaration : IDENTIFIER COLON Type      {$$ = Node.MakeBinary(NodeTag.ParameterDeclaration, $1, $3);}
+ParameterDeclaration : IDENTIFIER COLON Type      {$$ = Node.MakeComplexNode(NodeTag.ParameterDeclaration, $1, $3);}
     ;
   
 Type : PrimitiveType    {$$ = $1;}
@@ -95,20 +95,20 @@ Type : PrimitiveType    {$$ = $1;}
 PrimitiveType : INTEGER | REAL | BOOLEAN
     ;
   
-RecordType  : RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END    { $$ = Node.MakeUnary(NodeTag.RecordType, $3); }
-            | RECORD VariableDeclarations END                               { $$ = Node.MakeUnary(NodeTag.RecordType, $2); }
+RecordType  : RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END    { $$ = Node.MakeComplexNode(NodeTag.RecordType, $3); }
+            | RECORD VariableDeclarations END                               { $$ = Node.MakeComplexNode(NodeTag.RecordType, $2); }
     ;
   
 VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
-    { $$ = Node.MakeBinary(NodeTag.VariableDeclarations, $1, $2); }
+    { $$ = Node.MakeComplexNode(NodeTag.VariableDeclarations, $1, $2); }
     ;
 
-ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeBinary(NodeTag.ArrayType, $3,  $5); }
+ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeComplexNode(NodeTag.ArrayType, $3,  $5); }
     ;
 
 Body :  /* empty */
-        | Body SimpleDeclaration    { $$ = Node.MakeBinary(NodeTag.BodySimpleDeclaration, $1, $2); }
-        | Body Statement            { $$ = Node.MakeBinary(NodeTag.BodyStatement, $1, $2); }
+        | Body SimpleDeclaration    { $$ = Node.MakeComplexNode(NodeTag.BodySimpleDeclaration, $1, $2); }
+        | Body Statement            { $$ = Node.MakeComplexNode(NodeTag.BodyStatement, $1, $2); }
         ;
 
 Statement   : Assignment    { $$ = $1; }
@@ -118,80 +118,80 @@ Statement   : Assignment    { $$ = $1; }
             | ForeachLoop   { $$ = $1; }
             | IfStatement   { $$ = $1; }
             | Assert        { $$ = $1; }
-            | RETURN Expression { $$ = Node.MakeUnary(NodeTag.Return, $2); }
+            | RETURN Expression { $$ = Node.MakeComplexNode(NodeTag.Return, $2); }
             ;
 
-Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.MakeBinary(NodeTag.Assignment, $1,  $3); }
+Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.MakeComplexNode(NodeTag.Assignment, $1,  $3); }
             ;
 
-RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeBinary(NodeTag.RoutineCall, $1, $3); }
+RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1, $3); }
                 | IDENTIFIER {$$ = $1;}
                 ;
 
 Expressions     : Expression                    { $$ = $1; }
-                | Expressions COMMA Expression  { $$ = Node.MakeBinary(NodeTag.ExpressionsContinuous, $1, $3); }
+                | Expressions COMMA Expression  { $$ = Node.MakeComplexNode(NodeTag.ExpressionsContinuous, $1, $3); }
                 ;
 
-WhileLoop   : WHILE Expression LOOP Body END    { $$ = Node.MakeBinary(NodeTag.WhileLoop, $2, $4); }
+WhileLoop   : WHILE Expression LOOP Body END    { $$ = Node.MakeComplexNode(NodeTag.WhileLoop, $2, $4); }
             ;
 
-ForLoop : FOR IDENTIFIER Range LOOP Body END    { $$ = Node.MakeTernary(NodeTag.ForLoop, $2, $3, $5); }
+ForLoop : FOR IDENTIFIER Range LOOP Body END    { $$ = Node.MakeComplexNode(NodeTag.ForLoop, $2, $3, $5); }
         ;
 
 Range :
-    IN REVERSE Expression TWO_DOTS Expression   { $$ = Node.MakeBinary(NodeTag.RangeReverse, $3, $5); }
-    | IN Expression TWO_DOTS Expression         { $$ = Node.MakeBinary(NodeTag.Range, $2, $4); }
+    IN REVERSE Expression TWO_DOTS Expression   { $$ = Node.MakeComplexNode(NodeTag.RangeReverse, $3, $5); }
+    | IN Expression TWO_DOTS Expression         { $$ = Node.MakeComplexNode(NodeTag.Range, $2, $4); }
     ;
 
 ForeachLoop : FOREACH IDENTIFIER FROM ModifiablePrimary LOOP Body END
-            { $$ = Node.MakeTernary(NodeTag.ForeachLoop, $2, $4, $6); }
+            { $$ = Node.MakeComplexNode(NodeTag.ForeachLoop, $2, $4, $6); }
             ;
 
-IfStatement     : IF Expression THEN Body ELSE Body END { $$ = Node.MakeTernary(NodeTag.IfElseStatement, $2, $4, $6); }
-                | IF Expression THEN Body END           { $$ = Node.MakeBinary(NodeTag.IfStatement, $2, $4); }
+IfStatement     : IF Expression THEN Body ELSE Body END { $$ = Node.MakeComplexNode(NodeTag.IfElseStatement, $2, $4, $6); }
+                | IF Expression THEN Body END           { $$ = Node.MakeComplexNode(NodeTag.IfStatement, $2, $4); }
                 ;
 
 Expression : /* empty */  
     | Relation {$$ = $1;}
-    | Expression AND Relation {$$ = Node.MakeBinary(NodeTag.And, $1, $3);}
-    | Expression OR Relation {$$ = Node.MakeBinary(NodeTag.Or, $1, $3);}
-    | Expression XOR Relation {$$ = Node.MakeBinary(NodeTag.Xor, $1, $3);}
+    | Expression AND Relation {$$ = Node.MakeComplexNode(NodeTag.And, $1, $3);}
+    | Expression OR Relation {$$ = Node.MakeComplexNode(NodeTag.Or, $1, $3);}
+    | Expression XOR Relation {$$ = Node.MakeComplexNode(NodeTag.Xor, $1, $3);}
     | Cast
     | RoutineCall { $$ = $1; }
     ;
 
 Relation   : Simple {$$ = $1;}
-    | Relation EQ_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Eq, $1, $3);}
-    | Relation GT_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Gt, $1, $3);}
-    | Relation GE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Ge, $1, $3);}
-    | Relation LT_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Lt, $1, $3);}
-    | Relation LE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Le, $1, $3);}
-    | Relation NE_COMPARISON Simple {$$ = Node.MakeBinary(NodeTag.Ne, $1, $3);}
+    | Relation EQ_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Eq, $1, $3);}
+    | Relation GT_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Gt, $1, $3);}
+    | Relation GE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Ge, $1, $3);}
+    | Relation LT_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Lt, $1, $3);}
+    | Relation LE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Le, $1, $3);}
+    | Relation NE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Ne, $1, $3);}
     ;
 
 Simple     : Factor {$$ = $1;}
-    | Simple MULTIPLY Factor {$$ = Node.MakeBinary(NodeTag.Mul, $1, $3);}
-    | Simple DIVIDE Factor {$$ = Node.MakeBinary(NodeTag.Div, $1, $3);}
-    | Simple REMAINDER Factor {$$ = Node.MakeBinary(NodeTag.Rem, $1, $3);}
+    | Simple MULTIPLY Factor {$$ = Node.MakeComplexNode(NodeTag.Mul, $1, $3);}
+    | Simple DIVIDE Factor {$$ = Node.MakeComplexNode(NodeTag.Div, $1, $3);}
+    | Simple REMAINDER Factor {$$ = Node.MakeComplexNode(NodeTag.Rem, $1, $3);}
     ;
 
 Factor     : Summand { $$ = $1;}
-    | Factor PLUS Summand { $$ = Node.MakeBinary(NodeTag.Plus, $1, $3);}
-    | Factor MINUS Summand { $$ = Node.MakeBinary(NodeTag.Minus, $1, $3);}
+    | Factor PLUS Summand { $$ = Node.MakeComplexNode(NodeTag.Plus, $1, $3);}
+    | Factor MINUS Summand { $$ = Node.MakeComplexNode(NodeTag.Minus, $1, $3);}
     ;
 
 Summand : Primary { $$ = $1;}
     | LEFT_BRACKET Expression RIGHT_BRACKET { $$ = $2;}
     ;
 
-Primary   : Sign NUMBER {$$ = Node.MakeBinary(NodeTag.SignToInteger, $1, $2);}
-    | NOT NUMBER { $$ = Node.MakeUnary(NodeTag.NotInteger, $2);}
+Primary   : Sign NUMBER {$$ = Node.MakeComplexNode(NodeTag.SignToInteger, $1, $2);}
+    | NOT NUMBER { $$ = Node.MakeComplexNode(NodeTag.NotInteger, $2);}
     | NUMBER
-    | Sign FLOAT { $$ = Node.MakeBinary(NodeTag.SignToDouble, $1, $2);}
+    | Sign FLOAT { $$ = Node.MakeComplexNode(NodeTag.SignToDouble, $1, $2);}
     | FLOAT
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
-    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeUnary(NodeTag.ArrayConst, $2);}
+    | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.ArrayConst, $2);}
     // | NOT TRUE {}
     // | NOT FALSE {}
     ;
@@ -200,24 +200,24 @@ Sign : UNARY_PLUS
     | UNARY_MINUS
     ;
 
-Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeBinary(NodeTag.Cast, $1, $3); }
+Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeComplexNode(NodeTag.Cast, $1, $3); }
     ;
 
 ModifiablePrimary   : ModifiablePrimaryWithoutSize  { $$ = $1; }
-        | ModifiablePrimaryWithoutSize DOT SIZE     { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingSize, $1, $3); }
+        | ModifiablePrimaryWithoutSize DOT SIZE     { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingSize, $1, $3); }
         ;
 
 ModifiablePrimaryWithoutSize   : IDENTIFIER
         | RoutineCall { $$ = $1; }
         | ModifiablePrimaryWithoutSize DOT IDENTIFIER
-        { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
+        { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
         
         
         | ModifiablePrimaryWithoutSize LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET
-        { $$ = Node.MakeBinary(NodeTag.ModifiablePrimaryGettingValueFromArray, $1, $3); }
+        { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingValueFromArray, $1, $3); }
         ;
           
-Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeBinary(NodeTag.Assert, $2, $4); }
+Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeComplexNode(NodeTag.Assert, $2, $4); }
     ;
 %%
 
