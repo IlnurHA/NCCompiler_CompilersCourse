@@ -96,3 +96,4 @@ Gppg.exe
 Parser.conflicts
 Folder.DotSettings.user
 NCCompiler_CompilersCourse.csproj
+Parser/ParserGenerated.cs
