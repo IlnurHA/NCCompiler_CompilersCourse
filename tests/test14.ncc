@@ -6,7 +6,7 @@ routine special_function(arr: array[]integer): array[]integer is
   var new_arr: array[arr.size]integer
   var counter: integer is 1
 
-  for num from arr loop
+  foreach num from arr loop
     var divisible_part: integer is num / 7
     // division of integers returns number
     // of times a second factor contains in a first factor

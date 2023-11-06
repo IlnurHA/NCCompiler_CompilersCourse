@@ -7,4 +7,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="QUT.ShiftReduceParser">
+      <HintPath>Parser\QUT.ShiftReduceParser.dll</HintPath>
+    </Reference>
+    <Reference Include="QUT.ShiftReduceParser, Version=1.4.6.0, Culture=neutral, PublicKeyToken=402396ef6102baec">
+      <HintPath>Parser\QUT.ShiftReduceParser.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

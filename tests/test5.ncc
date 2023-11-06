@@ -1,12 +1,12 @@
 ﻿/* node user-defined type that is a record*/
-type node is (
+type node is 
   record 
     var val: integer
     var left: node
     var right: node
     var is_null: boolean is false
   end
-)
+
 
 /* Routine to find the node with given value in bst */
 routine find(cur: node, x: integer): node is
@@ -25,9 +25,9 @@ routine find(cur: node, x: integer): node is
 end
 
 var null: node
-null.is_null = true
 
 routine main() is
+  null.is_null := true
   var first: node
   var second: node
   var third: node

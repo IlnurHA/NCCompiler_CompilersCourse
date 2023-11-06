@@ -1,13 +1,13 @@
 routine reverse_array(a: array[]integer): array[]integer is
     var result: array[a.size]integer
-    for in reverse a.size..1 loop
+    for i in reverse a.size..1 loop
         result[a.size - i + 1] := a[i]
     end
     return result
 end
 
 routine main() is
-    var a: array[5]integer is [-1, -2, -4, 3, 0]
+    var a: array[5]integer is [-1, -2, -4, +3, 0]
     var result: array[5]integer is reverse_array(a)
     assert result, [0, 3, -4, -2, -1]
     assert reverse_array([]), []

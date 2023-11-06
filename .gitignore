@@ -92,3 +92,7 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/rider,dotnetcore
 global.json
+Gppg.exe
+Parser.conflicts
+Folder.DotSettings.user
+NCCompiler_CompilersCourse.csproj
