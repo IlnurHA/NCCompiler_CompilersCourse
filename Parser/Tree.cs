@@ -1,5 +1,13 @@
-﻿namespace NCCompiler_CompilersCourse.Parser
+﻿using NCCompiler_CompilersCourse.Semantics;
+
+namespace NCCompiler_CompilersCourse.Parser
 {
+    internal enum MyType
+    {
+        Integer,
+        Real,
+        Boolean,
+    }
     internal enum NodeTag
     {
         Program,
@@ -91,30 +99,44 @@
 
         readonly NodeTag _tag;
         public NodeTag Tag => _tag;
+        
+        public MyType? MyType { get; set; }
 
         protected Node(NodeTag tag)
         {
             _tag = tag;
         }
+
+        public abstract void Accept(IVisitor visitor);
     }
 
     internal class ComplexNode : Node
     {
-        private readonly Node[] _children;
+        public Node[] Children { get; }
 
         public ComplexNode(NodeTag nodeTag, params Node[] nodes) : base(nodeTag)
         {
-            _children = nodes;
+            Children = nodes;
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
     internal class LeafNode<T> : Node
     {
-        private readonly T _value;
-        
+        public T Value { get; }
+
         public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
         {
-            _value = value;
+            Value = value;
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            visitor.VisitLeaf(this);
         }
     }
 }
