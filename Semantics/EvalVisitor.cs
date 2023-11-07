@@ -65,6 +65,9 @@ class EvalVisitor : IVisitor
                 or NodeTag.Le or
                 NodeTag.Lt or NodeTag.Ge or NodeTag.Gt or NodeTag.And or NodeTag.Or or NodeTag.Xor:
                 return _visitBinaryOperations(node);
+            case NodeTag.NotInteger or NodeTag.SignToInteger or NodeTag.SignToDouble:
+                return _visitUnaryOperations(node);
+            
         }
     }
 
@@ -74,16 +77,21 @@ class EvalVisitor : IVisitor
         HashSet<NodeTag> numbersSet = new()
         {
             NodeTag.Plus, NodeTag.Minus, NodeTag.Mul, NodeTag.Div, NodeTag.Rem, NodeTag.Eq, NodeTag.Ne, NodeTag.Le,
-            NodeTag.Lt, NodeTag.Ge, NodeTag.Gt,
+            NodeTag.Lt, NodeTag.Ge, NodeTag.Gt, NodeTag.SignToInteger
         };
+        HashSet<NodeTag> integersSet = new(numbersSet);
+        integersSet.Add(NodeTag.SignToInteger);
+        integersSet.Add(NodeTag.NotInteger);
+        HashSet<NodeTag> realsSet = new(numbersSet);
+        realsSet.Add(NodeTag.SignToDouble);
         HashSet<NodeTag> boolsSet = new()
         {
             NodeTag.And, NodeTag.Or, NodeTag.Xor,
         };
         Dictionary<MyType, HashSet<NodeTag>> allowedOperations = new()
         {
-            { MyType.Integer, numbersSet },
-            { MyType.Real, numbersSet },
+            { MyType.Integer, integersSet },
+            { MyType.Real, realsSet },
             { MyType.Boolean, boolsSet },
         };
         return allowedOperations;
@@ -134,6 +142,34 @@ class EvalVisitor : IVisitor
         }
 
         return new SymbolicNode(operandsType, new List<SymbolicNode> { operand1, operand2 });
+    }
+
+    private SymbolicNode _visitUnaryOperations(ComplexNode node)
+    {
+        SymbolicNode number;
+        MyType operationType;
+        List<SymbolicNode> children = new();
+        switch (node.NodeTag)
+        {
+            case NodeTag.NotInteger:
+                number = UniversalVisit(node.Children[0]);
+                // TODO - check not 5
+                operationType = MyType.Boolean;
+                children.Add(number);
+                break;
+            case NodeTag.SignToInteger or NodeTag.SignToDouble:
+                var sign = UniversalVisit(node.Children[0]);
+                number = UniversalVisit(node.Children[1]);
+                children.Add(sign);
+                children.Add(number);
+                // TODO - unary operations are now only supported for number literals
+                operationType = number.MyType;
+                break;
+            default:
+                throw new Exception($"Trying to process unary operation. Actual type: {node.NodeTag}");
+        }
+        _checkOperationAllowance(number.MyType, node.NodeTag);
+        return new SymbolicNode(operationType, children: children);
     }
 
     private MyType GetTypeFromPrimitiveType(string value)
