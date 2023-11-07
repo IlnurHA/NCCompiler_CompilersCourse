@@ -12,4 +12,8 @@ public enum MyType
     PrimitiveType,
     Unary,
     CompoundType,
+    Expressions,
+    Return,
+    Break,
+    ForEachLoop
 }
