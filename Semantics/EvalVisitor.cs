@@ -147,6 +147,7 @@ class EvalVisitor : IVisitor
                 }
 
                 modPrimaryAssignment.Value = exprAssignment;
+                ScopeStack.AddVariable(modPrimaryAssignment);
                 return modPrimaryAssignment;
             case NodeTag.Return:
                 var returnValue = UniversalVisit(node.Children[0]);
@@ -154,11 +155,101 @@ class EvalVisitor : IVisitor
                 return new SymbolicNode(MyType.Return, value: returnValue);
             
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
+                if (node.Children[0] == null)
+                {
+                    MyType myType = MyType.Undefined;
+                    var singleBody = UniversalVisit(node.Children[1]);
+                    if (singleBody.MyType == MyType.Return)
+                    {
+                        if (!ScopeStack.HasRoutineScope()) throw new Exception("Return without routine scope");
+                        myType = ((SymbolicNode) singleBody.Value!).MyType;
+                    }
+
+                    if (singleBody.MyType == MyType.Break)
+                    {
+                        if (ScopeStack.GetLastScope().ScopeContextVar is not Scope.ScopeContext.Loop)
+                        {
+                            throw new Exception("Cannot break from the given context");
+                        }
+                    }
+
+                    return new SymbolicNode(myType, new List<SymbolicNode> {singleBody});
+                }
+                
                 var bodyCont = UniversalVisit(node.Children[0]);
                 var currentBody = UniversalVisit(node.Children[1]);
+
+                if (currentBody.MyType == MyType.Return)
+                {
+                    MyType newType = (currentBody.Value! as SymbolicNode)!.MyType;
+                    if (bodyCont.MyType != MyType.Undefined && bodyCont.MyType != newType)
+                    {
+                        throw new Exception($"Types of returns didn't match ({bodyCont.MyType}, {newType})");
+                    }
+
+                    if (bodyCont.MyType == MyType.Undefined) bodyCont.MyType = newType;
+                    if (!ScopeStack.HasRoutineScope()) throw new Exception("Return without routine scope");
+                }
+                if (currentBody.MyType == MyType.Break)
+                {
+                    if (ScopeStack.GetLastScope().ScopeContextVar is not (Scope.ScopeContext.Loop or Scope.ScopeContext.IfStatement))
+                    {
+                        throw new Exception("Cannot break from the given context");
+                    }
+                }
+
+                bodyCont.Children.Add(currentBody);
+                return bodyCont;
+            
+            case NodeTag.IfStatement or NodeTag.IfElseStatement:
+                ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
+                var exprIf = UniversalVisit(node.Children[0]);
+                var bodyIf = UniversalVisit(node.Children[1]);
+                SymbolicNode? bodyElse = null;
+                if (node.NodeTag == NodeTag.IfElseStatement)
+                {
+                    bodyElse = UniversalVisit(node.Children[2]);
+                }
+
+                if (exprIf.MyType != MyType.Boolean) throw new Exception($"Cannot match type {exprIf.MyType} to 'boolean'");
+                var symbolicNode = new SymbolicNode(myType: MyType.Undefined, new List<SymbolicNode> {exprIf, bodyIf});
+                if (bodyElse != null)
+                {
+                    symbolicNode.Children.Add(bodyElse);
+                }
+                ScopeStack.DeleteScope();
+                return symbolicNode;
+            
+            case NodeTag.ForeachLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var idForEachLoop = UniversalVisit(node.Children[0]);
+                var fromForEachLoop = UniversalVisit(node.Children[1]);
+
+                if (fromForEachLoop.MyType != MyType.CompoundType) throw new Exception($"Cannot iterate through {fromForEachLoop.MyType}");
+                if (fromForEachLoop.CompoundType == null || fromForEachLoop.CompoundType.MyType != MyType.Array)
+                    throw new Exception("Cannot iterate through non-array type");
+
+                idForEachLoop.MyType = fromForEachLoop.CompoundType.MyType;
+                if (fromForEachLoop.CompoundType.MyType == MyType.CompoundType)
+                {
+                    idForEachLoop.CompoundType = fromForEachLoop.CompoundType.CompoundType;
+                }
+                ScopeStack.AddVariable(idForEachLoop);
+                var bodyForEachLoop = UniversalVisit(node.Children[2]);
+                ScopeStack.DeleteScope();
+                return new SymbolicNode(MyType.ForEachLoop,
+                    new List<SymbolicNode> {idForEachLoop, fromForEachLoop, bodyForEachLoop});
+            case NodeTag.ProgramSimpleDeclaration or NodeTag.ProgramRoutineDeclaration:
+                if (node.Children[0] == null)
+                {
+                    return new SymbolicNode(MyType.Undefined, new List<SymbolicNode>{UniversalVisit(node.Children[1])});
+                }
+
+                var progs = UniversalVisit(node.Children[0]);
+                var decl = UniversalVisit(node.Children[1]);
                 
-                
-                
+                progs.Children.Add(decl);
+                return progs;
         }
     }
 

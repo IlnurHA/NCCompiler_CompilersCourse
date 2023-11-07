@@ -14,4 +14,6 @@ public enum MyType
     CompoundType,
     Expressions,
     Return,
+    Break,
+    ForEachLoop
 }
