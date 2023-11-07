@@ -9,9 +9,9 @@ public class ScopeStack
         Scopes.Add(new Scope());
     }
 
-    public void NewScope()
+    public void NewScope(Scope.ScopeContext scopeContext)
     {
-        Scopes.Add(new Scope());
+        Scopes.Add(new Scope(scopeContext: scopeContext));
     }
 
     public void DeleteScope()
@@ -41,5 +41,38 @@ public class ScopeStack
     public Scope GetLastScope()
     {
         return Scopes.Last();
+    }
+
+    public bool HasRoutineScope()
+    {
+        for (int i = Scopes.Count - 1; i >= 0; i--)
+        {
+            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Routine)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public (Scope, int) GetLastRoutineScope()
+    {
+        for (int i = Scopes.Count - 1; i >= 0; i--)
+        {
+            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Routine)
+            {
+                return (Scopes[i], i);
+            }
+        }
+
+        throw new Exception("No routine scopes yet");
+    }
+
+    public void PopUntilLastRoutineScope()
+    {
+        var (scope, index) = GetLastRoutineScope();
+
+        Scopes = Scopes.GetRange(0, index + 1);
     }
 }

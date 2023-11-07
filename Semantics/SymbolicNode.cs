@@ -23,7 +23,8 @@ public class SymbolicNode
 
     public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
         Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
-        Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null, SymbolicNode? compoundType = null)
+        Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null,
+        SymbolicNode? compoundType = null)
     {
         MyType = myType;
         Name = name;
@@ -34,5 +35,21 @@ public class SymbolicNode
         Value = value;
         Children = children ?? new List<SymbolicNode>();
         CompoundType = compoundType;
+    }
+
+    public bool Equals(SymbolicNode? obj)
+    {
+        if (obj == null) return false;
+        return MyType == obj.MyType
+               && Name == obj.Name
+               && StructFields == obj.StructFields
+               && ArrayElements == obj.ArrayElements
+               && FuncArguments == obj.FuncArguments
+               && ((FuncReturn != null && FuncReturn.Equals(obj.FuncReturn)) ||
+                   (FuncReturn == null && obj.FuncReturn == null))
+               && (Value == obj.Value)
+               && Children == obj.Children
+               && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
+                   (CompoundType == null && obj.CompoundType == null));
     }
 }
