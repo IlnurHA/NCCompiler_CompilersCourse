@@ -3,7 +3,12 @@
 public class ScopeStack
 {
     public List<Scope> Scopes { get; set; } = new ();
-    
+
+    public ScopeStack()
+    {
+        Scopes.Add(new Scope());
+    }
+
     public void NewScope()
     {
         Scopes.Add(new Scope());

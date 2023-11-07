@@ -9,4 +9,6 @@ public enum MyType
     Function,
     Structure,
     Array,
+    PrimitiveType,
+    Unary,
 }

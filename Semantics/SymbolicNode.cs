@@ -19,7 +19,7 @@ public class SymbolicNode
     public List<SymbolicNode> Children { get; set; }
 
 
-    public SymbolicNode(MyType myType, List<SymbolicNode> children, string? name = null,
+    public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
         Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
         Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null)
     {
@@ -30,6 +30,6 @@ public class SymbolicNode
         FuncArguments = funcArguments;
         FuncReturn = funcReturn;
         Value = value;
-        Children = children;
+        Children = children ?? new List<SymbolicNode>();
     }
 }

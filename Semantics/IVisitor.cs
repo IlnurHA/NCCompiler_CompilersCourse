@@ -5,5 +5,5 @@ namespace NCCompiler_CompilersCourse.Semantics;
 interface IVisitor
 {
     void Visit(ComplexNode node);
-    T VisitLeaf<T>(LeafNode<T> node);
+    SymbolicNode VisitLeaf<T>(LeafNode<T> node);
 }
