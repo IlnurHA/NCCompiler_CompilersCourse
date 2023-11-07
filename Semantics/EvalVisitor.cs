@@ -15,30 +15,30 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationIdenType:
                 var identifierNode = UniversalVisit(node.Children[0]);
                 var typeNode = UniversalVisit(node.Children[1]);
-                
+
                 // If type node is Primitive Type [!TODO for any type]
                 if (typeNode.MyType != MyType.PrimitiveType) throw new Exception("Unexpected type");
                 if (identifierNode.MyType != MyType.Undefined) throw new Exception("Unexpected type");
 
                 identifierNode.MyType = GetTypeFromPrimitiveType((typeNode.Value as string)!);
-                
+
                 ScopeStack.AddVariable(identifierNode);
                 return identifierNode;
             case NodeTag.VariableDeclarationIdenExpr:
                 var identifier = UniversalVisit(node.Children[0]);
                 var expr = UniversalVisit(node.Children[1]);
 
-                if (identifier.MyType != MyType.Undefined) throw new Exception("Unexpected type"); 
-                
+                if (identifier.MyType != MyType.Undefined) throw new Exception("Unexpected type");
+
                 identifier.MyType = expr.MyType;
 
                 ScopeStack.AddVariable(identifier);
-                return new SymbolicNode(myType: MyType.Undefined, new List<SymbolicNode>{identifier, expr});
+                return new SymbolicNode(myType: MyType.Undefined, new List<SymbolicNode> { identifier, expr });
             case NodeTag.VariableDeclarationFull:
                 var idDeclFull = UniversalVisit(node.Children[0]);
                 var typeDeclFull = UniversalVisit(node.Children[1]);
                 var exprDeclFull = UniversalVisit(node.Children[2]);
-                
+
                 if (idDeclFull.MyType != MyType.Undefined) throw new Exception("Unexpected type");
 
                 // For primitive type [!TODO]
@@ -60,8 +60,80 @@ class EvalVisitor : IVisitor
                     throw new Exception($"Cannot make array with non integral size");
 
                 return new SymbolicNode(MyType.CompoundType, compoundType: typeArrType,
-                    children: new List<SymbolicNode> {exprArrType});
+                    children: new List<SymbolicNode> { exprArrType });
+            case NodeTag.Plus or NodeTag.Minus or NodeTag.Mul or NodeTag.Div or NodeTag.Rem or NodeTag.Eq or NodeTag.Ne
+                or NodeTag.Le or
+                NodeTag.Lt or NodeTag.Ge or NodeTag.Gt or NodeTag.And or NodeTag.Or or NodeTag.Xor:
+                return _visitBinaryOperations(node);
         }
+    }
+
+    private static Dictionary<MyType, HashSet<NodeTag>> _createAllowedOperations()
+    {
+        // TODO - check if all filled correctly
+        HashSet<NodeTag> numbersSet = new()
+        {
+            NodeTag.Plus, NodeTag.Minus, NodeTag.Mul, NodeTag.Div, NodeTag.Rem, NodeTag.Eq, NodeTag.Ne, NodeTag.Le,
+            NodeTag.Lt, NodeTag.Ge, NodeTag.Gt,
+        };
+        HashSet<NodeTag> boolsSet = new()
+        {
+            NodeTag.And, NodeTag.Or, NodeTag.Xor,
+        };
+        Dictionary<MyType, HashSet<NodeTag>> allowedOperations = new()
+        {
+            { MyType.Integer, numbersSet },
+            { MyType.Real, numbersSet },
+            { MyType.Boolean, boolsSet },
+        };
+        return allowedOperations;
+    }
+
+    private Dictionary<MyType, HashSet<NodeTag>> _allowedOperations = _createAllowedOperations();
+
+    private void _checkOperationAllowance(MyType operandsType, NodeTag operationType)
+    {
+        if (_allowedOperations.TryGetValue(operandsType, out var set) && set.Contains(operationType))
+        {
+            // everything is ok
+        }
+        else
+        {
+            throw new Exception($"Operation {operationType} can't be performed on operands with type {operandsType}");
+        }
+    }
+
+    private void _checkDivision(SymbolicNode dividerOperand)
+    {
+        if (dividerOperand.Value != null && (double)dividerOperand.Value == 0)
+        {
+            throw new Exception("Error: Division by zero");
+        }
+    }
+
+    private SymbolicNode _visitBinaryOperations(ComplexNode node)
+    {
+        var operand1 = UniversalVisit(node.Children[0]);
+        var operand2 = UniversalVisit(node.Children[1]);
+        if (operand1.MyType != operand2.MyType)
+        {
+            throw new Exception(
+                $"Operation performed on operands with different types: {operand1.MyType}, {operand2.MyType}");
+        }
+
+        var operandsType = operand1.MyType;
+        _checkOperationAllowance(operandsType, node.NodeTag);
+
+        // TODO - add simplifying tree if both operands are compile-time constants
+        // switch (node.NodeTag)...
+        switch (node.NodeTag)
+        {
+            case NodeTag.Div or NodeTag.Rem:
+                _checkDivision(operand2);
+                break;
+        }
+
+        return new SymbolicNode(operandsType, new List<SymbolicNode> { operand1, operand2 });
     }
 
     private MyType GetTypeFromPrimitiveType(string value)
@@ -74,7 +146,7 @@ class EvalVisitor : IVisitor
             _ => throw new Exception("Unexpected Primitive Type"),
         };
     }
- 
+
     private SymbolicNode UniversalVisit(Node node)
     {
         return node switch
