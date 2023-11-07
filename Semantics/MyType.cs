@@ -9,11 +9,10 @@ public enum MyType
     Function,
     Structure,
     Array,
+    Range,
+    ReverseRange,
+    ForLoop,
     PrimitiveType,
     Unary,
     CompoundType,
-    Expressions,
-    Return,
-    Break,
-    ForEachLoop
 }
