@@ -19,12 +19,14 @@ public class SymbolicNode
     public List<SymbolicNode> Children { get; set; }
 
     public SymbolicNode? CompoundType { get; set; }
+    
+    public bool? IsDeclared { get; set; }
 
 
     public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
         Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
         Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null,
-        SymbolicNode? compoundType = null)
+        SymbolicNode? compoundType = null, bool? isDeclared = null)
     {
         MyType = myType;
         Name = name;
@@ -35,6 +37,7 @@ public class SymbolicNode
         Value = value;
         Children = children ?? new List<SymbolicNode>();
         CompoundType = compoundType;
+        IsDeclared = isDeclared;
     }
 
     public bool Equals(SymbolicNode? obj)
@@ -50,6 +53,7 @@ public class SymbolicNode
                && (Value == obj.Value)
                && Children == obj.Children
                && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
-                   (CompoundType == null && obj.CompoundType == null));
+                   (CompoundType == null && obj.CompoundType == null))
+               && IsDeclared == obj.IsDeclared;
     }
 }

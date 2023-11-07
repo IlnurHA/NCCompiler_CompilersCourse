@@ -141,6 +141,14 @@ class EvalVisitor : IVisitor
                     case (MyType.Boolean, MyType.Boolean):
                     case (MyType.Boolean, MyType.Integer): // No checks during compile time
                         break;
+                    case (MyType.CompoundType, MyType.CompoundType):
+                        if (!modPrimaryAssignment.CompoundType!.Equals(exprAssignment.CompoundType!))
+                        {
+                            throw new Exception(
+                                $"Unexpected type in assignment statement ({modPrimaryAssignment.MyType}, {exprAssignment.MyType})");
+                        }
+
+                        break;
                     default:
                         throw new Exception(
                             $"Unexpected type in assignment statement ({modPrimaryAssignment.MyType}, {exprAssignment.MyType})");
