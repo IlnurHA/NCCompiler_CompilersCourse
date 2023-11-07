@@ -67,7 +67,25 @@ class EvalVisitor : IVisitor
                 return _visitBinaryOperations(node);
             case NodeTag.NotInteger or NodeTag.SignToInteger or NodeTag.SignToDouble:
                 return _visitUnaryOperations(node);
-            
+            case NodeTag.ModifiablePrimaryGettingSize or NodeTag.ModifiablePrimaryGettingField
+                or NodeTag.ModifiablePrimaryGettingValueFromArray:
+                return _visitModifiablePrimary(node);
+            case NodeTag.ArrayConst:
+                var exprs = UniversalVisit(node.Children[0]);
+                // check that all elements in the array has the same type
+                var arrayElements = exprs.Children;
+                if (arrayElements.Count == 0)
+                {
+                    return new SymbolicNode(MyType.Array, arrayElements: arrayElements);
+                }
+
+                var arrayElementType = arrayElements[0].MyType;
+                var arrayElementCompoundType = arrayElements[0].CompoundType;
+                var arrayElementArrayElementType = arrayElements[0].ArrayElements
+                foreach (var e in arrayElements)
+                {
+                    
+                }
         }
     }
 
@@ -168,8 +186,73 @@ class EvalVisitor : IVisitor
             default:
                 throw new Exception($"Trying to process unary operation. Actual type: {node.NodeTag}");
         }
+
         _checkOperationAllowance(number.MyType, node.NodeTag);
         return new SymbolicNode(operationType, children: children);
+    }
+
+    private SymbolicNode _visitModifiablePrimary(ComplexNode node)
+    {
+        var modifiablePrimary = UniversalVisit(node.Children[0]);
+        var arg2 = UniversalVisit(node.Children[1]);
+        switch (node.NodeTag)
+        {
+            case NodeTag.ModifiablePrimaryGettingSize:
+                if (modifiablePrimary.MyType != MyType.Array)
+                {
+                    throw new Exception(
+                        $"Error: Trying to get size not from array, but from {modifiablePrimary.MyType}");
+                }
+
+                // TODO - does identifier that is array has type MyType.Array?
+                // TODO - what if struct has a field called size
+                return new SymbolicNode(MyType.Integer, new List<SymbolicNode> { modifiablePrimary, arg2 });
+
+
+            case NodeTag.ModifiablePrimaryGettingField:
+                if (modifiablePrimary.MyType != MyType.CompoundType)
+                {
+                    throw new Exception("Trying to get a field not from a struct");
+                }
+
+                var fieldName = arg2.Name ??
+                                throw new Exception("Something wrong with struct field name. It's not in the tree");
+
+                if (!(modifiablePrimary.StructFields?.ContainsKey(fieldName) ?? false))
+                {
+                    throw new Exception(
+                        $"Struct {modifiablePrimary.CompoundType!.Name} doesn't have a field called {arg2.Name}");
+                }
+
+                return new SymbolicNode(arg2.MyType, new List<SymbolicNode> { modifiablePrimary, arg2 });
+
+
+            case NodeTag.ModifiablePrimaryGettingValueFromArray:
+                if (modifiablePrimary.MyType != MyType.CompoundType || modifiablePrimary.CompoundType?.ArrayElements == null)
+                {
+                    throw new Exception(
+                        $"Error: Trying to get an array element not from array, but from {modifiablePrimary.MyType}");
+                }
+
+                // TODO - check out of range if index is a compile time constant
+                var arrayLen = modifiablePrimary.ArrayElements!.Count;
+                if (arrayLen < 1)
+                {
+                    throw new Exception("Index out of range: array length is 0");
+                }
+
+                var arrayElement = modifiablePrimary.ArrayElements![0];
+                if (arg2.MyType != MyType.Integer)
+                {
+                    throw new Exception($"Array index type is not integer, but {arg2.MyType}");
+                }
+
+                return new SymbolicNode(arrayElement.MyType, new List<SymbolicNode> { modifiablePrimary, arg2 },
+                    structFields: arrayElement.StructFields, arrayElements: arrayElement.ArrayElements,
+                    value: arrayElement.Value, compoundType: arrayElement.CompoundType);
+            default:
+                throw new Exception($"Trying to visit {node.NodeTag} as ModifiablePrimary");
+        }
     }
 
     private MyType GetTypeFromPrimitiveType(string value)
