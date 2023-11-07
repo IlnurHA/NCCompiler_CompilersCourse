@@ -18,10 +18,12 @@ public class SymbolicNode
 
     public List<SymbolicNode> Children { get; set; }
 
+    public SymbolicNode? CompoundType { get; set; }
+
 
     public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
         Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
-        Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null)
+        Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null, SymbolicNode? compoundType = null)
     {
         MyType = myType;
         Name = name;
@@ -31,5 +33,6 @@ public class SymbolicNode
         FuncReturn = funcReturn;
         Value = value;
         Children = children ?? new List<SymbolicNode>();
+        CompoundType = compoundType;
     }
 }

@@ -37,4 +37,9 @@ public class ScopeStack
     {
         Scopes[^1].AddVariable(node);
     }
+
+    public Scope GetLastScope()
+    {
+        return Scopes.Last();
+    }
 }

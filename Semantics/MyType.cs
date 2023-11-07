@@ -11,4 +11,5 @@ public enum MyType
     Array,
     PrimitiveType,
     Unary,
+    CompoundType,
 }

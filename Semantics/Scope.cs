@@ -16,6 +16,11 @@ public class Scope
     {
         return Variables.TryGetValue(name, out var variable) ? variable : null;
     }
+    
+    public Boolean HasVariable(string name)
+    {
+        return Variables.TryGetValue(name, out var variable);
+    }
 
     public void AddVariable(SymbolicNode node)
     {
@@ -24,7 +29,16 @@ public class Scope
             throw new Exception("Trying to save not variable as a variable");
         }
 
-        Variables.Add(node.Name, node);
+        if (Variables.TryGetValue(node.Name, out var variable))
+        {
+            if (variable.MyType != node.MyType)
+            {
+                throw new Exception("Cannot define variable second time with different type");
+            }
+
+            Variables[node.Name] = node;
+        }
+        else Variables.Add(node.Name, node);
     }
     
     

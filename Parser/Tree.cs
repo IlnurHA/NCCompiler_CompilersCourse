@@ -94,7 +94,7 @@ namespace NCCompiler_CompilersCourse.Parser
         readonly NodeTag _tag;
         public NodeTag Tag => _tag;
         
-        public MyType? MyType { get; set; }
+        public NodeTag NodeTag { get; set; }
 
         protected Node(NodeTag tag)
         {
