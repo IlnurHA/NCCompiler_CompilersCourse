@@ -2,12 +2,6 @@
 
 namespace NCCompiler_CompilersCourse.Parser
 {
-    internal enum MyType
-    {
-        Integer,
-        Real,
-        Boolean,
-    }
     internal enum NodeTag
     {
         Program,
