@@ -258,7 +258,94 @@ class EvalVisitor : IVisitor
                 
                 progs.Children.Add(decl);
                 return progs;
+            case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
+                or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
+                ScopeStack.NewScope(Scope.ScopeContext.Routine);
+                SymbolicNode idRoutineDecl = UniversalVisit(node.Children[0]);
+                SymbolicNode? parametersRoutineDecl = null;
+                SymbolicNode? typeRoutineDecl = null;
+                SymbolicNode bodyRoutineDecl;
+                switch (node.NodeTag)
+                {
+                    case NodeTag.RoutineDeclarationWithTypeAndParams:
+                        parametersRoutineDecl = UniversalVisit(node.Children[1]);
+                        typeRoutineDecl = UniversalVisit(node.Children[2]);
+                        bodyRoutineDecl = UniversalVisit(node.Children[3]);
+                        break;
+                    case NodeTag.RoutineDeclarationWithType:
+                        typeRoutineDecl = UniversalVisit(node.Children[1]);
+                        bodyRoutineDecl = UniversalVisit(node.Children[2]);
+                        break;
+                    case NodeTag.RoutineDeclarationWithParams:
+                        parametersRoutineDecl = UniversalVisit(node.Children[1]);
+                        bodyRoutineDecl = UniversalVisit(node.Children[2]);
+                        break;
+                    default:
+                        bodyRoutineDecl = UniversalVisit(node.Children[1]);
+                        break;
+                }
+
+                // For primitive type [!TODO]
+                if (typeRoutineDecl != null)
+                {
+                    var typeRoutineDeclMyType = GetTypeFromPrimitiveType((typeRoutineDecl.Value as string)!);
+                    if (bodyRoutineDecl.MyType != typeRoutineDeclMyType)
+                        throw new Exception(
+                            $"Type of declared routine doesn't match with expression type ({typeRoutineDeclMyType}, {bodyRoutineDecl.MyType})");
+                }
+
+                idRoutineDecl.FuncArguments = new();
+                if (parametersRoutineDecl != null)
+                    foreach (SymbolicNode parameter in parametersRoutineDecl.Children)
+                        idRoutineDecl.FuncArguments[parameter.Name!] = parameter;
+                idRoutineDecl.MyType = bodyRoutineDecl.MyType;
+                idRoutineDecl.Children.Add(bodyRoutineDecl);
+                ScopeStack.DeleteScope();
+                ScopeStack.AddVariable(idRoutineDecl);
+                return idRoutineDecl;
+            case NodeTag.ParametersContinuous:
+                var parametersParametersContinuous = UniversalVisit(node.Children[0]);
+                var parameterDeclarationParametersContinuous = UniversalVisit(node.Children[1]);
+                parametersParametersContinuous.Children.AddRange(parameterDeclarationParametersContinuous.Children);
+                return new SymbolicNode(myType: MyType.CompoundType, parametersParametersContinuous.Children);
+            case NodeTag.ParameterDeclaration:
+                var idParameterDeclaration = UniversalVisit(node.Children[0]);
+                var typeParameterDeclaration = UniversalVisit(node.Children[1]);
+                // TODO: Add structure and array support
+                ScopeStack.AddVariable(idParameterDeclaration);
+                return new SymbolicNode(myType: MyType.CompoundType, new List<SymbolicNode> { idParameterDeclaration });
+            case NodeTag.WhileLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var expressionWhile = UniversalVisit(node.Children[0]);
+                var bodyWhile = UniversalVisit(node.Children[1]);
+                if (expressionWhile.MyType != MyType.Boolean)
+                    throw new Exception("While loop condition type must be boolean!");
+                ScopeStack.DeleteScope();
+                return new SymbolicNode(myType: MyType.Undefined,
+                    new List<SymbolicNode> { expressionWhile, bodyWhile });
+            case NodeTag.ForLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var iterIdForLoop = UniversalVisit(node.Children[0]);
+                var rangeForLoop = UniversalVisit(node.Children[1]);
+                if (rangeForLoop.MyType is not (MyType.Range or MyType.ReverseRange))
+                    throw new Exception($"Type of range {rangeForLoop.MyType} doesn't match with any range type");
+                iterIdForLoop.MyType = MyType.Integer;
+                ScopeStack.AddVariable(iterIdForLoop);
+                var bodyForLoop = UniversalVisit(node.Children[2]);
+                ScopeStack.DeleteScope();
+                return new SymbolicNode(myType: MyType.ForLoop,
+                    new List<SymbolicNode> { iterIdForLoop, rangeForLoop, bodyForLoop });
+            case NodeTag.RangeReverse or NodeTag.Range:
+                var fromRange = UniversalVisit(node.Children[0]);
+                var toRange = UniversalVisit(node.Children[1]);
+                if (fromRange.MyType != MyType.Integer || toRange.MyType != MyType.Integer)
+                    throw new Exception(
+                        $"Boundaries of range have incorrect type (From: {fromRange.MyType} To: {toRange.MyType}");
+                return new SymbolicNode(myType: node.Tag == NodeTag.Range ? MyType.Range : MyType.ReverseRange,
+                    new List<SymbolicNode> { fromRange, toRange });
         }
+
+        throw new Exception($"Unexpected node tag {node.NodeTag}");
     }
 
     private bool CheckCompoundType(SymbolicNode? compoundTypeA, SymbolicNode? compoundTypeB)
