@@ -12,6 +12,7 @@ public class SymbolicNode
 
     public Dictionary<string, SymbolicNode>? StructFields { get; set; }
     public List<SymbolicNode>? ArrayElements { get; set; }
+    public SymbolicNode? ArraySize;
     public Dictionary<string, SymbolicNode>? FuncArguments { get; set; }
     public SymbolicNode? FuncReturn { get; set; }
     public object? Value { get; set; }
@@ -20,13 +21,13 @@ public class SymbolicNode
 
     public SymbolicNode? CompoundType { get; set; }
     
-    public bool? IsDeclared { get; set; }
+    public bool? IsInitialized { get; set; }
 
 
     public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
         Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
         Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null,
-        SymbolicNode? compoundType = null, bool? isDeclared = null)
+        SymbolicNode? compoundType = null, bool? isInitialized = null, SymbolicNode? arraySize = null)
     {
         MyType = myType;
         Name = name;
@@ -37,7 +38,8 @@ public class SymbolicNode
         Value = value;
         Children = children ?? new List<SymbolicNode>();
         CompoundType = compoundType;
-        IsDeclared = isDeclared;
+        IsInitialized = isInitialized;
+        ArraySize = arraySize;
     }
 
     public bool Equals(SymbolicNode? obj)
@@ -54,6 +56,7 @@ public class SymbolicNode
                && Children == obj.Children
                && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
                    (CompoundType == null && obj.CompoundType == null))
-               && IsDeclared == obj.IsDeclared;
+               && IsInitialized == obj.IsInitialized
+               && ArraySize == obj.ArraySize;
     }
 }

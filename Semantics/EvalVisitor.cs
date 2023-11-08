@@ -28,6 +28,7 @@ class EvalVisitor : IVisitor
                     identifierNode.CompoundType = typeNode;
                 }
 
+                identifierNode.IsInitialized = false;
                 ScopeStack.AddVariable(identifierNode);
                 return identifierNode;
             case NodeTag.VariableDeclarationIdenExpr:
@@ -38,7 +39,9 @@ class EvalVisitor : IVisitor
                     throw new Exception($"Unexpected type ({identifier.MyType})");
 
                 identifier.MyType = expr.MyType;
+                if (expr.MyType == MyType.CompoundType) identifier.CompoundType = expr.CompoundType;
                 identifier.Value = expr;
+                identifier.IsInitialized = true;
 
                 ScopeStack.AddVariable(identifier);
                 return new SymbolicNode(myType: expr.MyType);
@@ -56,7 +59,7 @@ class EvalVisitor : IVisitor
                     throw new Exception(
                         $"Type of declared variable doesn't match with expression type ({typeDeclFullMyType}, {exprDeclFull.MyType})");
                 if (typeDeclFullMyType == MyType.CompoundType &&
-                    !CheckCompoundType(typeDeclFull.CompoundType, exprDeclFull.CompoundType))
+                    !CheckCompoundType(typeDeclFull, exprDeclFull.CompoundType))
                 {
                     throw new Exception(
                         $"Type of declared variable doesn't match with expression type ({typeDeclFullMyType}, {exprDeclFull.MyType})");
@@ -66,8 +69,10 @@ class EvalVisitor : IVisitor
                 idDeclFull.Value = exprDeclFull;
                 if (exprDeclFull.MyType == MyType.CompoundType)
                 {
-                    idDeclFull.CompoundType = typeDeclFull.CompoundType;
+                    idDeclFull.CompoundType = typeDeclFull;
                 }
+
+                idDeclFull.IsInitialized = true;
 
                 ScopeStack.AddVariable(idDeclFull);
                 return idDeclFull;
@@ -83,11 +88,11 @@ class EvalVisitor : IVisitor
                     value: exprArrType);
             case NodeTag.RecordType:
                 var varRecType = UniversalVisit(node.Children[0]);
-                return new SymbolicNode(MyType.CompoundType, compoundType: varRecType);
+                return new SymbolicNode(MyType.CompoundType, structFields: GetStructFields(varRecType));
             case NodeTag.VariableDeclarations:
                 if (node.Children.Length == 0)
                 {
-                    return new SymbolicNode(MyType.CompoundType, new List<SymbolicNode>());
+                    return new SymbolicNode(MyType.VariableDeclarations, new List<SymbolicNode>());
                 }
 
                 var varDeclarations = UniversalVisit(node.Children[0]);
@@ -142,7 +147,7 @@ class EvalVisitor : IVisitor
                     case (MyType.Boolean, MyType.Integer): // No checks during compile time
                         break;
                     case (MyType.CompoundType, MyType.CompoundType):
-                        if (!modPrimaryAssignment.CompoundType!.Equals(exprAssignment.CompoundType!))
+                        if (!modPrimaryAssignment.CompoundType!.Equals(exprAssignment.CompoundType))
                         {
                             throw new Exception(
                                 $"Unexpected type in assignment statement ({modPrimaryAssignment.MyType}, {exprAssignment.MyType})");
@@ -154,6 +159,7 @@ class EvalVisitor : IVisitor
                             $"Unexpected type in assignment statement ({modPrimaryAssignment.MyType}, {exprAssignment.MyType})");
                 }
 
+                modPrimaryAssignment.IsInitialized = true;
                 modPrimaryAssignment.Value = exprAssignment;
                 ScopeStack.AddVariable(modPrimaryAssignment);
                 return modPrimaryAssignment;
@@ -189,20 +195,27 @@ class EvalVisitor : IVisitor
 
                 if (currentBody.MyType == MyType.Return)
                 {
-                    MyType newType = (currentBody.Value! as SymbolicNode)!.MyType;
-                    if (bodyCont.MyType != MyType.Undefined && bodyCont.MyType != newType)
+                    var returnExpr = (currentBody.Value! as SymbolicNode)!;
+                    MyType newType = returnExpr.MyType;
+                    if (bodyCont.MyType != MyType.Undefined && bodyCont.MyType != newType ||
+                        (bodyCont.MyType == MyType.CompoundType &&
+                         !bodyCont.CompoundType!.Equals(currentBody.CompoundType)))
                     {
                         throw new Exception($"Types of returns didn't match ({bodyCont.MyType}, {newType})");
                     }
 
-                    if (bodyCont.MyType == MyType.Undefined) bodyCont.MyType = newType;
+                    if (bodyCont.MyType == MyType.Undefined)
+                    {
+                        bodyCont.MyType = newType;
+                        if (newType == MyType.CompoundType) bodyCont.CompoundType = returnExpr.CompoundType;
+                    }
+
                     if (!ScopeStack.HasRoutineScope()) throw new Exception("Return without routine scope");
                 }
 
                 if (currentBody.MyType == MyType.Break)
                 {
-                    if (ScopeStack.GetLastScope().ScopeContextVar is not (Scope.ScopeContext.Loop
-                        or Scope.ScopeContext.IfStatement))
+                    if (!ScopeStack.HasLoopScope())
                     {
                         throw new Exception("Cannot break from the given context");
                     }
@@ -239,14 +252,16 @@ class EvalVisitor : IVisitor
 
                 if (fromForEachLoop.MyType != MyType.CompoundType)
                     throw new Exception($"Cannot iterate through {fromForEachLoop.MyType}");
-                if (fromForEachLoop.CompoundType == null || fromForEachLoop.CompoundType.MyType != MyType.Array)
+                if (fromForEachLoop.CompoundType == null || fromForEachLoop.CompoundType.ArrayElements == null)
                     throw new Exception("Cannot iterate through non-array type");
 
                 idForEachLoop.MyType = fromForEachLoop.CompoundType.MyType;
                 if (fromForEachLoop.CompoundType.MyType == MyType.CompoundType)
                 {
-                    idForEachLoop.CompoundType = fromForEachLoop.CompoundType.CompoundType;
+                    idForEachLoop.CompoundType = fromForEachLoop.CompoundType;
                 }
+
+                idForEachLoop.IsInitialized = true;
 
                 ScopeStack.AddVariable(idForEachLoop);
                 var bodyForEachLoop = UniversalVisit(node.Children[2]);
@@ -284,11 +299,13 @@ class EvalVisitor : IVisitor
                     var arrayElementCompoundType = arrayElements[0].CompoundType;
                     foreach (var e in arrayElements)
                     {
-                        if (e.MyType != arrayElementType || (e.MyType == MyType.CompoundType && arrayElementCompoundType!.Equals(e.CompoundType)))
+                        if (e.MyType != arrayElementType || (e.MyType == MyType.CompoundType &&
+                                                             arrayElementCompoundType!.Equals(e.CompoundType)))
                             throw new Exception(
                                 $"Expected variables in array to be in the same type ({arrayElementType}, {e.MyType})");
                     }
                 }
+
                 return new SymbolicNode(MyType.Array, arrayElements: arrayElements);
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
                 or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
@@ -317,11 +334,15 @@ class EvalVisitor : IVisitor
                         break;
                 }
 
-                // For primitive type [!TODO]
                 if (typeRoutineDecl != null)
                 {
-                    var typeRoutineDeclMyType = GetTypeFromPrimitiveType((typeRoutineDecl.Value as string)!);
-                    if (bodyRoutineDecl.MyType != typeRoutineDeclMyType)
+                    var typeRoutineDeclMyType = MyType.Undefined;
+                    if (typeRoutineDecl.MyType == MyType.PrimitiveType)
+                        typeRoutineDeclMyType = GetTypeFromPrimitiveType((typeRoutineDecl.Value as string)!);
+
+                    if (bodyRoutineDecl.MyType != typeRoutineDeclMyType ||
+                        (typeRoutineDecl.MyType == MyType.CompoundType &&
+                         typeRoutineDecl.CompoundType!.Equals(bodyRoutineDecl.CompoundType)))
                         throw new Exception(
                             $"Type of declared routine doesn't match with expression type ({typeRoutineDeclMyType}, {bodyRoutineDecl.MyType})");
                 }
@@ -343,6 +364,12 @@ class EvalVisitor : IVisitor
             case NodeTag.ParameterDeclaration:
                 var idParameterDeclaration = UniversalVisit(node.Children[0]);
                 var typeParameterDeclaration = UniversalVisit(node.Children[1]);
+
+                idParameterDeclaration.MyType = typeParameterDeclaration.MyType;
+                if (typeParameterDeclaration.MyType == MyType.CompoundType)
+                {
+                }
+
                 // TODO: Add structure and array support
                 ScopeStack.AddVariable(idParameterDeclaration);
                 return new SymbolicNode(myType: MyType.CompoundType, new List<SymbolicNode> {idParameterDeclaration});
@@ -362,6 +389,7 @@ class EvalVisitor : IVisitor
                 if (rangeForLoop.MyType is not (MyType.Range or MyType.ReverseRange))
                     throw new Exception($"Type of range {rangeForLoop.MyType} doesn't match with any range type");
                 iterIdForLoop.MyType = MyType.Integer;
+                iterIdForLoop.IsInitialized = true;
                 ScopeStack.AddVariable(iterIdForLoop);
                 var bodyForLoop = UniversalVisit(node.Children[2]);
                 ScopeStack.DeleteScope();
@@ -378,6 +406,18 @@ class EvalVisitor : IVisitor
         }
 
         throw new Exception($"Unexpected node tag {node.NodeTag}");
+    }
+
+    private Dictionary<string, SymbolicNode> GetStructFields(SymbolicNode node)
+    {
+        if (node.MyType != MyType.VariableDeclarations) throw new Exception($"Unexpected Type {node.MyType}");
+        var toReturn = new Dictionary<string, SymbolicNode>();
+        foreach (var field in node.Children)
+        {
+            toReturn.Add(field.Name!, field);
+        }
+
+        return toReturn;
     }
 
     private static Dictionary<MyType, HashSet<NodeTag>> _createAllowedOperations()
@@ -432,7 +472,8 @@ class EvalVisitor : IVisitor
     {
         var operand1 = UniversalVisit(node.Children[0]);
         var operand2 = UniversalVisit(node.Children[1]);
-        if (operand1.MyType != operand2.MyType)
+        if (operand1.MyType != operand2.MyType || operand1.MyType == MyType.CompoundType &&
+            !operand1.CompoundType!.Equals(operand2.CompoundType))
         {
             throw new Exception(
                 $"Operation performed on operands with different types: {operand1.MyType}, {operand2.MyType}");
@@ -462,7 +503,13 @@ class EvalVisitor : IVisitor
         {
             case NodeTag.NotInteger:
                 number = UniversalVisit(node.Children[0]);
-                // TODO - check not 5
+                if (number.MyType != MyType.Integer)
+                {
+                    throw new Exception($"Unsupported operation 'not' for {number.MyType}");
+                }
+
+                if ((int) number.Value! != 0 && (int) number.Value! != 1)
+                    throw new Exception($"Unsupported operation 'not' for integer value {(int) number.Value!}");
                 operationType = MyType.Boolean;
                 children.Add(number);
                 break;
@@ -472,6 +519,10 @@ class EvalVisitor : IVisitor
                 children.Add(sign);
                 children.Add(number);
                 // TODO - unary operations are now only supported for number literals
+
+                if (number.MyType is not (MyType.Real or MyType.Integer))
+                    throw new Exception($"Unsupported unary operation on {number.MyType}");
+
                 operationType = number.MyType;
                 break;
             default:
@@ -489,14 +540,13 @@ class EvalVisitor : IVisitor
         switch (node.NodeTag)
         {
             case NodeTag.ModifiablePrimaryGettingSize:
-                if (modifiablePrimary.MyType != MyType.Array)
+                if (modifiablePrimary.MyType != MyType.CompoundType && modifiablePrimary.ArrayElements == null)
                 {
                     throw new Exception(
                         $"Error: Trying to get size not from array, but from {modifiablePrimary.MyType}");
                 }
 
-                // TODO - does identifier that is array has type MyType.Array?
-                // TODO - what if struct has a field called size
+                // TODO - does identifier that is array has type MyType.Array? - NO
                 return new SymbolicNode(MyType.Integer, new List<SymbolicNode> {modifiablePrimary, arg2});
 
 
@@ -526,12 +576,9 @@ class EvalVisitor : IVisitor
                         $"Error: Trying to get an array element not from array, but from {modifiablePrimary.MyType}");
                 }
 
-                // TODO - check out of range if index is a compile time constant
-                var arrayLen = modifiablePrimary.ArrayElements!.Count;
-                if (arrayLen < 1)
-                {
-                    throw new Exception("Index out of range: array length is 0");
-                }
+                // // TODO - check out of range if index is a compile time constant - Cannot Check
+                // if (modifiablePrimary.ArrayElements != null) ;
+                // SymbolicNode arrayLen = (modifiablePrimary.Value! as SymbolicNode)!;
 
                 var arrayElement = modifiablePrimary.ArrayElements![0];
                 if (arg2.MyType != MyType.Integer)

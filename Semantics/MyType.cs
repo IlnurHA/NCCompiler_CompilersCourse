@@ -19,4 +19,5 @@ public enum MyType
     Range,
     ReverseRange,
     ForLoop,
+    VariableDeclarations
 }

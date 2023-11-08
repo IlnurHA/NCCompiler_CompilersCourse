@@ -69,6 +69,19 @@ public class ScopeStack
         throw new Exception("No routine scopes yet");
     }
 
+    public bool HasLoopScope()
+    {
+        for (int i = Scopes.Count - 1; i >= 0; i--)
+        {
+            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Loop)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void PopUntilLastRoutineScope()
     {
         var (scope, index) = GetLastRoutineScope();
