@@ -28,6 +28,6 @@
       end
      end
   end
-  // assert res, 3 // OK
+  assert res, 3 // OK
   // mid should be 3
 end

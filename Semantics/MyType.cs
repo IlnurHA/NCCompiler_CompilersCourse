@@ -20,4 +20,6 @@ public enum MyType
     ReverseRange,
     ForLoop,
     VariableDeclarations,
+    Assert,
+    DeclaredType
 }

@@ -10,7 +10,7 @@ routine dec_to_bin(dec: integer): integer is
 end
 
 routine main() is
-  //assert dec_to_bin(31), 11111 // OK
-  //assert dec_to_bin(15), 1111 // OK
-  //assert dec_to_bin(32), 10000 // OK
+  assert dec_to_bin(31), 11111 // OK
+  assert dec_to_bin(15), 1111 // OK
+  assert dec_to_bin(32), 10000 // OK
 end

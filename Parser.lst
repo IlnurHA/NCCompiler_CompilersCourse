@@ -1,3 +1,14 @@
+
+// ==========================================================================
+//  GPPG error listing for yacc source file <./Parser/Parser.y - 08.11.2023 14:04:21>
+// ==========================================================================
+//  Version:  1.5.2
+//  Machine:  DESKTOP-803OF5N
+//  DateTime: 08.11.2023 14:05:14
+//  UserName: Ilnur
+// ==========================================================================
+
+
 /*
  *  This specification is for a version of the RealCalc example.
  *  This version creates a abstract syntax tree from the input,
@@ -30,7 +41,7 @@
 %YYSTYPE Node
 
 // Tokens without values
-%token ROUTINE ARRAY INTEGER IS VAR SIZE FOR FROM LOOP IF THEN ELSE END RETURN REAL IN ASSERT WHILE TYPE RECORD TRUE FALSE BOOLEAN FOREACH REVERSE BREAK
+%token ROUTINE ARRAY INTEGER IS VAR SIZE FOR FROM LOOP IF THEN ELSE END RETURN REAL IN ASSERT WHILE TYPE RECORD TRUE FALSE BOOLEAN FOREACH REVERSE
 
 // Tokens with values
 %token IDENTIFIER NUMBER FLOAT
@@ -51,6 +62,12 @@
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
+// Error: NonTerminal symbol "BREAK" has no productions
+// Warning: Terminating BREAK fixes the following size-1 NonTerminal set
+   // {BREAK}
+// Error: There are 1 non-terminating NonTerminal Symbols
+   //  {BREAK}
+// ---------------------------------------------------------------------
 Root : Program { RootNode = $1; } ;
 
 Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeComplexNode(NodeTag.ProgramSimpleDeclaration, $1, $2); }
@@ -234,4 +251,6 @@ public Parser(Lexer.Scanner s) : base(s) { }
 public Node RootNode;
 
 
+
+// ==========================================================================
 

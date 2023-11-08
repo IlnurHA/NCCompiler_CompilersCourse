@@ -15,6 +15,7 @@ public enum TokenType
     In, Assert,
     While, Type,
     Record, True, False, Boolean,
+    Break,
 
     // Tokens with values
     Identifier, Number, Float,

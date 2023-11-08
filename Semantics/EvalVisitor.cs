@@ -111,23 +111,38 @@ class EvalVisitor : IVisitor
                 var routine = ScopeStack.FindVariable(idRoutineCall.Name!);
 
                 var counter = 0;
-                if (routine.FuncArguments!.Count != exprsRoutineCall.Children.Count)
-                {
-                    throw new Exception("Unexpected number of arguments");
-                }
 
-                foreach (var element in routine.FuncArguments!)
+                if (exprsRoutineCall.Value == null)
                 {
-                    if (!CheckRoutinesArgument(element, exprsRoutineCall.Children[counter]))
+                    if (routine.FuncArguments!.Count != exprsRoutineCall.Children.Count)
                     {
-                        throw new Exception($"Unexpected argument type ({element.Key}) in function");
+                        throw new Exception("Unexpected number of arguments");
                     }
 
-                    counter++;
+                    foreach (var element in routine.FuncArguments!)
+                    {
+                        if (!CheckRoutinesArgument(element, exprsRoutineCall.Children[counter]))
+                        {
+                            throw new Exception($"Unexpected argument type ({element.Key}) in function");
+                        }
+
+                        counter++;
+                    }
+                }
+                else
+                {
+                    if (routine.FuncArguments!.Count != 1) throw new Exception("Unexpected number of arguments");
+                    foreach (var element in routine.FuncArguments!)
+                    {
+                        if (!CheckRoutinesArgument(element, exprsRoutineCall))
+                        {
+                            throw new Exception($"Unexpected argument type ({element.Key}) in function");
+                        }
+                    }
                 }
 
                 // TODO - not sure
-                idRoutineCall.MyType = MyType.Function;
+                idRoutineCall.MyType = routine.FuncReturn!.MyType;
                 idRoutineCall.Children.Add(exprsRoutineCall);
                 return idRoutineCall;
 
@@ -178,6 +193,11 @@ class EvalVisitor : IVisitor
                 ScopeStack.AddVariable(modPrimaryAssignment);
                 return modPrimaryAssignment;
             case NodeTag.Return:
+                if (node.Children[0] == null)
+                {
+                    return new SymbolicNode(MyType.Return, value: new SymbolicNode(MyType.Undefined));
+                }
+
                 var returnValue = UniversalVisit(node.Children[0]);
 
                 return new SymbolicNode(MyType.Return, value: returnValue);
@@ -361,22 +381,20 @@ class EvalVisitor : IVisitor
                 }
 
                 if (bodyRoutineDecl == null)
-                {
                     bodyRoutineDecl = new SymbolicNode(MyType.Undefined);
-                }
+                if (typeRoutineDecl == null)
+                    typeRoutineDecl = new SymbolicNode(MyType.Undefined);
 
-                if (typeRoutineDecl != null)
-                {
-                    var typeRoutineDeclMyType = MyType.Undefined;
-                    if (typeRoutineDecl.MyType == MyType.PrimitiveType)
-                        typeRoutineDeclMyType = GetTypeFromPrimitiveType((typeRoutineDecl.Value as string)!);
+                var typeRoutineDeclMyType = MyType.Undefined;
+                if (typeRoutineDecl.MyType == MyType.PrimitiveType)
+                    typeRoutineDeclMyType = GetTypeFromPrimitiveType((typeRoutineDecl.Value as string)!);
 
-                    if (bodyRoutineDecl.MyType != typeRoutineDeclMyType ||
-                        (typeRoutineDecl.MyType == MyType.CompoundType &&
-                         typeRoutineDecl.Equals(bodyRoutineDecl.CompoundType)))
-                        throw new Exception(
-                            $"Type of declared routine doesn't match with expression type ({typeRoutineDeclMyType}, {bodyRoutineDecl.MyType})");
-                }
+                if (bodyRoutineDecl.MyType != typeRoutineDeclMyType ||
+                    (typeRoutineDecl.MyType == MyType.CompoundType &&
+                     typeRoutineDecl.Equals(bodyRoutineDecl.CompoundType)))
+                    throw new Exception(
+                        $"Type of declared routine doesn't match with expression type ({typeRoutineDeclMyType}, {bodyRoutineDecl.MyType})");
+
 
                 idRoutineDecl.FuncArguments = new();
                 if (parametersRoutineDecl != null)
@@ -388,6 +406,7 @@ class EvalVisitor : IVisitor
                     idRoutineDecl.CompoundType = bodyRoutineDecl.CompoundType;
                 }
 
+                idRoutineDecl.FuncReturn = new SymbolicNode(typeRoutineDeclMyType);
                 idRoutineDecl.Children.Add(bodyRoutineDecl);
                 ScopeStack.DeleteScope();
                 ScopeStack.AddVariable(idRoutineDecl);
@@ -448,6 +467,40 @@ class EvalVisitor : IVisitor
                         $"Boundaries of range have incorrect type (From: {fromRange.MyType} To: {toRange.MyType}");
                 return new SymbolicNode(myType: node.Tag == NodeTag.Range ? MyType.Range : MyType.ReverseRange,
                     new List<SymbolicNode> {fromRange, toRange});
+
+            case NodeTag.Break:
+                return new SymbolicNode(MyType.Break);
+
+            case NodeTag.Assert:
+                var nodeChildA = node.Children[0];
+                var nodeChildB = node.Children[1];
+
+                if (nodeChildA == null && nodeChildB == null) return new SymbolicNode(MyType.Assert);
+                if (nodeChildA == null || nodeChildB == null)
+                    throw new Exception("Expected similar types in Assert Expressions");
+
+                var processedNodeA = UniversalVisit(nodeChildA);
+                var processedNodeB = UniversalVisit(nodeChildB);
+
+                if (processedNodeA.MyType != processedNodeB.MyType || processedNodeA.MyType == MyType.CompoundType &&
+                    !CheckCompoundType(processedNodeA.CompoundType, processedNodeB.CompoundType))
+                {
+                    throw new Exception($"Expected similar types ({processedNodeA.MyType}, {processedNodeB.MyType})");
+                }
+
+                return new SymbolicNode(MyType.Assert, new List<SymbolicNode>
+                {
+                    processedNodeA, processedNodeB
+                });
+            // case NodeTag.TypeDeclaration:
+            //     var idTypeDeclaration = UniversalVisit(node.Children[0]!);
+            //     var typeTypeDeclaration = UniversalVisit(node.Children[1]!);
+            //     
+            //     idTypeDeclaration.MyType = MyType.DeclaredType;
+            //     idTypeDeclaration.CompoundType = typeTypeDeclaration;
+            //     
+            //     ScopeStack.AddVariable(idTypeDeclaration);
+            //     return idTypeDeclaration;
         }
 
         throw new Exception($"Unexpected node tag {node.Tag}");
@@ -493,11 +546,16 @@ class EvalVisitor : IVisitor
 
     private Dictionary<MyType, HashSet<NodeTag>> _allowedOperations = _createAllowedOperations();
 
-    private void _checkOperationAllowance(MyType operandsType, NodeTag operationType)
+    private MyType _checkOperationAllowance(MyType operandsType, NodeTag operationType)
     {
         if (_allowedOperations.TryGetValue(operandsType, out var set) && set.Contains(operationType))
         {
             // everything is ok
+            return operationType switch
+            {
+                NodeTag.Eq or NodeTag.Ne or NodeTag.Le or NodeTag.Lt or NodeTag.Ge or NodeTag.Gt => MyType.Boolean,
+                _ => operandsType,
+            };
         }
         else
         {
@@ -686,6 +744,7 @@ class EvalVisitor : IVisitor
         {
             Console.WriteLine(node);
         }
+
         return node switch
         {
             ComplexNode complexNode => Visit(complexNode),

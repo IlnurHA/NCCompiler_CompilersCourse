@@ -73,6 +73,7 @@ class Lexer
             "reverse" => TokenType.Reverse,
             "foreach" => TokenType.Foreach,
             "not" => TokenType.Not,
+            "break" => TokenType.Break,
 
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
@@ -143,6 +144,7 @@ class Lexer
             TokenType.UnaryPlus => Tokens.UNARY_PLUS,
             TokenType.UnaryMinus => Tokens.UNARY_MINUS,
             TokenType.Not => Tokens.NOT,
+            TokenType.Break => Tokens.BREAK,
             _ => throw new Exception($"Unknown type {tokenType}")
         };
     }
@@ -222,7 +224,11 @@ class Lexer
                        (char.IsDigit(_input[lexemeLength + _currentPosition]) ||
                         (_input[lexemeLength + _currentPosition] == '.' && !isDot)))
                 {
-                    if (_input[lexemeLength + _currentPosition] == '.') isDot = true;
+                    if (_input[lexemeLength + _currentPosition] == '.')
+                    {
+                        isDot = true;
+                        if (!char.IsDigit(_input[lexemeLength + _currentPosition])) break;
+                    }
                     lexemeLength++;
                 }
             }

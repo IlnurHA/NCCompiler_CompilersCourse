@@ -46,17 +46,14 @@ public class SymbolicNode
     {
         if (obj == null) return false;
         return MyType == obj.MyType
-               && Name == obj.Name
-               && StructFields == obj.StructFields
-               && ArrayElements == obj.ArrayElements
-               && FuncArguments == obj.FuncArguments
+               && ((StructFields == null && obj.StructFields == null) || (StructFields != null && StructFields!.Equals(obj.StructFields)))
+               && ((ArrayElements == null && obj.ArrayElements == null) || (ArrayElements != null && ArrayElements!.Equals(obj.ArrayElements)))
+               && ((FuncArguments == null && obj.FuncArguments == null) || (FuncArguments != null && FuncArguments!.Equals(obj.FuncArguments)))
                && ((FuncReturn != null && FuncReturn.Equals(obj.FuncReturn)) ||
                    (FuncReturn == null && obj.FuncReturn == null))
-               && (Value == obj.Value)
-               && Children == obj.Children
                && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
                    (CompoundType == null && obj.CompoundType == null))
                && IsInitialized == obj.IsInitialized
-               && ArraySize == obj.ArraySize;
+               && ((ArraySize == null && obj.ArraySize == null) || (ArraySize != null && ArraySize!.Equals(obj.ArraySize)));
     }
 }

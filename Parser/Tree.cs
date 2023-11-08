@@ -60,7 +60,8 @@ namespace NCCompiler_CompilersCourse.Parser
         Unary,
         Return,
         RoutineDeclarationWithTypeAndParams,
-        RoutineDeclarationWithParams
+        RoutineDeclarationWithParams,
+        Break
     }
 
     internal abstract class Node
