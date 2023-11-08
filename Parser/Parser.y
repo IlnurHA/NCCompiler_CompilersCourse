@@ -51,6 +51,8 @@
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
 %%
+Root : Program { RootNode = $1; } ;
+
 Program : /* empty */ | Program SimpleDeclaration   { $$ = Node.MakeComplexNode(NodeTag.ProgramSimpleDeclaration, $1, $2); }
     | Program RoutineDeclaration                    { $$ = Node.MakeComplexNode(NodeTag.ProgramRoutineDeclaration, $1, $2);}
     ;
@@ -227,4 +229,8 @@ Assert : ASSERT Expression COMMA Expression {$$ = Node.MakeComplexNode(NodeTag.A
 %%
 
 public Parser(Lexer.Scanner s) : base(s) { }
+
+public Node RootNode;
+
+
 

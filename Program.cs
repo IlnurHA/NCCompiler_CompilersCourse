@@ -1,4 +1,5 @@
 ﻿using NCCompiler_CompilersCourse.Lexer;
+using NCCompiler_CompilersCourse.Semantics;
 
 namespace NCCompiler_CompilersCourse;
 
@@ -14,6 +15,13 @@ class Program
         Lexer.Scanner scanner = new Lexer.Scanner(new Lexer.Lexer(contents));
         Parser.Parser parser = new Parser.Parser(scanner);
         var res = parser.Parse();
+        if (res)
+        {
+            var rootNode = parser.RootNode;
+            EvalVisitor visitor = new EvalVisitor();
+            var rootSymbolic = visitor.UniversalVisit(rootNode);
+            Console.WriteLine(res);
+        }
         Console.WriteLine(res);
     }
 }

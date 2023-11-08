@@ -73,7 +73,7 @@ namespace NCCompiler_CompilersCourse.Parser
         readonly NodeTag _tag;
         public NodeTag Tag => _tag;
         
-        public NodeTag NodeTag { get; set; }
+        // public NodeTag Tag { get; set; }
 
         protected Node(NodeTag tag)
         {
@@ -85,9 +85,9 @@ namespace NCCompiler_CompilersCourse.Parser
 
     internal class ComplexNode : Node
     {
-        public Node[] Children { get; }
+        public Node?[] Children { get; }
 
-        public ComplexNode(NodeTag nodeTag, params Node[] nodes) : base(nodeTag)
+        public ComplexNode(NodeTag nodeTag, params Node?[] nodes) : base(nodeTag)
         {
             Children = nodes;
         }

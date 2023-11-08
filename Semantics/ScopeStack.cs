@@ -32,6 +32,21 @@ public class ScopeStack
 
         throw new Exception($"The variable {name} is not declared");
     }
+    
+    public bool HasVariable(string name)
+    {
+        for (int i = Scopes.Count - 1; i >= 0; i--)
+        {
+            var result = Scopes[i].FindVariable(name);
+            if (result != null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    
 
     public void AddVariable(SymbolicNode node)
     {
