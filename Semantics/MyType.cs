@@ -15,5 +15,8 @@ public enum MyType
     Expressions,
     Return,
     Break,
-    ForEachLoop
+    ForEachLoop,
+    Range,
+    ReverseRange,
+    ForLoop,
 }
