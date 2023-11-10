@@ -2,63 +2,35 @@ namespace NCCompiler_CompilersCourse.Lexer;
 
 public enum TokenType
 {
-    // Tokens without values
-    Routine,
-    Array,
-    Integer,
-    Is, Var,
-    Size, For,
-    From, Loop,
-    If, Then,
-    Else, End,
-    Return, Real,
-    In, Assert,
-    While, Type,
-    Record, True, False, Boolean,
-    Break,
-
-    // Tokens with values
-    Identifier, Number, Float,
+    // Common Keywords
+    End, LeftBracket, RightBracket, LeftSquaredBracket,
+    RightSquaredBracket, Comma, Is, Colon,
     
-    // Other tokens
-    EndOfLine,
-    Colon, Dot, TwoDots,
-    Comma,
+    // Primitive Types
+    Integer, Boolean, Real, Undefined,
     
-    // // Comments
-    // MultilineCommentStart,
-    // MultilineCommentEnd,
-    // SinglelineComment,
+    // User-defined types
+    Array, Size, Reversed, Sorted, Record, Dot,
     
-    AssignmentOperator,
+    // Routines
+    Routine, Return,
     
-    // Boolean operators
-    And, Or, Xor,
-    EqComparison,
-    GtComparison,
-    GeComparison,
-    LtComparison,
-    LeComparison,
-    NeComparison,
+    // Declarations
+    Var, Type,
     
-    // Arithmetic operators
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Remainder,
-    UnaryMinus,
-    UnaryPlus,
-    Reverse,
-    Sorted,
-    Foreach,
-    Reversed,
-    Not,
+    // Statements
+    AssignmentOperator, While, Loop, For, In, Reverse,
+    TwoDots, Foreach, From, If, Else, Then, Break,
     
+    // Expressions
+    And, Or, Xor, LeComparison,
+    LtComparison, GeComparison,
+    GtComparison, EqComparison,
+    NeComparison, Multiply,
+    Divide, Remainder, Plus,
+    Minus, Not, UnaryPlus, UnaryMinus,
     
-    // Brackets
-    LeftBracket,
-    RightBracket,
-    LeftSquaredBracket,
-    RightSquaredBracket,
+    // Values
+    Identifier, IntegralLiteral,
+    True, False, RealLiteral,
 }
