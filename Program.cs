@@ -27,6 +27,7 @@ class Program
             Lexer.Scanner scanner = new Lexer.Scanner(lexer);
             Parser.Parser parser = new Parser.Parser(scanner);
             var res = parser.Parse();
+            Console.WriteLine($"Syntax analysis: {res}");
             // if (res)
             // {
             //     var rootNode = parser.RootNode;
@@ -34,7 +35,6 @@ class Program
             //     var rootSymbolic = visitor.UniversalVisit(rootNode);
             //     Console.WriteLine(res);
             // }
-            Console.WriteLine(res);
         }
     }
 }
