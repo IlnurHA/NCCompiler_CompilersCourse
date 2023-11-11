@@ -131,9 +131,15 @@ public class ArrayTypeNode : TypeNode
 
 public class StructTypeNode : TypeNode
 {
-    public Dictionary<string, ValueNode> StructFields { get; set; }
-    public string name { get; set; }
+    public Dictionary<string, VarNode> StructFields { get; set; }
+    public new string Name { get; set; }
     public new MyType MyType { get; set; } = MyType.CompoundType;
+
+    public StructTypeNode(Dictionary<string, VarNode> structFields, string name)
+    {
+        Name = name;
+        StructFields = structFields;
+    } 
 }
 
 public class UserDefinedTypeNode : TypeNode
@@ -231,5 +237,32 @@ public class GetByIndexNode : TypedSymbolicNode
     {
         ArrayVarNode = varNode;
         Index = index;
+    }
+}
+
+public class StructVarNode : VarNode
+{
+    public Dictionary<string, VarNode> Fields { get; set; }
+    public StructVarNode(string name, Dictionary<string, VarNode> fields, StructTypeNode structTypeNode) : base(name)
+    {
+        Fields = fields;
+        Type = structTypeNode;
+    }
+
+    public VarNode GetField(string fieldName)
+    {
+        if (!Fields.ContainsKey(fieldName)) throw new Exception("in ");
+        return Fields[fieldName];
+    }
+}
+public class GetFieldNode : TypedSymbolicNode
+{
+    public StructVarNode StructVarNode { get; set; }
+    public string FieldName { get; set; }
+
+    GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.GetField(fieldName).Type)
+    {
+        StructVarNode = structVarNode;
+        FieldName = fieldName;
     }
 }
