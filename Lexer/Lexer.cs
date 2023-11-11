@@ -140,14 +140,17 @@ class Lexer
             TokenType.False => Tokens.FALSE,
             TokenType.Boolean => Tokens.BOOLEAN,
             TokenType.Identifier => Tokens.IDENTIFIER,
-            TokenType.IntegralLiteral => Tokens.NUMBER,
-            TokenType.RealLiteral => Tokens.FLOAT,
+            TokenType.IntegralLiteral => Tokens.INTEGRAL_LITERAL,
+            TokenType.RealLiteral => Tokens.REAL_LITERAL,
             TokenType.Reverse => Tokens.REVERSE,
             TokenType.Foreach => Tokens.FOREACH,
             TokenType.UnaryPlus => Tokens.UNARY_PLUS,
             TokenType.UnaryMinus => Tokens.UNARY_MINUS,
             TokenType.Not => Tokens.NOT,
             TokenType.Break => Tokens.BREAK,
+            TokenType.Undefined => Tokens.UNDEFINED,
+            TokenType.Reversed => Tokens.REVERSED,
+            TokenType.Sorted => Tokens.SORTED,
             _ => throw new Exception($"Unknown type {tokenType}")
         };
     }
