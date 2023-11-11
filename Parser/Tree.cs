@@ -31,7 +31,6 @@ namespace NCCompiler_CompilersCourse.Parser
         IfStatement,
         IfElseStatement,
         Cast,
-        ModifiablePrimaryGettingSize,
         ModifiablePrimaryGettingField,
         ModifiablePrimaryGettingValueFromArray,
         Assert,
@@ -41,7 +40,6 @@ namespace NCCompiler_CompilersCourse.Parser
         BooleanLiteral,
         SignToInteger,
         SignToDouble,
-        NotInteger,
         ArrayConst,
         And,
         Or,
@@ -83,7 +81,7 @@ namespace NCCompiler_CompilersCourse.Parser
             _tag = tag;
         }
 
-        public abstract void Accept(IVisitor visitor);
+        public abstract SymbolicNode Accept(IVisitor visitor);
     }
 
     internal class ComplexNode : Node
@@ -95,9 +93,9 @@ namespace NCCompiler_CompilersCourse.Parser
             Children = nodes;
         }
 
-        public override void Accept(IVisitor visitor)
+        public override SymbolicNode Accept(IVisitor visitor)
         {
-            visitor.Visit(this);
+            return visitor.Visit(this);
         }
     }
 
@@ -110,9 +108,9 @@ namespace NCCompiler_CompilersCourse.Parser
             Value = value;
         }
 
-        public override void Accept(IVisitor visitor)
+        public override SymbolicNode Accept(IVisitor visitor)
         {
-            visitor.VisitLeaf(this);
+            return visitor.VisitLeaf(this);
         }
     }
 }
