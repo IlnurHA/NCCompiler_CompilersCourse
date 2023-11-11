@@ -70,6 +70,20 @@ public abstract class SymbolicNode
     // public abstract SymbolicNode Accept(IVisitor visitor);
 }
 
+public class TypedSymbolicNode : SymbolicNode
+{
+    public TypeNode TypeNode { get; set; } = new TypeNode(MyType.Undefined);
+
+    public TypedSymbolicNode()
+    {
+    }
+
+    public TypedSymbolicNode(TypeNode typeNode)
+    {
+        TypeNode = typeNode;
+    }
+}
+
 public class TypeNode : SymbolicNode
 {
     public new MyType MyType { get; set; }
@@ -87,7 +101,7 @@ public class TypeNode : SymbolicNode
     public bool IsTheSame(Object anotherObject)
     {
         if (anotherObject.GetType() != typeof(TypeNode)) return false;
-        return MyType == ((TypeNode)anotherObject).MyType;
+        return MyType == ((TypeNode) anotherObject).MyType;
     }
 }
 
@@ -101,7 +115,7 @@ public class ArrayTypeNode : TypeNode
         ElementTypeNode = elementTypeNode;
         Size = size;
     }
-    
+
     public ArrayTypeNode(TypeNode elementTypeNode) : base(MyType.CompoundType)
     {
         ElementTypeNode = elementTypeNode;
@@ -188,12 +202,13 @@ public class OperationNode : SymbolicNode
 public class ArrayVarNode : VarNode
 {
     public List<ValueNode> Elements = new List<ValueNode>();
+
     public ArrayVarNode(string name, TypeNode elementTypeNode, int size) : base(name)
     {
         Elements.EnsureCapacity(size);
         Type = new ArrayTypeNode(elementTypeNode, size);
     }
-    
+
     public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
     {
         Elements = values;
@@ -204,5 +219,17 @@ public class ArrayVarNode : VarNode
     public ArrayVarNode(string name, TypeNode elementTypeNode) : base(name)
     {
         Type = new ArrayTypeNode(elementTypeNode);
+    }
+}
+
+public class GetByIndexNode : TypedSymbolicNode
+{
+    public ArrayVarNode ArrayVarNode { get; set; }
+    public ValueNode Index { get; set; }
+
+    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode) varNode.Type).ElementTypeNode)
+    {
+        ArrayVarNode = varNode;
+        Index = index;
     }
 }
