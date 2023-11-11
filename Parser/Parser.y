@@ -50,7 +50,6 @@
 // Brackets
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
- //
 %token SORTED REVERSED
  
 %%
@@ -114,6 +113,7 @@ VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
     ;
 
 ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeComplexNode(NodeTag.ArrayType, $3,  $5); }
+    | ARRAY LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET Type { $$ = Node.MakeComplexNode(NodeTag.ArrayTypeWithoutSize, $4); }
     ;
 
 Body :  /* empty */
@@ -162,8 +162,8 @@ IfStatement     : IF Expression THEN Body ELSE Body END { $$ = Node.MakeComplexN
                 | IF Expression THEN Body END           { $$ = Node.MakeComplexNode(NodeTag.IfStatement, $2, $4); }
                 ;
 
-Expression : /* empty */  
-    | Relation {$$ = $1;}
+Expression :
+    Relation {$$ = $1;}
     | Expression AND Relation {$$ = Node.MakeComplexNode(NodeTag.And, $1, $3);}
     | Expression OR Relation {$$ = Node.MakeComplexNode(NodeTag.Or, $1, $3);}
     | Expression XOR Relation {$$ = Node.MakeComplexNode(NodeTag.Xor, $1, $3);}
