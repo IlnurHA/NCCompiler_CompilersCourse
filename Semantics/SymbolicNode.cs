@@ -77,6 +77,11 @@ public class TypeNode : SymbolicNode
     {
         MyType = myType;
     }
+
+    public TypeNode()
+    {
+        MyType = MyType.Undefined;
+    }
 }
 
 public class ArrayTypeNode : TypeNode
@@ -84,18 +89,21 @@ public class ArrayTypeNode : TypeNode
     public TypeNode ElementTypeNode { get; }
     public int Size { get; set; }
     public List<ValueNode> elements;
+    public new MyType MyType { get; set; } = MyType.CompoundType;
 }
 
 public class StructTypeNode : TypeNode
 {
     public Dictionary<string, ValueNode> StructFields { get; set; }
     public string name { get; set; }
+    public new MyType MyType { get; set; } = MyType.CompoundType;
 }
 
 public class UserDefinedTypeNode : TypeNode
 {
     public TypeNode Type { get; set; }
     public string name { get; set; }
+    public new MyType MyType { get; set; } = MyType.DeclaredType;
 }
 
 public class ValueNode : SymbolicNode
