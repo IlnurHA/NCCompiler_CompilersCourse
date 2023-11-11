@@ -1,4 +1,5 @@
-﻿using NCCompiler_CompilersCourse.Parser;
+﻿using System.Collections;
+using NCCompiler_CompilersCourse.Parser;
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
@@ -82,14 +83,36 @@ public class TypeNode : SymbolicNode
     {
         MyType = MyType.Undefined;
     }
+
+    public bool IsTheSame(Object anotherObject)
+    {
+        if (anotherObject.GetType() != typeof(TypeNode)) return false;
+        return MyType == ((TypeNode)anotherObject).MyType;
+    }
 }
 
 public class ArrayTypeNode : TypeNode
 {
     public TypeNode ElementTypeNode { get; }
-    public int Size { get; set; }
-    public List<ValueNode> elements;
-    public new MyType MyType { get; set; } = MyType.CompoundType;
+    public int? Size { get; set; }
+
+    public ArrayTypeNode(TypeNode elementTypeNode, int size) : base(MyType.CompoundType)
+    {
+        ElementTypeNode = elementTypeNode;
+        Size = size;
+    }
+    
+    public ArrayTypeNode(TypeNode elementTypeNode) : base(MyType.CompoundType)
+    {
+        ElementTypeNode = elementTypeNode;
+    }
+
+    public new bool IsTheSame(Object anotherObject)
+    {
+        if (anotherObject.GetType() != typeof(ArrayTypeNode)) return false;
+        var tempObj = (ArrayTypeNode) anotherObject;
+        return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj) && Size == tempObj.Size;
+    }
 }
 
 public class StructTypeNode : TypeNode
@@ -159,5 +182,27 @@ public class OperationNode : SymbolicNode
     public OperationNode(OperationType operationType)
     {
         OperationType = operationType;
+    }
+}
+
+public class ArrayVarNode : VarNode
+{
+    public List<ValueNode> Elements = new List<ValueNode>();
+    public ArrayVarNode(string name, TypeNode elementTypeNode, int size) : base(name)
+    {
+        Elements.EnsureCapacity(size);
+        Type = new ArrayTypeNode(elementTypeNode, size);
+    }
+    
+    public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
+    {
+        Elements = values;
+        Type = new ArrayTypeNode(elementTypeNode, values.Count);
+    }
+
+    // For function parameters with arbitrary number of elements
+    public ArrayVarNode(string name, TypeNode elementTypeNode) : base(name)
+    {
+        Type = new ArrayTypeNode(elementTypeNode);
     }
 }
