@@ -12,4 +12,9 @@ public class Span
         PosBegin = posBegin;
         PosEnd = posEnd;
     }
+
+    public override string ToString()
+    {
+        return $"{LineNum}:{PosBegin}-{PosEnd}";
+    }
 }

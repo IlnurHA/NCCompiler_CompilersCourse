@@ -10,18 +10,27 @@ class Program
         string? fileName = Console.ReadLine();
         // while ((fileName = Console.ReadLine()) == null) { }
         // Console.WriteLine(fileName);
-        string contents = File.ReadAllText(fileName);
+        string contents = File.ReadAllText(fileName!);
         // Console.WriteLine(contents);
-        Lexer.Scanner scanner = new Lexer.Scanner(new Lexer.Lexer(contents));
-        Parser.Parser parser = new Parser.Parser(scanner);
-        var res = parser.Parse();
-        if (res)
+        Lexer.Lexer lexer = new Lexer.Lexer(contents);
+        
+        foreach (var token in lexer.GetTokens())
         {
-            var rootNode = parser.RootNode;
-            EvalVisitor visitor = new EvalVisitor();
-            var rootSymbolic = visitor.UniversalVisit(rootNode);
-            Console.WriteLine(res);
+            Console.WriteLine(
+                $"Token: {token.Type}, Lexeme: {token.Lexeme}, Value: {token.Value}, Span: {token.Span}"
+                );
         }
-        Console.WriteLine(res);
+
+        // Lexer.Scanner scanner = new Lexer.Scanner(new Lexer.Lexer(contents));
+        // Parser.Parser parser = new Parser.Parser(scanner);
+        // var res = parser.Parse();
+        // if (res)
+        // {
+        //     var rootNode = parser.RootNode;
+        //     EvalVisitor visitor = new EvalVisitor();
+        //     var rootSymbolic = visitor.UniversalVisit(rootNode);
+        //     Console.WriteLine(res);
+        // }
+        // Console.WriteLine(res);
     }
 }

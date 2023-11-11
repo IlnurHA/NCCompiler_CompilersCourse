@@ -4,7 +4,7 @@ public enum TokenType
 {
     // Common Keywords
     End, LeftBracket, RightBracket, LeftSquaredBracket,
-    RightSquaredBracket, Comma, Is, Colon,
+    RightSquaredBracket, Comma, Is, Colon, EOL,
     
     // Primitive Types
     Integer, Boolean, Real, Undefined,
@@ -21,6 +21,7 @@ public enum TokenType
     // Statements
     AssignmentOperator, While, Loop, For, In, Reverse,
     TwoDots, Foreach, From, If, Else, Then, Break,
+    Assert,
     
     // Expressions
     And, Or, Xor, LeComparison,

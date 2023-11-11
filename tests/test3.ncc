@@ -2,7 +2,7 @@
 routine dec_to_bin(dec: integer): integer is
   var bin: integer is 0
 
-  while true loop
+  while dec /= 0 loop
     bin := 10 * bin + dec % 2
     dec := dec / 2
   end

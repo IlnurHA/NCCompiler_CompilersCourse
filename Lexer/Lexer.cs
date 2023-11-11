@@ -30,7 +30,7 @@ class Lexer
             "[" => TokenType.LeftSquaredBracket,
             "]" => TokenType.RightSquaredBracket,
             "," => TokenType.Comma,
-            "\n" => TokenType.EndOfLine,
+            "\n" => TokenType.EOL,
             ":" => TokenType.Colon,
             "." => TokenType.Dot,
             ".." => TokenType.TwoDots,
@@ -74,13 +74,16 @@ class Lexer
             "foreach" => TokenType.Foreach,
             "not" => TokenType.Not,
             "break" => TokenType.Break,
+            "undefined" => TokenType.Undefined,
+            "reversed" => TokenType.Reversed,
+            "sorted" => TokenType.Sorted,
 
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
             var someVal when new Regex(@"^-?\d+$").IsMatch(someVal) =>
-                TokenType.Number,
+                TokenType.IntegralLiteral,
             var someVal when new Regex(@"^-?\d+\.?\d+$").IsMatch(someVal) =>
-                TokenType.Float,
+                TokenType.RealLiteral,
             _ => throw new NotImplementedException($"The {token} is not implemented")
         };
     }
@@ -99,7 +102,7 @@ class Lexer
             TokenType.LeftSquaredBracket => Tokens.LEFT_SQUARED_BRACKET,
             TokenType.RightSquaredBracket => Tokens.RIGHT_SQUARED_BRACKET,
             TokenType.Comma => Tokens.COMMA,
-            TokenType.EndOfLine => Tokens.EOL,
+            TokenType.EOL => Tokens.EOL,
             TokenType.Colon => Tokens.COLON,
             TokenType.Dot => Tokens.DOT,
             TokenType.TwoDots => Tokens.TWO_DOTS,
@@ -137,8 +140,8 @@ class Lexer
             TokenType.False => Tokens.FALSE,
             TokenType.Boolean => Tokens.BOOLEAN,
             TokenType.Identifier => Tokens.IDENTIFIER,
-            TokenType.Number => Tokens.NUMBER,
-            TokenType.Float => Tokens.FLOAT,
+            TokenType.IntegralLiteral => Tokens.NUMBER,
+            TokenType.RealLiteral => Tokens.FLOAT,
             TokenType.Reverse => Tokens.REVERSE,
             TokenType.Foreach => Tokens.FOREACH,
             TokenType.UnaryPlus => Tokens.UNARY_PLUS,
@@ -227,7 +230,11 @@ class Lexer
                     if (_input[lexemeLength + _currentPosition] == '.')
                     {
                         isDot = true;
-                        if (!char.IsDigit(_input[lexemeLength + _currentPosition])) break;
+                        if (!char.IsDigit(_input[lexemeLength + _currentPosition + 1]))
+                        {
+                            // lexemeLength--;
+                            break;
+                        }
                     }
                     lexemeLength++;
                 }
@@ -276,7 +283,7 @@ class Lexer
                 {
                     switch (prevToken.Type)
                     {
-                        case TokenType.Identifier or TokenType.Number or TokenType.Float or TokenType.RightBracket
+                        case TokenType.Identifier or TokenType.IntegralLiteral or TokenType.RealLiteral or TokenType.RightBracket
                             or TokenType.RightSquaredBracket or TokenType.Size:
                             tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
                             break;
@@ -300,7 +307,7 @@ class Lexer
                     posBegin: _currentPosition - _lastEolIndex,
                     posEnd: _currentPosition + lexemeLength - _lastEolIndex
                 ),
-                value: tokenType is TokenType.Number or TokenType.Float
+                value: tokenType is TokenType.IntegralLiteral or TokenType.RealLiteral
                     ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
                     : null
             );
@@ -345,10 +352,10 @@ class Scanner : AbstractScanner<Node, LexLocation>
                 case TokenType.UnaryPlus or TokenType.UnaryMinus:
                     yylval = new LeafNode<string>(NodeTag.Unary, token.Lexeme);
                     break;
-                case TokenType.Number:
+                case TokenType.IntegralLiteral:
                     yylval = new LeafNode<Int32>(NodeTag.IntegerLiteral, Convert.ToInt32(token.Value!));
                     break;
-                case TokenType.Float:
+                case TokenType.RealLiteral:
                     yylval = new LeafNode<Double>(NodeTag.RealLiteral, Convert.ToDouble(token.Value!));
                     break;
                 case TokenType.True or TokenType.False:
