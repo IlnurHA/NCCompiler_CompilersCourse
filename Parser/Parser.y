@@ -195,11 +195,11 @@ Summand : Primary { $$ = $1;}
     | LEFT_BRACKET Expression RIGHT_BRACKET { $$ = $2;}
     ;
 
-Primary   : Sign NUMBER {$$ = Node.MakeComplexNode(NodeTag.SignToInteger, $1, $2);}
-    | NOT NUMBER { $$ = Node.MakeComplexNode(NodeTag.NotInteger, $2);}
-    | NUMBER
-    | Sign FLOAT { $$ = Node.MakeComplexNode(NodeTag.SignToDouble, $1, $2);}
-    | FLOAT
+Primary   : Sign INTEGRAL_LITERAL {$$ = Node.MakeComplexNode(NodeTag.SignToInteger, $1, $2);}
+    | NOT INTEGRAL_LITERAL { $$ = Node.MakeComplexNode(NodeTag.NotInteger, $2);}
+    | INTEGRAL_LITERAL
+    | Sign REAL_LITERAL { $$ = Node.MakeComplexNode(NodeTag.SignToDouble, $1, $2);}
+    | REAL_LITERAL
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
     | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.ArrayConst, $2);}
