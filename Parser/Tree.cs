@@ -62,7 +62,8 @@ namespace NCCompiler_CompilersCourse.Parser
         RoutineDeclarationWithTypeAndParams,
         RoutineDeclarationWithParams,
         Break,
-        ArrayTypeWithoutSize
+        ArrayTypeWithoutSize,
+        NotExpression,
     }
 
     internal abstract class Node

@@ -137,7 +137,6 @@ Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.Mak
             ;
 
 RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1, $3); }
-                | IDENTIFIER {$$ = $1;}
                 ;
 
 Expressions     : Expression                    { $$ = $1; }
@@ -163,13 +162,16 @@ IfStatement     : IF Expression THEN Body ELSE Body END { $$ = Node.MakeComplexN
                 | IF Expression THEN Body END           { $$ = Node.MakeComplexNode(NodeTag.IfStatement, $2, $4); }
                 ;
 
-Expression :
+Expression : SubExpression { $$ = $1; }
+            | NOT SubExpression { $$ = Node.MakeComplexNode(NodeTag.NotExpression, $2); };
+
+SubExpression :
     Relation {$$ = $1;}
-    | Expression AND Relation {$$ = Node.MakeComplexNode(NodeTag.And, $1, $3);}
-    | Expression OR Relation {$$ = Node.MakeComplexNode(NodeTag.Or, $1, $3);}
-    | Expression XOR Relation {$$ = Node.MakeComplexNode(NodeTag.Xor, $1, $3);}
-    | Cast
+    | SubExpression AND Relation {$$ = Node.MakeComplexNode(NodeTag.And, $1, $3);}
+    | SubExpression OR Relation {$$ = Node.MakeComplexNode(NodeTag.Or, $1, $3);}
+    | SubExpression XOR Relation {$$ = Node.MakeComplexNode(NodeTag.Xor, $1, $3);}
     | RoutineCall { $$ = $1; }
+    | Cast
     ;
 
 Relation   : Simple {$$ = $1;}
@@ -197,15 +199,12 @@ Summand : Primary { $$ = $1;}
     ;
 
 Primary   : Sign INTEGRAL_LITERAL {$$ = Node.MakeComplexNode(NodeTag.SignToInteger, $1, $2);}
-    | NOT INTEGRAL_LITERAL { $$ = Node.MakeComplexNode(NodeTag.NotInteger, $2);}
     | INTEGRAL_LITERAL
     | Sign REAL_LITERAL { $$ = Node.MakeComplexNode(NodeTag.SignToDouble, $1, $2);}
     | REAL_LITERAL
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
     | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.ArrayConst, $2);}
-    // | NOT TRUE {}
-    // | NOT FALSE {}
     ;
 
 Sign : UNARY_PLUS
@@ -215,7 +214,8 @@ Sign : UNARY_PLUS
 Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeComplexNode(NodeTag.Cast, $1, $3); }
     ;
 
-ModifiablePrimary   : IDENTIFIER
+ModifiablePrimary :
+        IDENTIFIER
         | ModifiablePrimary DOT IDENTIFIER
         { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
         
