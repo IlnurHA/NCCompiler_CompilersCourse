@@ -2,7 +2,7 @@
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
-public class SymbolicNode
+public abstract class SymbolicNode
 {
     public MyType MyType { get; set; }
 
@@ -20,7 +20,7 @@ public class SymbolicNode
     public List<SymbolicNode> Children { get; set; }
 
     public SymbolicNode? CompoundType { get; set; }
-    
+
     public bool? IsInitialized { get; set; }
 
 
@@ -42,18 +42,114 @@ public class SymbolicNode
         ArraySize = arraySize;
     }
 
+    public SymbolicNode()
+    {
+        Children = new List<SymbolicNode>();
+    }
+
     public bool Equals(SymbolicNode? obj)
     {
         if (obj == null) return false;
         return MyType == obj.MyType
-               && ((StructFields == null && obj.StructFields == null) || (StructFields != null && StructFields!.Equals(obj.StructFields)))
-               && ((ArrayElements == null && obj.ArrayElements == null) || (ArrayElements != null && ArrayElements!.Equals(obj.ArrayElements)))
-               && ((FuncArguments == null && obj.FuncArguments == null) || (FuncArguments != null && FuncArguments!.Equals(obj.FuncArguments)))
+               && ((StructFields == null && obj.StructFields == null) ||
+                   (StructFields != null && StructFields!.Equals(obj.StructFields)))
+               && ((ArrayElements == null && obj.ArrayElements == null) ||
+                   (ArrayElements != null && ArrayElements!.Equals(obj.ArrayElements)))
+               && ((FuncArguments == null && obj.FuncArguments == null) ||
+                   (FuncArguments != null && FuncArguments!.Equals(obj.FuncArguments)))
                && ((FuncReturn != null && FuncReturn.Equals(obj.FuncReturn)) ||
                    (FuncReturn == null && obj.FuncReturn == null))
                && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
                    (CompoundType == null && obj.CompoundType == null))
                && IsInitialized == obj.IsInitialized
-               && ((ArraySize == null && obj.ArraySize == null) || (ArraySize != null && ArraySize!.Equals(obj.ArraySize)));
+               && ((ArraySize == null && obj.ArraySize == null) ||
+                   (ArraySize != null && ArraySize!.Equals(obj.ArraySize)));
+    }
+
+    // public abstract SymbolicNode Accept(IVisitor visitor);
+}
+
+public class TypeNode : SymbolicNode
+{
+    public new MyType MyType { get; set; }
+
+    public TypeNode(MyType myType)
+    {
+        MyType = myType;
+    }
+}
+
+public class ArrayTypeNode : TypeNode
+{
+    public TypeNode ElementTypeNode { get; }
+    public int Size { get; set; }
+    public List<ValueNode> elements;
+}
+
+public class StructTypeNode : TypeNode
+{
+    public Dictionary<string, ValueNode> StructFields { get; set; }
+    public string name { get; set; }
+}
+
+public class UserDefinedTypeNode : TypeNode
+{
+    public TypeNode Type { get; set; }
+    public string name { get; set; }
+}
+
+public class ValueNode : SymbolicNode
+{
+    public new Object? Value { get; set; }
+    public TypeNode Type { get; set; }
+
+    public ValueNode(Object? value, TypeNode type)
+    {
+        Value = value;
+        Type = type;
+    }
+
+    public ValueNode()
+    {
+        Value = null;
+        Type = new TypeNode(MyType.Undefined);
+    }
+}
+
+public class VarNode : ValueNode
+{
+    public new string Name { get; set; }
+    public bool IsInitialized { get; set; } = false;
+
+    public VarNode(string name)
+    {
+        Name = name;
+    }
+}
+
+public class StatementNode : SymbolicNode
+{
+    public TypeNode Type { get; set; }
+}
+
+public class BodyNode : SymbolicNode
+{
+    public TypeNode Type { get; set; }
+    public List<StatementNode> Statements { get; set; }
+}
+
+public class StatementWithBodyNode : StatementNode
+{
+    public BodyNode Body { get; set; }
+}
+
+public class OperationNode : SymbolicNode
+{
+    public OperationType OperationType { get; set; }
+    public List<ValueNode> operands { get; set; } = new List<ValueNode>();
+
+    public OperationNode(OperationType operationType)
+    {
+        OperationType = operationType;
     }
 }
