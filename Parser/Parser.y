@@ -114,6 +114,7 @@ VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
 
 ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeComplexNode(NodeTag.ArrayType, $3,  $5); }
     | ARRAY LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET Type { $$ = Node.MakeComplexNode(NodeTag.ArrayTypeWithoutSize, $4); }
+    // If function parameter
     ;
 
 Body :  /* empty */
@@ -214,17 +215,11 @@ Sign : UNARY_PLUS
 Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeComplexNode(NodeTag.Cast, $1, $3); }
     ;
 
-ModifiablePrimary   : ModifiablePrimaryWithoutSize  { $$ = $1; }
-        | ModifiablePrimaryWithoutSize DOT SIZE     { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingSize, $1, $3); }
-        ;
-
-ModifiablePrimaryWithoutSize   : IDENTIFIER
-        | RoutineCall { $$ = $1; }
-        | ModifiablePrimaryWithoutSize DOT IDENTIFIER
+ModifiablePrimary   : IDENTIFIER
+        | ModifiablePrimary DOT IDENTIFIER
         { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingField, $1, $3); }
         
-        
-        | ModifiablePrimaryWithoutSize LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET
+        | ModifiablePrimary LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET
         { $$ = Node.MakeComplexNode(NodeTag.ModifiablePrimaryGettingValueFromArray, $1, $3); }
         ;
           
