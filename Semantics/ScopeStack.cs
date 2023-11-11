@@ -19,6 +19,11 @@ public class ScopeStack
         Scopes.RemoveAt(Scopes.Count - 1);
     }
 
+    public List<VarNode> GetUnusedVariablesInLastScope()
+    {
+        return Scopes[^1].GetUnusedVariables();
+    }
+
     public SymbolicNode FindVariable(string name)
     {
         for (int i = Scopes.Count - 1; i >= 0; i--)
@@ -48,7 +53,7 @@ public class ScopeStack
     
     
 
-    public void AddVariable(SymbolicNode node)
+    public void AddVariable(VarNode node)
     {
         Scopes[^1].AddVariable(node);
     }
