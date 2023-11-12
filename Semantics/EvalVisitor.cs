@@ -20,6 +20,17 @@ class EvalVisitor : IVisitor
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
                 return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr).GetValueNode();
+            case NodeTag.ArrayGetSorted:
+                var arrGetSorted = node.Children[0]!.Accept(this);
+                if (arrGetSorted.GetType() != typeof(ArrayVarNode))
+                    throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
+                return new SortedArrayNode((ArrayVarNode) arrGetSorted);
+            case NodeTag.ArrayGetSize:
+                var arrGetSize = node.Children[0]!.Accept(this);
+                return new ArraySizeNode((ArrayVarNode) arrGetSize);
+            case NodeTag.ArrayGetReversed:
+                var arrGetReversed = node.Children[0]!.Accept(this);
+                return new ReversedArrayNode((ArrayVarNode) arrGetReversed);
         }
 
         throw new Exception("Unimplemented");

@@ -72,7 +72,7 @@ public abstract class SymbolicNode
 
 public class TypedSymbolicNode : SymbolicNode
 {
-    public TypeNode TypeNode { get; set; } = new TypeNode(MyType.Undefined);
+    public TypeNode Type { get; set; } = new TypeNode(MyType.Undefined);
 
     public TypedSymbolicNode()
     {
@@ -80,7 +80,7 @@ public class TypedSymbolicNode : SymbolicNode
 
     public TypedSymbolicNode(TypeNode typeNode)
     {
-        TypeNode = typeNode;
+        Type = typeNode;
     }
 }
 
@@ -333,5 +333,40 @@ public class GetFieldNode : CompoundGettingNode
         var node = StructVarNode!.GetField(FieldName!);
         node.Child = this;
         return node;
+    }
+}
+
+
+public class ArrayFunctions : TypedSymbolicNode
+{
+    public ArrayVarNode Array { get; set; }
+    public ArrayFunctions(ArrayVarNode arrayVarNode)
+    {
+        Array = arrayVarNode;
+    }
+}
+public class SortedArrayNode : ArrayFunctions
+{
+    public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    {
+        Type = arrayVarNode.Type;
+    }
+}
+
+public class ArraySizeNode : ArrayFunctions
+{
+
+    public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    {
+        Type = new TypeNode(MyType.Integer); 
+    }
+
+}
+
+public class ReversedArrayNode : ArrayFunctions
+{
+    public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    {
+        Type = arrayVarNode.Type; 
     }
 }
