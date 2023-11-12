@@ -12,26 +12,17 @@ class EvalVisitor : IVisitor
     {
         switch (node.Tag)
         {
-
-
+            case NodeTag.ModifiablePrimaryGettingField:
+                var modPrimField = node.Children[0]!.Accept(this);
+                var idField = node.Children[1]!.Accept(this);
+                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField).GetValueNode();
+            case NodeTag.ModifiablePrimaryGettingValueFromArray:
+                var arrFromArr = node.Children[0]!.Accept(this);
+                var indexFromArr = node.Children[1]!.Accept(this);
+                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr).GetValueNode();
         }
-    }
 
-
-
-
-
-    public SymbolicNode UniversalVisit(Node node)
-    {
-        return node switch
-        {
-            ComplexNode complexNode => Visit(complexNode),
-            LeafNode<string> leafNode => VisitLeaf(leafNode),
-            LeafNode<double> leafNode => VisitLeaf(leafNode),
-            LeafNode<int> leafNode => VisitLeaf(leafNode),
-            LeafNode<bool> leafNode => VisitLeaf(leafNode),
-            _ => throw new Exception($"Cannot find out Node type {node}")
-        };
+        throw new Exception("Unimplemented");
     }
 
     public SymbolicNode VisitLeaf<T>(LeafNode<T> node)
@@ -47,11 +38,12 @@ class EvalVisitor : IVisitor
             case NodeTag.PrimitiveType:
                 return new TypeNode(_getPrimitiveType((node.Value! as string)!));
             case NodeTag.Unary:
-                return new OperationNode((node.Value! as string)! == "-" ? OperationType.UnaryMinus : OperationType.UnaryPlus);
+                return new OperationNode((node.Value! as string)! == "-"
+                    ? OperationType.UnaryMinus
+                    : OperationType.UnaryPlus);
             default:
                 throw new Exception($"Unexpected node tag for visiting Leaf node {node.Tag}");
         }
-
     }
 
     private MyType _getPrimitiveType(string primitiveType)
