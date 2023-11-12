@@ -139,7 +139,7 @@ public class StructTypeNode : TypeNode
     {
         Name = name;
         StructFields = structFields;
-    } 
+    }
 }
 
 public class UserDefinedTypeNode : TypeNode
@@ -154,6 +154,9 @@ public class ValueNode : SymbolicNode
     public new Object? Value { get; set; }
     public TypeNode Type { get; set; }
 
+    public bool isSubVar { get; set; } = false;
+    public CompoundGettingNode? Child { get; set; } = null;
+
     public ValueNode(Object? value, TypeNode type)
     {
         Value = value;
@@ -167,9 +170,16 @@ public class ValueNode : SymbolicNode
     }
 }
 
+public class ConstNode : ValueNode
+{
+    public ConstNode(Object? value, TypeNode typeNode) : base(value, typeNode)
+    {
+    }
+}
+
 public class VarNode : ValueNode
 {
-    public new string Name { get; set; }
+    public new string? Name { get; set; }
     public bool IsInitialized { get; set; } = false;
 
     public VarNode(string name)
@@ -226,9 +236,43 @@ public class ArrayVarNode : VarNode
     {
         Type = new ArrayTypeNode(elementTypeNode);
     }
+
+    public ArrayVarNode(ArrayTypeNode elementTypeNode) : base(null)
+    {
+        Type = elementTypeNode;
+    }
 }
 
-public class GetByIndexNode : TypedSymbolicNode
+public class CompoundGettingNode : TypedSymbolicNode
+{
+    public CompoundGettingNode(TypeNode typeNode) : base(typeNode)
+    {
+    }
+
+    public ValueNode GetValueNodeFromType(TypeNode typeNode)
+    {
+        switch (typeNode)
+        {
+            case ArrayTypeNode arrayTypeNode:
+                return new ArrayVarNode(arrayTypeNode);
+            case StructTypeNode structTypeNode:
+                return new StructVarNode(structTypeNode.Name, structTypeNode.StructFields, structTypeNode);
+            case UserDefinedTypeNode userDefinedTypeNode:
+                return GetValueNodeFromType(userDefinedTypeNode);
+            case { } simpleTypeNode:
+                return new ValueNode(null, simpleTypeNode);
+        }
+
+        throw new Exception("Got null type node");
+    }
+
+    public ValueNode GetValueNode()
+    {
+        throw new Exception("This function is not supposed to be called");
+    }
+}
+
+public class GetByIndexNode : CompoundGettingNode
 {
     public ArrayVarNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
@@ -238,11 +282,19 @@ public class GetByIndexNode : TypedSymbolicNode
         ArrayVarNode = varNode;
         Index = index;
     }
+
+    public new ValueNode GetValueNode()
+    {
+        var node = GetValueNodeFromType(ArrayVarNode.Type);
+        node.Child = this;
+        return node;
+    }
 }
 
 public class StructVarNode : VarNode
 {
     public Dictionary<string, VarNode> Fields { get; set; }
+
     public StructVarNode(string name, Dictionary<string, VarNode> fields, StructTypeNode structTypeNode) : base(name)
     {
         Fields = fields;
@@ -251,11 +303,13 @@ public class StructVarNode : VarNode
 
     public VarNode GetField(string fieldName)
     {
-        if (!Fields.ContainsKey(fieldName)) throw new Exception("in ");
+        if (!Fields.ContainsKey(fieldName))
+            throw new Exception($"Trying to get undefined field {fieldName} from {Name} struct");
         return Fields[fieldName];
     }
 }
-public class GetFieldNode : TypedSymbolicNode
+
+public class GetFieldNode : CompoundGettingNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }
@@ -264,5 +318,12 @@ public class GetFieldNode : TypedSymbolicNode
     {
         StructVarNode = structVarNode;
         FieldName = fieldName;
+    }
+
+    public new ValueNode GetValueNode()
+    {
+        var node = StructVarNode!.GetField(FieldName!);
+        node.Child = this;
+        return node;
     }
 }
