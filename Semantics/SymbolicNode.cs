@@ -98,10 +98,9 @@ public class TypeNode : SymbolicNode
         MyType = MyType.Undefined;
     }
 
-    public bool IsTheSame(Object anotherObject)
+    public bool IsTheSame(TypeNode anotherObject)
     {
-        if (anotherObject.GetType() != typeof(TypeNode)) return false;
-        return MyType == ((TypeNode) anotherObject).MyType;
+        return MyType == anotherObject.MyType;
     }
 }
 
@@ -121,7 +120,7 @@ public class ArrayTypeNode : TypeNode
         ElementTypeNode = elementTypeNode;
     }
 
-    public new bool IsTheSame(Object anotherObject)
+    public new bool IsTheSame(TypeNode anotherObject)
     {
         if (anotherObject.GetType() != typeof(ArrayTypeNode)) return false;
         var tempObj = (ArrayTypeNode) anotherObject;
@@ -147,6 +146,11 @@ public class UserDefinedTypeNode : TypeNode
     public TypeNode Type { get; set; }
     public string name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
+
+    public bool IsTheSame(TypeNode anotherObject)
+    {
+        return Type.IsTheSame(anotherObject);
+    }
 }
 
 public class ValueNode : SymbolicNode
@@ -172,7 +176,7 @@ public class ValueNode : SymbolicNode
 
 public class ConstNode : ValueNode
 {
-    public ConstNode(Object? value, TypeNode typeNode) : base(value, typeNode)
+    public ConstNode(Object value, TypeNode typeNode) : base(value, typeNode)
     {
     }
 }
@@ -188,14 +192,12 @@ public class VarNode : ValueNode
     }
 }
 
-public class StatementNode : SymbolicNode
+public class StatementNode : TypedSymbolicNode
 {
-    public TypeNode Type { get; set; }
 }
 
-public class BodyNode : SymbolicNode
+public class BodyNode : TypedSymbolicNode
 {
-    public TypeNode Type { get; set; }
     public List<StatementNode> Statements { get; set; }
 }
 
@@ -332,6 +334,7 @@ public class GetFieldNode : CompoundGettingNode
     {
         var node = StructVarNode!.GetField(FieldName!);
         node.Child = this;
+        node.isSubVar = true;
         return node;
     }
 }

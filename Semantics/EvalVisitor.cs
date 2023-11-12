@@ -36,14 +36,23 @@ class EvalVisitor : IVisitor
         throw new Exception("Unimplemented");
     }
 
+    // public SymbolicNode VisitWithCast(ComplexNode node)
+    // {
+    //     switch (node.Tag)
+    //     {
+    //         case NodeTag.Assignment:
+    //             
+    //     }
+    // }
+
     public SymbolicNode VisitLeaf<T>(LeafNode<T> node)
     {
         switch (node.Tag)
         {
             case NodeTag.IntegerLiteral:
-                return new ValueNode(node.Value!, new TypeNode(MyType.Integer));
+                return new ConstNode(node.Value!, new TypeNode(MyType.Integer));
             case NodeTag.RealLiteral:
-                return new ValueNode(node.Value!, new TypeNode(MyType.Real));
+                return new ConstNode(node.Value!, new TypeNode(MyType.Real));
             case NodeTag.Identifier:
                 return new VarNode((node.Value! as string)!);
             case NodeTag.PrimitiveType:

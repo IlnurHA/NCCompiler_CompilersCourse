@@ -44,17 +44,11 @@ public class Scope
             throw new Exception("Trying to save not variable as a variable");
         }
 
-        if (Variables.TryGetValue(node.Name, out var result))
+        if (Variables.TryGetValue(node.Name, out _))
         {
-            var (variable, _) = result;
-            if (!CheckTypes(variable.Type, node.Type))
-            {
-                throw new Exception($"Cannot define variable second time with different type: {node.Name} - type1 {variable.Type}, type2 {node.Type}");
-            }
-
-            Variables[node.Name] = (node, 0);
+            throw new Exception($"Cannot define variable second time: {node.Name}");
         }
-        else Variables.Add(node.Name, (node, 0));
+        Variables.Add(node.Name, (node, 0));
     }
 
     public void UpdateValue(string name, ValueNode value)
