@@ -313,11 +313,19 @@ public class GetFieldNode : CompoundGettingNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }
+    public VarNode? FieldNode { get; set; } = null;
 
-    GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.GetField(fieldName).Type)
+    public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.GetField(fieldName).Type)
     {
         StructVarNode = structVarNode;
         FieldName = fieldName;
+    }
+    
+    public GetFieldNode(StructVarNode structVarNode, VarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name!).Type)
+    {
+        StructVarNode = structVarNode;
+        FieldName = fieldNode.Name!;
+        FieldNode = fieldNode;
     }
 
     public new ValueNode GetValueNode()
