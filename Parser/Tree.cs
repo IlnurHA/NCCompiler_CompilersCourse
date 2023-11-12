@@ -62,6 +62,9 @@ namespace NCCompiler_CompilersCourse.Parser
         Break,
         ArrayTypeWithoutSize,
         NotExpression,
+        ArrayGetSize,
+        ArrayGetReversed,
+        ArrayGetSorted,
     }
 
     internal abstract class Node

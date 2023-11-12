@@ -205,6 +205,7 @@ Primary   : Sign INTEGRAL_LITERAL {$$ = Node.MakeComplexNode(NodeTag.SignToInteg
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
     | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.ArrayConst, $2);}
+    | ArrayFunctions
     ;
 
 Sign : UNARY_PLUS
@@ -213,6 +214,11 @@ Sign : UNARY_PLUS
 
 Cast : Type LEFT_BRACKET Expression RIGHT_BRACKET { $$ = Node.MakeComplexNode(NodeTag.Cast, $1, $3); }
     ;
+
+ArrayFunctions  : ModifiablePrimary DOT SORTED      { $$ = Node.MakeComplexNode(NodeTag.ArrayGetSorted, $1); }
+                | ModifiablePrimary DOT REVERSED    { $$ = Node.MakeComplexNode(NodeTag.ArrayGetReversed, $1); }
+                | ModifiablePrimary DOT SIZE        { $$ = Node.MakeComplexNode(NodeTag.ArrayGetSize, $1); }
+        ;
 
 ModifiablePrimary :
         IDENTIFIER
