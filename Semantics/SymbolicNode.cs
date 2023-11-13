@@ -130,13 +130,10 @@ public class ArrayTypeNode : TypeNode
 
 public class StructTypeNode : TypeNode
 {
-    public Dictionary<string, VarNode> StructFields { get; set; }
-    public new string Name { get; set; }
-    public new MyType MyType { get; set; } = MyType.CompoundType;
+    public Dictionary<string, TypeNode> StructFields { get; set; }
 
-    public StructTypeNode(Dictionary<string, VarNode> structFields, string name)
+    public StructTypeNode(Dictionary<string, TypeNode> structFields) : base(MyType.CompoundType)
     {
-        Name = name;
         StructFields = structFields;
     }
 }
@@ -183,13 +180,14 @@ public class ConstNode : ValueNode
 
 public class VarNode : ValueNode
 {
-    public new string? Name { get; set; }
+    public new string? Name { get; set; } = null;
     public bool IsInitialized { get; set; } = false;
 
     public VarNode(string name)
     {
         Name = name;
     }
+    public VarNode() {}
 }
 
 public class StatementNode : TypedSymbolicNode
@@ -258,7 +256,7 @@ public class CompoundGettingNode : TypedSymbolicNode
             case ArrayTypeNode arrayTypeNode:
                 return new ArrayVarNode(arrayTypeNode);
             case StructTypeNode structTypeNode:
-                return new StructVarNode(structTypeNode.Name, structTypeNode.StructFields, structTypeNode);
+                return new StructVarNode(structTypeNode.StructFields, structTypeNode); // TODO getValueNode for each element in dictionary
             case UserDefinedTypeNode userDefinedTypeNode:
                 return GetValueNodeFromType(userDefinedTypeNode);
             case { } simpleTypeNode:
@@ -297,7 +295,7 @@ public class StructVarNode : VarNode
 {
     public Dictionary<string, VarNode> Fields { get; set; }
 
-    public StructVarNode(string name, Dictionary<string, VarNode> fields, StructTypeNode structTypeNode) : base(name)
+    public StructVarNode(Dictionary<string, VarNode> fields, StructTypeNode structTypeNode) : base()
     {
         Fields = fields;
         Type = structTypeNode;
