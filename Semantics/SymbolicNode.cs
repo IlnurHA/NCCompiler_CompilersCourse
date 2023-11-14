@@ -124,7 +124,7 @@ public class ArrayTypeNode : TypeNode
     public new bool IsTheSame(TypeNode anotherObject)
     {
         if (anotherObject.GetType() != typeof(ArrayTypeNode)) return false;
-        var tempObj = (ArrayTypeNode) anotherObject;
+        var tempObj = (ArrayTypeNode)anotherObject;
         return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj) && Size == tempObj.Size;
     }
 }
@@ -156,7 +156,7 @@ public class ValueNode : SymbolicNode
     public new Object? Value { get; set; }
     public TypeNode Type { get; set; }
 
-    public CompoundGettingNode? Child { get; set; } = null;
+    public IntermediateOperationNode? Child { get; set; } = null;
 
     public ValueNode(Object? value, TypeNode type)
     {
@@ -251,9 +251,9 @@ public class ArrayVarNode : VarNode
     }
 }
 
-public class CompoundGettingNode : TypedSymbolicNode
+public class IntermediateOperationNode : TypedSymbolicNode
 {
-    public CompoundGettingNode(TypeNode typeNode) : base(typeNode)
+    public IntermediateOperationNode(TypeNode typeNode) : base(typeNode)
     {
     }
 
@@ -286,12 +286,36 @@ public class CompoundGettingNode : TypedSymbolicNode
     }
 }
 
-public class GetByIndexNode : CompoundGettingNode
+public class DeclarationNode : SymbolicNode
+{
+    public VarNode Variable { get; set; }
+
+    public DeclarationNode(VarNode varNode, ValueNode? value)
+    {
+        Variable = varNode;
+        Variable.Value = value;
+        Variable.IsInitialized = value != null;
+    }
+}
+
+public class AssignmentNode : SymbolicNode
+{
+    public VarNode Variable { get; set; }
+
+    public AssignmentNode(VarNode varNode, ValueNode value)
+    {
+        Variable = varNode;
+        Variable.Value = value;
+        Variable.IsInitialized = true;
+    }
+}
+
+public class GetByIndexNode : IntermediateOperationNode
 {
     public ArrayVarNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
 
-    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode) varNode.Type).ElementTypeNode)
+    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode)varNode.Type).ElementTypeNode)
     {
         ArrayVarNode = varNode;
         Index = index;
@@ -323,7 +347,7 @@ public class StructVarNode : VarNode
     }
 }
 
-public class GetFieldNode : CompoundGettingNode
+public class GetFieldNode : IntermediateOperationNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }

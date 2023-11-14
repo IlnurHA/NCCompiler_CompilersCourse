@@ -1,6 +1,6 @@
 ﻿namespace NCCompiler_CompilersCourse.Semantics;
 
-public class Scope
+public class Scope : IDisposable
 {
     public enum ScopeContext
     {
@@ -76,5 +76,9 @@ public class Scope
     private bool CheckTypes(TypeNode valueA, TypeNode valueB)
     {
         return valueA == valueB;
+    }
+
+    public void Dispose()
+    {
     }
 }
