@@ -37,7 +37,11 @@ public class ScopeStack
 
         throw new Exception($"The variable {name} is not declared");
     }
-    
+
+    public bool isFreeInLastScope(string name)
+    {
+        return Scopes[^1].IsFree(name);
+    }
     public bool HasVariable(string name)
     {
         for (int i = Scopes.Count - 1; i >= 0; i--)

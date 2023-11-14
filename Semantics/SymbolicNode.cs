@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq.Expressions;
 using NCCompiler_CompilersCourse.Parser;
 
 namespace NCCompiler_CompilersCourse.Semantics;
@@ -187,7 +188,10 @@ public class VarNode : ValueNode
     {
         Name = name;
     }
-    public VarNode() {}
+
+    public VarNode()
+    {
+    }
 }
 
 public class StatementNode : TypedSymbolicNode
@@ -326,8 +330,9 @@ public class GetFieldNode : CompoundGettingNode
         StructVarNode = structVarNode;
         FieldName = fieldName;
     }
-    
-    public GetFieldNode(StructVarNode structVarNode, VarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name!).Type)
+
+    public GetFieldNode(StructVarNode structVarNode, VarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name!)
+        .Type)
     {
         StructVarNode = structVarNode;
         FieldName = fieldNode.Name!;
@@ -343,15 +348,16 @@ public class GetFieldNode : CompoundGettingNode
     }
 }
 
-
 public class ArrayFunctions : TypedSymbolicNode
 {
     public ArrayVarNode Array { get; set; }
+
     public ArrayFunctions(ArrayVarNode arrayVarNode)
     {
         Array = arrayVarNode;
     }
 }
+
 public class SortedArrayNode : ArrayFunctions
 {
     public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
@@ -362,18 +368,107 @@ public class SortedArrayNode : ArrayFunctions
 
 public class ArraySizeNode : ArrayFunctions
 {
-
     public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
     {
-        Type = new TypeNode(MyType.Integer); 
+        Type = new TypeNode(MyType.Integer);
     }
-
 }
 
 public class ReversedArrayNode : ArrayFunctions
 {
     public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
     {
-        Type = arrayVarNode.Type; 
+        Type = arrayVarNode.Type;
+    }
+}
+
+public class ParameterNode : TypedSymbolicNode
+{
+    public VarNode Variable { get; set; }
+
+    public ParameterNode(VarNode variable, TypeNode typeNode) : base(typeNode)
+    {
+        Variable = variable;
+    }
+}
+
+public class ParametersNode : SymbolicNode
+{
+    public List<ParameterNode> Parameters { get; set; } = new List<ParameterNode>();
+
+    public ParametersNode(List<ParameterNode> parameters)
+    {
+        Parameters = parameters;
+    }
+
+    public void AddParameter(ParameterNode parameterNode)
+    {
+        Parameters.Add(parameterNode);
+    }
+}
+
+public class FunctionDeclNode : VarNode
+{
+    public VarNode FunctionName { get; set; }
+    public BodyNode Body { get; set; }
+    public ParametersNode? Parameters { get; set; }
+    public TypeNode? ReturnType { get; set; }
+
+    // For full declaration of function
+    public FunctionDeclNode(VarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
+    {
+        FunctionName = functionName;
+        Body = body;
+        Parameters = parameters;
+        ReturnType = returnType;
+    }
+}
+
+public class ExpressionNode : ValueNode
+{
+}
+
+public class ExpressionsNode : SymbolicNode
+{
+    public List<ExpressionNode> Expressions { get; set; } = new List<ExpressionNode>();
+
+    public ExpressionsNode(List<ExpressionNode> expressions)
+    {
+        Expressions = expressions;
+    }
+    
+    public ExpressionsNode()
+    {
+    }
+
+    public void AddExpression(ExpressionNode expressionNode)
+    {
+        Expressions.Add(expressionNode);
+    }
+}
+
+public class RoutineCallNode : CompoundGettingNode
+{
+    public FunctionDeclNode Function { get; set; }
+    public ExpressionsNode? Expressions { get; set; }
+
+    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(function.ReturnType ?? new TypeNode(MyType.Undefined))
+    {
+        Function = function;
+        Expressions = expressions;
+    }
+
+    public new ValueNode GetValueNode()
+    {
+        if (Type.MyType == MyType.Undefined)
+        {
+            var node = new ValueNode(null, Type)
+            {
+                Child = this
+            };
+            return node;
+        }
+
+        return GetValueNodeFromType(Type);
     }
 }
