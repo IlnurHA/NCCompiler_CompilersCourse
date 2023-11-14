@@ -135,6 +135,16 @@ class EvalVisitor : IVisitor
         }
     }
 
+    // public SymbolicNode ExpressionVisit(ComplexNode node)
+    // {
+    //     switch (node.Tag)
+    //     {
+    //         case NodeTag.And:
+    //             var operand1 = node.Children[0]!.Accept(this);
+    //             var operand2 = node.Children[0]!.Accept(this);
+    //     }
+    // }
+
     public SymbolicNode VisitLeaf<T>(LeafNode<T> node)
     {
         switch (node.Tag)

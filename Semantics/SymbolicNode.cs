@@ -212,7 +212,7 @@ public class StatementWithBodyNode : StatementNode
     public BodyNode Body { get; set; }
 }
 
-public class OperationNode : SymbolicNode
+public class OperationNode : ValueNode
 {
     public OperationType OperationType { get; set; }
     public List<ValueNode> operands { get; set; } = new List<ValueNode>();
@@ -452,6 +452,8 @@ public class FunctionDeclNode : VarNode
 
 public class ExpressionNode : ValueNode
 {
+    
+    
 }
 
 public class ExpressionsNode : SymbolicNode
