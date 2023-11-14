@@ -8,7 +8,7 @@ class EvalVisitor : IVisitor
 {
     public ScopeStack ScopeStack { get; set; } = new();
 
-    public SymbolicNode Visit(ComplexNode node)
+    public SymbolicNode ModifiablePrimaryVisit(ComplexNode node)
     {
         switch (node.Tag)
         {
@@ -26,13 +26,13 @@ class EvalVisitor : IVisitor
                 var arrGetSorted = node.Children[0]!.Accept(this);
                 if (arrGetSorted.GetType() != typeof(ArrayVarNode))
                     throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
-                return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
+                return new SortedArrayNode((ArrayVarNode) arrGetSorted).GetValueNode(); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = node.Children[0]!.Accept(this);
-                return new ArraySizeNode((ArrayVarNode) arrGetSize); // TODO return VarNode
+                return new ArraySizeNode((ArrayVarNode) arrGetSize).GetValueNode(); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversed = node.Children[0]!.Accept(this);
-                return new ReversedArrayNode((ArrayVarNode) arrGetReversed); // TODO return VarNode
+                return new ReversedArrayNode((ArrayVarNode) arrGetReversed).GetValueNode(); // TODO return VarNode
         }
 
         throw new Exception("Unimplemented");

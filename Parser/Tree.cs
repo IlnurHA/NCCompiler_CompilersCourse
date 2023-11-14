@@ -98,7 +98,7 @@ namespace NCCompiler_CompilersCourse.Parser
 
         public override SymbolicNode Accept(IVisitor visitor)
         {
-            return visitor.Visit(this);
+            return visitor.ModifiablePrimaryVisit(this);
         }
     }
 

@@ -156,7 +156,6 @@ public class ValueNode : SymbolicNode
     public new Object? Value { get; set; }
     public TypeNode Type { get; set; }
 
-    public bool isSubVar { get; set; } = false;
     public CompoundGettingNode? Child { get; set; } = null;
 
     public ValueNode(Object? value, TypeNode type)
@@ -169,6 +168,11 @@ public class ValueNode : SymbolicNode
     {
         Value = null;
         Type = new TypeNode(MyType.Undefined);
+    }
+
+    public bool IsSubVar()
+    {
+        return Child != null;
     }
 }
 
@@ -343,16 +347,15 @@ public class GetFieldNode : CompoundGettingNode
     {
         var node = StructVarNode!.GetField(FieldName!);
         node.Child = this;
-        node.isSubVar = true;
         return node;
     }
 }
 
-public class ArrayFunctions : TypedSymbolicNode
+public class ArrayFunctions : CompoundGettingNode
 {
     public ArrayVarNode Array { get; set; }
 
-    public ArrayFunctions(ArrayVarNode arrayVarNode)
+    public ArrayFunctions(ArrayVarNode arrayVarNode, TypeNode typeNode) : base(typeNode)
     {
         Array = arrayVarNode;
     }
@@ -360,25 +363,48 @@ public class ArrayFunctions : TypedSymbolicNode
 
 public class SortedArrayNode : ArrayFunctions
 {
-    public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
-        Type = arrayVarNode.Type;
+    }
+
+    public new ValueNode GetValueNode()
+    {
+        return new ArrayVarNode((ArrayTypeNode) Array.Type)
+        {
+            IsInitialized = Array.IsInitialized,
+            Child = this,
+        };
     }
 }
 
 public class ArraySizeNode : ArrayFunctions
 {
-    public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
-        Type = new TypeNode(MyType.Integer);
+    }
+    
+    public new ValueNode GetValueNode()
+    {
+        return new ValueNode(null, new TypeNode(MyType.Integer))
+        {
+            IsInitialized = true,
+            Child = this,
+        };
     }
 }
 
 public class ReversedArrayNode : ArrayFunctions
 {
-    public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode)
+    public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
-        Type = arrayVarNode.Type;
+    }
+    public new ValueNode GetValueNode()
+    {
+        return new ArrayVarNode((ArrayTypeNode) Array.Type)
+        {
+            IsInitialized = Array.IsInitialized,
+            Child = this,
+        };
     }
 }
 
