@@ -62,57 +62,41 @@ class EvalVisitor : IVisitor
                         break;
                 }
 
+                
                 using (var scope = ScopeStack.GetLastScope())
                 {
-                    ValueNode? newVariable = null;
+                    if (identifier.Name == null || !scope.IsFree(identifier.Name)) 
+                        throw new Exception($"The variable with name {identifier.Name} already exists in this scope!");
                     if (value != null)
                     {
+                        identifier = identifier.GetFinalVarNode();
+                        value = value.GetFinalValueNode();
                         if (type != null && _isConvertible(type, value.Type))
                             throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
-
-                        switch (value.Type)
-                        {
-                            case ArrayTypeNode:
-                                value = (ArrayVarNode) value;
-                                value.Name = identifier.Name;
-                                newVariable = value;
-                                break;
-                            case StructTypeNode:
-                                newVariable = new StructVarNode(identifier.Name!,);
-                                break;
-                            case UserDefinedTypeNode:
-                                break;
-                        }
-
-                        if (newVariable != null) scope.AddVariable(newVariable);
+                        identifier.Value = value;
+                        scope.AddVariable(identifier);
                     }
                 }
                 
                 return new DeclarationNode(identifier, value);
             case NodeTag.Break:
-                // return new SymbolicNode(MyType.Break);
+                //return new SymbolicNode(MyType.Break);
                 break;
             case NodeTag.Assert:
-                SymbolicNode? nodeChildA = node.Children[0]!.Accept(this);
-                SymbolicNode? nodeChildB = node.Children[1]!.Accept(this);
-
-                if (nodeChildA == null && nodeChildB == null) return new SymbolicNode(MyType.Assert);
-                if (nodeChildA == null || nodeChildB == null)
-                    throw new Exception("Expected similar types in Assert Expressions");
-
-                var processedNodeA = UniversalVisit(nodeChildA);
-                var processedNodeB = UniversalVisit(nodeChildB);
-
-                if (processedNodeA.MyType != processedNodeB.MyType || processedNodeA.MyType == MyType.CompoundType &&
-                    !CheckCompoundType(processedNodeA.CompoundType, processedNodeB.CompoundType))
-                {
-                    throw new Exception($"Expected similar types ({processedNodeA.MyType}, {processedNodeB.MyType})");
-                }
-
-                return new SymbolicNode(MyType.Assert, new List<SymbolicNode>
-                {
-                    processedNodeA, processedNodeB
-                });
+                // SymbolicNode? leftAssertExpression = node.Children[0]!.Accept(this);
+                // SymbolicNode? rightAssertExpression = node.Children[1]!.Accept(this);
+                //
+                // if (processedNodeA.MyType != processedNodeB.MyType || processedNodeA.MyType == MyType.CompoundType &&
+                //     !CheckCompoundType(processedNodeA.CompoundType, processedNodeB.CompoundType))
+                // {
+                //     throw new Exception($"Expected similar types ({processedNodeA.MyType}, {processedNodeB.MyType})");
+                // }
+                //
+                // return new SymbolicNode(MyType.Assert, new List<SymbolicNode>
+                // {
+                //     processedNodeA, processedNodeB
+                // });
+                break;
             
         }
     }
@@ -256,7 +240,6 @@ class EvalVisitor : IVisitor
             (MyType.Real, MyType.Integer) => true,
             (MyType.Real, MyType.Boolean) => true,
             (MyType.Boolean, MyType.Integer) => true,
-            (MyType.Boolean, MyType.Real) => true,
             _ => false
         };
     }
