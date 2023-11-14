@@ -10,7 +10,7 @@ public class Scope : IDisposable
         IfStatement
     }
 
-    public Dictionary<string, (VarNode, int)> Variables { get; set; } = new();
+    private Dictionary<string, (VarNode, int)> Variables { get; set; } = new();
     public ScopeContext ScopeContextVar { get; }
     public string? ScopeContextName { get; }
 
