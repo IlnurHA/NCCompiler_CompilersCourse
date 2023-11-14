@@ -256,7 +256,13 @@ public class CompoundGettingNode : TypedSymbolicNode
             case ArrayTypeNode arrayTypeNode:
                 return new ArrayVarNode(arrayTypeNode);
             case StructTypeNode structTypeNode:
-                return new StructVarNode(structTypeNode.StructFields, structTypeNode); // TODO getValueNode for each element in dictionary
+                var toVarFromType = new Dictionary<string, VarNode>();
+                foreach (var (name, node) in structTypeNode.StructFields)
+                {
+                    toVarFromType[name] = (VarNode) GetValueNodeFromType(node);
+                }
+
+                return new StructVarNode(toVarFromType, structTypeNode);
             case UserDefinedTypeNode userDefinedTypeNode:
                 return GetValueNodeFromType(userDefinedTypeNode);
             case { } simpleTypeNode:
