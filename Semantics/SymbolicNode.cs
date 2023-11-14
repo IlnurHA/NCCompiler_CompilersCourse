@@ -144,10 +144,27 @@ public class UserDefinedTypeNode : TypeNode
     public TypeNode Type { get; set; }
     public string name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
-
+    
     public bool IsTheSame(TypeNode anotherObject)
     {
         return Type.IsTheSame(anotherObject);
+    }
+    
+    public TypeNode GetFinalTypeNode()
+    {
+        switch (Type)
+        {
+            case ArrayTypeNode arrayTypeNode:
+                return arrayTypeNode;
+            case StructTypeNode structTypeNode:
+                return structTypeNode;
+            case UserDefinedTypeNode userDefinedTypeNode:
+                return userDefinedTypeNode.GetFinalTypeNode();
+            case { } simpleTypeNode:
+                return simpleTypeNode;
+        }
+        
+        throw new Exception("Got null type node");
     }
 }
 
@@ -174,6 +191,14 @@ public class ValueNode : SymbolicNode
     {
         return Child != null;
     }
+    
+    public ValueNode GetFinalValueNode()
+    {
+        if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
+        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
+        Type = finalType;
+        return this;
+    }
 }
 
 public class ConstNode : ValueNode
@@ -192,6 +217,14 @@ public class VarNode : ValueNode
     {
         Name = name;
     }
+    
+    public VarNode GetFinalVarNode()
+    {
+        if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
+        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
+        Type = finalType;
+        return this;
+    }
 
     public VarNode()
     {
@@ -204,7 +237,13 @@ public class StatementNode : TypedSymbolicNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; set; }
+    public List<StatementNode> Statements { get; set; } 
+    
+    public BodyNode(List<StatementNode> statements, TypeNode typeNode)
+    {
+        Statements = statements;
+        
+    }
 }
 
 public class StatementWithBodyNode : StatementNode
