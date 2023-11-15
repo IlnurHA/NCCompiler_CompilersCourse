@@ -117,6 +117,10 @@ internal class ComplexNode : Node
             case NodeTag.Assert:
             case NodeTag.Return:
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
+            case NodeTag.ArrayType or NodeTag.ArrayTypeWithoutSize:
+            case NodeTag.ForLoop or NodeTag.ForeachLoop or NodeTag.WhileLoop: 
+            case NodeTag.IfStatement or NodeTag.IfElseStatement:
+            case NodeTag.Range or NodeTag.RangeReverse:
                 return visitor.StatementVisit(this);
             case NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType:

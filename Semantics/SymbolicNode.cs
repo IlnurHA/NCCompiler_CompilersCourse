@@ -78,9 +78,9 @@ public class TypeNode : SymbolicNode
 public class ArrayTypeNode : TypeNode
 {
     public TypeNode ElementTypeNode { get; }
-    public int? Size { get; set; }
+    public ValueNode? Size { get; set; }
 
-    public ArrayTypeNode(TypeNode elementTypeNode, int size) : base(MyType.CompoundType)
+    public ArrayTypeNode(TypeNode elementTypeNode, ValueNode size) : base(MyType.CompoundType)
     {
         ElementTypeNode = elementTypeNode;
         Size = size;
@@ -315,16 +315,15 @@ public class ArrayVarNode : VarNode
 {
     public List<ValueNode> Elements = new List<ValueNode>();
 
-    public ArrayVarNode(string name, TypeNode elementTypeNode, int size) : base(name)
+    public ArrayVarNode(string name, TypeNode elementTypeNode, ValueNode size) : base(name)
     {
-        Elements.EnsureCapacity(size);
         Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), size);
     }
 
     public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
     {
         Elements = values;
-        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), values.Count);
+        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), new ValueNode(new TypeNode(MyType.Integer), values.Count));
     }
 
     // For function parameters with arbitrary number of elements
