@@ -414,7 +414,7 @@ public class GetFieldNode : IntermediateOperationNode
     }
 }
 
-public class ArrayFunctions : CompoundGettingNode
+public class ArrayFunctions : IntermediateOperationNode
 {
     public ArrayVarNode Array { get; set; }
 
@@ -538,28 +538,14 @@ public class ExpressionsNode : SymbolicNode
     }
 }
 
-public class RoutineCallNode : CompoundGettingNode
+public class RoutineCallNode : ValueNode
 {
     public FunctionDeclNode Function { get; set; }
     public ExpressionsNode? Expressions { get; set; }
 
-    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(function.ReturnType ?? new TypeNode(MyType.Undefined))
+    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(null, function.ReturnType ?? new TypeNode(MyType.Undefined))
     {
         Function = function;
         Expressions = expressions;
-    }
-
-    public new ValueNode GetValueNode()
-    {
-        if (Type.MyType == MyType.Undefined)
-        {
-            var node = new ValueNode(null, Type)
-            {
-                Child = this
-            };
-            return node;
-        }
-
-        return GetValueNodeFromType(Type);
     }
 }

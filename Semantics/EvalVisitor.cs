@@ -177,7 +177,7 @@ class EvalVisitor : IVisitor
                 {
                     if (node.Children.Length == 2)
                         throw new Exception("Unexpected number of arguments. Expected zero arguments");
-                    return new RoutineCallNode(function, new ExpressionsNode()).GetValueNode();
+                    return new RoutineCallNode(function, new ExpressionsNode());
                 }
 
                 if (node.Children.Length == 1)
@@ -192,7 +192,7 @@ class EvalVisitor : IVisitor
                 }
 
                 // TODO check exprs types compared with routine parameters
-                return new RoutineCallNode(function, exprsRoutineCall).GetValueNode();
+                return new RoutineCallNode(function, exprsRoutineCall);
             default:
                 throw new Exception($"Unexpected Name Tag: {node.Tag}");
         }
