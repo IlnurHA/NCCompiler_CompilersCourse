@@ -6,69 +6,6 @@ namespace NCCompiler_CompilersCourse.Semantics;
 
 public abstract class SymbolicNode
 {
-    // public MyType MyType { get; set; }
-    //
-    // public string? Name { get; set; }
-    // // SymbolicNode TypeNode
-    // // TypeNode -> children ()
-    //
-    // public Dictionary<string, SymbolicNode>? StructFields { get; set; }
-    // public List<SymbolicNode>? ArrayElements { get; set; }
-    // public SymbolicNode? ArraySize;
-    // public Dictionary<string, SymbolicNode>? FuncArguments { get; set; }
-    // public SymbolicNode? FuncReturn { get; set; }
-    // public object? Value { get; set; }
-    //
-    // public List<SymbolicNode> Children { get; set; }
-    //
-    // public SymbolicNode? CompoundType { get; set; }
-    //
-    public bool? IsInitialized { get; set; }
-    //
-    //
-    // public SymbolicNode(MyType myType, List<SymbolicNode>? children = null, string? name = null,
-    //     Dictionary<string, SymbolicNode>? structFields = null, List<SymbolicNode>? arrayElements = null,
-    //     Dictionary<string, SymbolicNode>? funcArguments = null, SymbolicNode? funcReturn = null, object? value = null,
-    //     SymbolicNode? compoundType = null, bool? isInitialized = null, SymbolicNode? arraySize = null)
-    // {
-    //     MyType = myType;
-    //     Name = name;
-    //     StructFields = structFields;
-    //     ArrayElements = arrayElements;
-    //     FuncArguments = funcArguments;
-    //     FuncReturn = funcReturn;
-    //     Value = value;
-    //     Children = children ?? new List<SymbolicNode>();
-    //     CompoundType = compoundType;
-    //     IsInitialized = isInitialized;
-    //     ArraySize = arraySize;
-    // }
-    //
-    // public SymbolicNode()
-    // {
-    //     Children = new List<SymbolicNode>();
-    // }
-    //
-    // public bool Equals(SymbolicNode? obj)
-    // {
-    //     if (obj == null) return false;
-    //     return MyType == obj.MyType
-    //            && ((StructFields == null && obj.StructFields == null) ||
-    //                (StructFields != null && StructFields!.Equals(obj.StructFields)))
-    //            && ((ArrayElements == null && obj.ArrayElements == null) ||
-    //                (ArrayElements != null && ArrayElements!.Equals(obj.ArrayElements)))
-    //            && ((FuncArguments == null && obj.FuncArguments == null) ||
-    //                (FuncArguments != null && FuncArguments!.Equals(obj.FuncArguments)))
-    //            && ((FuncReturn != null && FuncReturn.Equals(obj.FuncReturn)) ||
-    //                (FuncReturn == null && obj.FuncReturn == null))
-    //            && ((CompoundType != null && CompoundType.Equals(obj.CompoundType)) ||
-    //                (CompoundType == null && obj.CompoundType == null))
-    //            && IsInitialized == obj.IsInitialized
-    //            && ((ArraySize == null && obj.ArraySize == null) ||
-    //                (ArraySize != null && ArraySize!.Equals(obj.ArraySize)));
-    // }
-
-    // public abstract SymbolicNode Accept(IVisitor visitor);
 }
 
 public class TypedSymbolicNode : SymbolicNode
@@ -389,7 +326,7 @@ public class ArrayVarNode : VarNode
         Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode());
     }
 
-    public ArrayVarNode(ArrayTypeNode elementTypeNode) : base(null)
+    public ArrayVarNode(ArrayTypeNode elementTypeNode)
     {
         Type = elementTypeNode.GetFinalTypeNode();
     }
@@ -418,7 +355,7 @@ public class IntermediateOperationNode : TypedSymbolicNode
             case UserDefinedTypeNode userDefinedTypeNode:
                 return GetValueNodeFromType(userDefinedTypeNode);
             case { } simpleTypeNode:
-                return new ValueNode(null, simpleTypeNode);
+                return new ValueNode(simpleTypeNode);
         }
 
         throw new Exception("Got null type node");
@@ -453,7 +390,7 @@ public class StructVarNode : VarNode
 {
     public Dictionary<string, VarNode> Fields { get; set; }
 
-    public StructVarNode(Dictionary<string, VarNode> fields, StructTypeNode structTypeNode) : base()
+    public StructVarNode(Dictionary<string, VarNode> fields, StructTypeNode structTypeNode)
     {
         Fields = fields;
         Type = structTypeNode;
@@ -471,7 +408,7 @@ public class GetFieldNode : IntermediateOperationNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }
-    public VarNode? FieldNode { get; set; } = null;
+    public VarNode? FieldNode { get; set; }
 
     public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.GetField(fieldName).Type)
     {
@@ -529,9 +466,8 @@ public class ArraySizeNode : ArrayFunctions
 
     public new ValueNode GetValueNode()
     {
-        return new ValueNode(null, new TypeNode(MyType.Integer))
+        return new ValueNode(new TypeNode(MyType.Integer))
         {
-            IsInitialized = true,
             Child = this,
         };
     }
@@ -624,7 +560,7 @@ public class RoutineCallNode : ValueNode
     public FunctionDeclNode Function { get; set; }
     public ExpressionsNode? Expressions { get; set; }
 
-    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(null,
+    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(
         function.ReturnType ?? new TypeNode(MyType.Undefined))
     {
         Function = function;

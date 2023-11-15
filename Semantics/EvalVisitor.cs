@@ -73,8 +73,9 @@ class EvalVisitor : IVisitor
                         if (variableType != null && value.Type.IsConvertibleTo(variableType))
                             throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
                         variableIdentifier.Value = value;
-                        scope.AddVariable(variableIdentifier);
+                        variableIdentifier.IsInitialized = true;
                     }
+                    scope.AddVariable(variableIdentifier);
                 }
 
                 return new DeclarationNode(variableIdentifier, value);
