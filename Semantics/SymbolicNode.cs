@@ -554,3 +554,25 @@ public class WhileLoopNode : StatementNode
         Body = body;
     }
 }
+
+public class IfStatement : StatementNode
+{
+    public ValueNode Condition { get; }
+    public BodyNode Body { get; }
+
+    public IfStatement(ValueNode condition, BodyNode body)
+    {
+        Condition = condition;
+        Body = body;
+    }
+}
+
+public class IfElseStatement : IfStatement
+{
+    public BodyNode BodyElse { get; }
+
+    public IfElseStatement(ValueNode condition, BodyNode body, BodyNode bodyElse) : base(condition, body)
+    {
+        BodyElse = bodyElse;
+    }
+}

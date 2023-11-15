@@ -119,28 +119,29 @@ class EvalVisitor : IVisitor
                 {
                     throw new Exception($"Cannot convert {leftBound.Type.MyType} to integer type");
                 }
+
                 if (!rightBound.Type.IsConvertibleTo(integerType))
                 {
                     throw new Exception($"Cannot convert {rightBound.Type.MyType} to integer type");
                 }
 
                 return new RangeNode(leftBound, rightBound, node.Tag == NodeTag.RangeReverse);
-                
+
             case NodeTag.ForLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
                 var idForLoop = (VarNode) node.Children[0]!.Accept(this);
                 idForLoop.Type = new TypeNode(MyType.Integer);
                 ScopeStack.AddVariable(idForLoop);
-                
+
                 var rangeForLoop = (RangeNode) node.Children[1]!.Accept(this);
                 var bodyForLoop = (BodyNode) node.Children[2]!.Accept(this);
-                
+
                 ScopeStack.DeleteScope();
                 return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop)
                 {
                     Type = bodyForLoop.Type
                 };
-            
+
             case NodeTag.ForeachLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
                 var idForEach = (VarNode) node.Children[0]!.Accept(this);
@@ -161,7 +162,8 @@ class EvalVisitor : IVisitor
                 var condExprWhile = (ValueNode) node.Children[0]!.Accept(this);
                 if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
-                    throw new Exception($"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
+                    throw new Exception(
+                        $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
                 }
 
                 var bodyWhile = (BodyNode) node.Children[1]!.Accept(this);
@@ -169,6 +171,46 @@ class EvalVisitor : IVisitor
                 {
                     Type = bodyWhile.Type
                 };
+            case NodeTag.IfStatement:
+                ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
+                var condIf = (ValueNode) node.Children[0]!.Accept(this);
+                if (!condIf.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
+                {
+                    throw new Exception(
+                        $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean");
+                }
+
+                var bodyIf = (BodyNode) node.Children[1]!.Accept(this);
+                return new IfStatement(condIf, bodyIf)
+                {
+                    Type = bodyIf.Type
+                };
+            case NodeTag.IfElseStatement:
+                ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
+                var condIfElse = (ValueNode) node.Children[0]!.Accept(this);
+                if (!condIfElse.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
+                {
+                    throw new Exception(
+                        $"Unexpected type for if statement condition: Got {condIfElse.Type.MyType}, expected boolean");
+                }
+
+                var bodyIfElse = (BodyNode) node.Children[1]!.Accept(this);
+                var bodyElse = (BodyNode) node.Children[2]!.Accept(this);
+
+                var newType = bodyIfElse.Type;
+
+                if (!bodyIfElse.Type.IsTheSame(bodyElse.Type))
+                {
+                    newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
+                        OperationType.Assert);
+                    
+                }
+
+                return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
+                {
+                    Type = newType
+                };
+            
         }
     }
 
