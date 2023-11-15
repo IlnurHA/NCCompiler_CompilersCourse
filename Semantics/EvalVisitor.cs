@@ -554,6 +554,28 @@ class EvalVisitor : IVisitor
                 operationType = _nodeTagToOperationType(node);
                 resultType = _isValidUnaryOperation(operand, operationType);
                 return new OperationNode(operationType, new List<ValueNode> {operand}, resultType);
+            case NodeTag.ArrayConst:
+                var expressions = (ExpressionsNode) node.Children[0]!.Accept(this);
+
+                var typeExpr = new TypeNode();
+                var realType = new TypeNode(MyType.Real);
+                var integerType = new TypeNode(MyType.Integer);
+                var booleanType = new TypeNode(MyType.Boolean);
+                
+                foreach (var expr in expressions.Expressions)
+                {
+                    if (expr.Type.IsTheSame(realType) && typeExpr.MyType is MyType.Undefined or MyType.Boolean or MyType.Integer) typeExpr = realType;
+                    if (expr.Type.IsTheSame(integerType) && typeExpr.MyType is MyType.Undefined or MyType.Boolean)
+                        typeExpr = integerType;
+                    if (expr.Type.IsTheSame(booleanType) && typeExpr.MyType is MyType.Undefined) typeExpr = booleanType;
+
+                    if (expr.Type.MyType == MyType.CompoundType && typeExpr.MyType != MyType.Undefined)
+                    {
+                        throw new Exception($"Cannot conform types: {expr.Type.GetType()}, {typeExpr.GetType()}");
+                    }
+                }
+
+                return new ArrayConst(expressions);
             default:
                 throw new Exception($"Invalid operation tag: {node.Tag}");
         }
@@ -579,21 +601,6 @@ class EvalVisitor : IVisitor
                 throw new Exception($"Unexpected node tag for visiting Leaf node {node.Tag}");
         }
     }
-
-    // private bool _isConvertible(TypeNode var1, TypeNode var2)
-    // {
-    //     if (var1.IsTheSame(var2)) return true;
-    //     return (var1.MyType, var2.MyType) switch
-    //     {
-    //         (MyType.Integer, MyType.Real) => true,
-    //         (MyType.Integer, MyType.Boolean) => true,
-    //         (MyType.Real, MyType.Real) => true,
-    //         (MyType.Real, MyType.Integer) => true,
-    //         (MyType.Real, MyType.Boolean) => true,
-    //         (MyType.Boolean, MyType.Integer) => true,
-    //         _ => false
-    //     };
-    // }
 
     private MyType _getPrimitiveType(string primitiveType)
     {

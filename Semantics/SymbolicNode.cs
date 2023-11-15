@@ -433,7 +433,7 @@ public class ParameterNode : TypedSymbolicNode
 
 public class ParametersNode : SymbolicNode
 {
-    public List<ParameterNode> Parameters { get;}
+    public List<ParameterNode> Parameters { get; }
 
     public ParametersNode(List<ParameterNode> parameters)
     {
@@ -463,11 +463,11 @@ public class FunctionDeclNode : VarNode
     }
 }
 
-public class ExpressionsNode : SymbolicNode
+public class ExpressionsNode : TypedSymbolicNode
 {
     public List<ValueNode> Expressions { get; }
 
-    public ExpressionsNode(List<ValueNode> expressions)
+    public ExpressionsNode(List<ValueNode> expressions) : base(expressions[0].Type)
     {
         Expressions = expressions;
     }
@@ -500,7 +500,7 @@ public class RangeNode : SymbolicNode
 {
     public ValueNode LeftBound { get; }
     public ValueNode RightBound { get; }
-    
+
     public bool Reversed { get; }
 
     public RangeNode(ValueNode leftBound, ValueNode rightBound, bool reversed = false)
@@ -570,5 +570,15 @@ public class IfElseStatement : IfStatement
     public IfElseStatement(ValueNode condition, BodyNode body, BodyNode bodyElse) : base(condition, body)
     {
         BodyElse = bodyElse;
+    }
+}
+
+public class ArrayConst : ValueNode
+{
+    public ExpressionsNode Expressions { get; }
+
+    public ArrayConst(ExpressionsNode expressions) : base(expressions.Type)
+    {
+        Expressions = expressions;
     }
 }
