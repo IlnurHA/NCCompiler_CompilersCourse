@@ -15,22 +15,22 @@ class EvalVisitor : IVisitor
             case NodeTag.ModifiablePrimaryGettingField:
                 var modPrimField = node.Children[0]!.Accept(this);
                 var idField = node.Children[1]!.Accept(this);
-                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField); // return VarNode
+                return new GetFieldNode((StructVarNode)modPrimField, (VarNode)idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
-                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr); // return VarNode
+                return new GetByIndexNode((ArrayVarNode)arrFromArr, (ValueNode)indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSorted = node.Children[0]!.Accept(this);
                 if (arrGetSorted.GetType() != typeof(ArrayVarNode))
                     throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
-                return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
+                return new SortedArrayNode((ArrayVarNode)arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = node.Children[0]!.Accept(this);
-                return new ArraySizeNode((ArrayVarNode) arrGetSize); // TODO return VarNode
+                return new ArraySizeNode((ArrayVarNode)arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversed = node.Children[0]!.Accept(this);
-                return new ReversedArrayNode((ArrayVarNode) arrGetReversed); // TODO return VarNode
+                return new ReversedArrayNode((ArrayVarNode)arrGetReversed); // TODO return VarNode
         }
 
         throw new Exception("Unimplemented");
@@ -43,27 +43,28 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationFull:
             case NodeTag.VariableDeclarationIdenType:
             case NodeTag.VariableDeclarationIdenExpr:
-                VarNode variableIdentifier = (VarNode) node.Children[0]!.Accept(this);
+                VarNode variableIdentifier = (VarNode)node.Children[0]!.Accept(this);
                 TypeNode? variableType = null;
                 ValueNode? value = null;
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
-                        value = (ValueNode) node.Children[2]!.Accept(this);
+                        variableType = (TypeNode)node.Children[1]!.Accept(this);
+                        value = (ValueNode)node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
+                        variableType = (TypeNode)node.Children[1]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
-                        value = (ValueNode) node.Children[1]!.Accept(this);
+                        value = (ValueNode)node.Children[1]!.Accept(this);
                         break;
                 }
 
                 using (var scope = ScopeStack.GetLastScope())
                 {
                     if (variableIdentifier.Name == null || !scope.IsFree(variableIdentifier.Name))
-                        throw new Exception($"The variable with name {variableIdentifier.Name} already exists in this scope!");
+                        throw new Exception(
+                            $"The variable with name {variableIdentifier.Name} already exists in this scope!");
                     if (value != null)
                     {
                         variableIdentifier = variableIdentifier.GetFinalVarNode();
@@ -73,6 +74,7 @@ class EvalVisitor : IVisitor
                         variableIdentifier.Value = value;
                         variableIdentifier.IsInitialized = true;
                     }
+
                     scope.AddVariable(variableIdentifier);
                 }
 
@@ -90,15 +92,15 @@ class EvalVisitor : IVisitor
                 }
 
                 return new TypeDeclarationNode(typeIdentifier, typeSynonym);
-            
+
             case NodeTag.Break:
                 return new BreakNode();
             case NodeTag.Assert:
-                ValueNode? leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
-                ValueNode? rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+                ValueNode? leftAssertExpression = (ValueNode)node.Children[0]!.Accept(this);
+                ValueNode? rightAssertExpression = (ValueNode)node.Children[1]!.Accept(this);
                 return new AssertNode(leftAssertExpression, rightAssertExpression);
             case NodeTag.Return:
-                ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
+                ValueNode returnValue = (ValueNode)node.Children[0]!.Accept(this);
                 return new ReturnNode(returnValue);
         }
     }
@@ -215,6 +217,11 @@ class EvalVisitor : IVisitor
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
+        if (operand.Type is StructTypeNode or ArrayTypeNode)
+        {
+            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+        }
+
         switch (operationType)
         {
             case OperationType.UnaryMinus:
@@ -245,6 +252,11 @@ class EvalVisitor : IVisitor
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
+        if (operand1.Type is StructTypeNode or ArrayTypeNode || operand2.Type is StructTypeNode or ArrayTypeNode)
+        {
+            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+        }
+
         switch (operationType)
         {
             case OperationType.And:
@@ -356,7 +368,6 @@ class EvalVisitor : IVisitor
 
     public SymbolicNode ExpressionVisit(ComplexNode node)
     {
-        
         switch (node.Tag)
         {
             case NodeTag.And:
