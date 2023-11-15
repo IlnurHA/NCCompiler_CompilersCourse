@@ -11,6 +11,19 @@ class EvalVisitor : IVisitor
 {
     public ScopeStack ScopeStack { get; set; } = new();
 
+    public SymbolicNode ProgramVisit(ComplexNode node)
+    {
+        switch (node.Tag)
+        {
+            case NodeTag.ProgramRoutineDeclaration or NodeTag.ProgramSimpleDeclaration:
+                var progs = node.Children[0] == null ? new ProgramNode() : (ProgramNode) node.Children[0]!.Accept(this);
+                var declaration = node.Children[1]!.Accept(this);
+                progs.AddDeclaration(declaration);
+                return progs;
+            default:
+                throw new Exception($"Unexpected node tag {node.Tag}");
+        }
+    }
     public SymbolicNode ModifiablePrimaryVisit(ComplexNode node)
     {
         switch (node.Tag)

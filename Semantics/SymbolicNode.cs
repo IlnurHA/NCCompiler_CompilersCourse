@@ -582,3 +582,18 @@ public class ArrayConst : ValueNode
         Expressions = expressions;
     }
 }
+
+public class ProgramNode : SymbolicNode
+{
+    public List<SymbolicNode> Declarations { get; }
+
+    public ProgramNode()
+    {
+        Declarations = new List<SymbolicNode>();
+    }
+
+    public void AddDeclaration(SymbolicNode node)
+    {
+        Declarations.Add(node);
+    }
+}

@@ -1,10 +1,10 @@
-﻿using System.Numerics;
-using NCCompiler_CompilersCourse.Parser;
+﻿using NCCompiler_CompilersCourse.Parser;
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
 interface IVisitor
 {
+    SymbolicNode ProgramVisit(ComplexNode node);
     SymbolicNode ModifiablePrimaryVisit(ComplexNode node);
     SymbolicNode StatementVisit(ComplexNode node);
     SymbolicNode RoutineVisit(ComplexNode node);
