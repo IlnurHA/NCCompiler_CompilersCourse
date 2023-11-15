@@ -433,7 +433,7 @@ public class ParameterNode : TypedSymbolicNode
 
 public class ParametersNode : SymbolicNode
 {
-    public List<ParameterNode> Parameters { get;};
+    public List<ParameterNode> Parameters { get;}
 
     public ParametersNode(List<ParameterNode> parameters)
     {

@@ -236,16 +236,11 @@ class EvalVisitor : IVisitor
 
                 switch (idAssignment)
                 {
-                    case ArrayFunctions:
-                        throw new Exception("Cannot assign ot not assignable entity (ArrayFunctions).");
                     case GetFieldNode:
                     case GetByIndexNode:
                     case StructVarNode:
                     case ArrayVarNode:
                         break;
-                    case OperationNode or ConstNode:
-                        throw new Exception(
-                            $"Unexpected Nodes. Got {typeof(ConstNode)} or {typeof(OperationNode)}, expected {typeof(VarNode)}");
                     case VarNode varNode:
                         idAssignment = (ValueNode) ScopeStack.FindVariable(varNode.Name!);
                         break;
