@@ -110,6 +110,33 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 0) return new ReturnNode();
                 ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
                 return new ReturnNode(returnValue);
+            case NodeTag.Range or NodeTag.RangeReverse:
+                var leftBound = (ValueNode) node.Children[0]!.Accept(this);
+                var rightBound = (ValueNode) node.Children[1]!.Accept(this);
+
+                var integerType = new TypeNode(MyType.Integer);
+                if (!leftBound.Type.IsConvertibleTo(integerType))
+                {
+                    throw new Exception($"Cannot convert {leftBound.Type.MyType} to integer type");
+                }
+                if (!rightBound.Type.IsConvertibleTo(integerType))
+                {
+                    throw new Exception($"Cannot convert {rightBound.Type.MyType} to integer type");
+                }
+
+                return new RangeNode(leftBound, rightBound, node.Tag == NodeTag.RangeReverse);
+                
+            case NodeTag.ForLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var idForLoop = (VarNode) node.Children[0]!.Accept(this);
+                idForLoop.Type = new TypeNode(MyType.Integer);
+                ScopeStack.AddVariable(idForLoop);
+                
+                var rangeForLoop = (RangeNode) node.Children[1]!.Accept(this);
+                var bodyForLoop = (BodyNode) node.Children[2]!.Accept(this);
+                
+                ScopeStack.DeleteScope();
+                return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop);
         }
     }
 

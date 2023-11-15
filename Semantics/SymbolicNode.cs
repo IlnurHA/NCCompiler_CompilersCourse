@@ -499,3 +499,32 @@ public class RoutineCallNode : ValueNode
         Expressions = expressions;
     }
 }
+
+public class RangeNode : SymbolicNode
+{
+    public ValueNode LeftBound { get; }
+    public ValueNode RightBound { get; }
+    
+    public bool Reversed { get; }
+
+    public RangeNode(ValueNode leftBound, ValueNode rightBound, bool reversed = false)
+    {
+        LeftBound = leftBound;
+        RightBound = rightBound;
+        Reversed = true;
+    }
+}
+
+public class ForLoopNode : StatementNode
+{
+    public VarNode IdName { get; }
+    public RangeNode Range { get; }
+    public BodyNode Body { get; }
+
+    public ForLoopNode(VarNode idName, RangeNode range, BodyNode body)
+    {
+        IdName = idName;
+        Range = range;
+        Body = body;
+    }
+}
