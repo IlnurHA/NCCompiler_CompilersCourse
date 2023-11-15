@@ -203,7 +203,6 @@ class EvalVisitor : IVisitor
                 {
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
-                    
                 }
 
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
@@ -212,7 +211,8 @@ class EvalVisitor : IVisitor
                 };
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 var undefinedType = new TypeNode(MyType.Undefined);
-                var bodyCont = (BodyNode) node.Children[0]!.Accept(this) ?? new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
+                var bodyCont = (BodyNode) node.Children[0]!.Accept(this) ??
+                               new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
                 var bodyStatement = (StatementNode) node.Children[1]!.Accept(this);
 
                 if (!bodyStatement.Type.IsTheSame(undefinedType) && bodyCont.Type.IsTheSame(undefinedType))
@@ -230,7 +230,6 @@ class EvalVisitor : IVisitor
                 bodyCont.Type = newTypeBody;
                 bodyCont.AddStatement(bodyStatement);
                 return bodyCont;
-                
         }
     }
 
@@ -265,6 +264,18 @@ class EvalVisitor : IVisitor
                         break;
                     default:
                         throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
+                }
+
+                var returnType = new TypeNode(MyType.Undefined);
+                if (returnTypeRoutineDecl != null)
+                {
+                    returnType = returnTypeRoutineDecl;
+                }
+
+                if (!bodyRoutineDeclFull.Type.IsConvertibleTo(returnType))
+                {
+                    throw new Exception(
+                        $"Unexpected return type. Got {bodyRoutineDeclFull.Type.MyType}, expected {returnType.MyType}");
                 }
 
                 ScopeStack.DeleteScope();
