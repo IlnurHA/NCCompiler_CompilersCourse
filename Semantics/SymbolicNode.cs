@@ -280,7 +280,7 @@ public class AssignmentNode : StatementNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; }
+    public List<StatementNode> Statements { get; set; }
 
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
@@ -449,7 +449,7 @@ public class ParametersNode : SymbolicNode
 public class FunctionDeclNode : VarNode
 {
     public VarNode FunctionName { get; }
-    public BodyNode Body { get; }
+    public BodyNode Body { get; set; }
     public ParametersNode? Parameters { get; }
     public TypeNode? ReturnType { get; }
 
@@ -515,7 +515,7 @@ public class ForLoopNode : StatementNode
 {
     public VarNode IdName { get; }
     public RangeNode Range { get; }
-    public BodyNode Body { get; }
+    public BodyNode Body { get; set; }
 
     public ForLoopNode(VarNode idName, RangeNode range, BodyNode body)
     {
@@ -529,7 +529,7 @@ public class ForEachLoopNode : StatementNode
 {
     public VarNode IdName { get; }
     public ArrayVarNode Array { get; }
-    public BodyNode Body { get; }
+    public BodyNode Body { get; set; }
 
     public ForEachLoopNode(VarNode idName, ArrayVarNode array, BodyNode body)
     {
@@ -542,7 +542,7 @@ public class ForEachLoopNode : StatementNode
 public class WhileLoopNode : StatementNode
 {
     public ValueNode Condition { get; }
-    public BodyNode Body { get; }
+    public BodyNode Body { get; set; }
 
     public WhileLoopNode(ValueNode condition, BodyNode body)
     {
@@ -554,7 +554,7 @@ public class WhileLoopNode : StatementNode
 public class IfStatement : StatementNode
 {
     public ValueNode Condition { get; }
-    public BodyNode Body { get; }
+    public BodyNode Body { get; set; }
 
     public IfStatement(ValueNode condition, BodyNode body)
     {
@@ -565,7 +565,7 @@ public class IfStatement : StatementNode
 
 public class IfElseStatement : IfStatement
 {
-    public BodyNode BodyElse { get; }
+    public BodyNode BodyElse { get; set; }
 
     public IfElseStatement(ValueNode condition, BodyNode body, BodyNode bodyElse) : base(condition, body)
     {
