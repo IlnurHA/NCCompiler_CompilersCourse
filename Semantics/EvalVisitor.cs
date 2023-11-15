@@ -15,24 +15,22 @@ class EvalVisitor : IVisitor
             case NodeTag.ModifiablePrimaryGettingField:
                 var modPrimField = node.Children[0]!.Accept(this);
                 var idField = node.Children[1]!.Accept(this);
-                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField)
-                    .GetValueNode(); // return VarNode
+                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
-                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr)
-                    .GetValueNode(); // return VarNode
+                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSorted = node.Children[0]!.Accept(this);
                 if (arrGetSorted.GetType() != typeof(ArrayVarNode))
                     throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
-                return new SortedArrayNode((ArrayVarNode) arrGetSorted).GetValueNode(); // TODO return VarNode
+                return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = node.Children[0]!.Accept(this);
-                return new ArraySizeNode((ArrayVarNode) arrGetSize).GetValueNode(); // TODO return VarNode
+                return new ArraySizeNode((ArrayVarNode) arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversed = node.Children[0]!.Accept(this);
-                return new ReversedArrayNode((ArrayVarNode) arrGetReversed).GetValueNode(); // TODO return VarNode
+                return new ReversedArrayNode((ArrayVarNode) arrGetReversed); // TODO return VarNode
         }
 
         throw new Exception("Unimplemented");

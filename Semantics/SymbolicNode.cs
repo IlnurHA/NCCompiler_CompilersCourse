@@ -44,14 +44,14 @@ public class TypeNode : SymbolicNode
     public TypeNode ConvertTo(TypeNode toTypeNode)
     {
         if (toTypeNode.IsTheSame(this)) return this;
-        return (toTypeNode.MyType, this.MyType) switch
+        return (toTypeNode.MyType, MyType) switch
         {
             (MyType.Integer, MyType.Real) => toTypeNode,
             (MyType.Integer, MyType.Boolean) => toTypeNode,
             (MyType.Real, MyType.Integer) => toTypeNode,
             (MyType.Real, MyType.Boolean) => toTypeNode,
             (MyType.Boolean, MyType.Integer) => toTypeNode,
-            _ => throw new Exception($"Can't convert from type {this.MyType} to {toTypeNode.MyType}")
+            _ => throw new Exception($"Can't convert from type {MyType} to {toTypeNode.MyType}")
         };
     }
 
@@ -62,7 +62,7 @@ public class TypeNode : SymbolicNode
             ConvertTo(toTypeNode);
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return false;
         }
@@ -144,8 +144,6 @@ public class ValueNode : SymbolicNode
     public new Object? Value { get; set; }
     public TypeNode Type { get; set; }
 
-    public IntermediateOperationNode? Child { get; set; } = null;
-
     public ValueNode(TypeNode type, object? value = null)
     {
         Value = value;
@@ -156,11 +154,6 @@ public class ValueNode : SymbolicNode
     {
         Value = null;
         Type = new TypeNode(MyType.Undefined);
-    }
-
-    public bool IsSubVar()
-    {
-        return Child != null;
     }
 
     public ValueNode GetFinalValueNode()
@@ -332,42 +325,7 @@ public class ArrayVarNode : VarNode
     }
 }
 
-public class IntermediateOperationNode : TypedSymbolicNode
-{
-    public IntermediateOperationNode(TypeNode typeNode) : base(typeNode)
-    {
-    }
-
-    public ValueNode GetValueNodeFromType(TypeNode typeNode)
-    {
-        switch (typeNode)
-        {
-            case ArrayTypeNode arrayTypeNode:
-                return new ArrayVarNode(arrayTypeNode);
-            case StructTypeNode structTypeNode:
-                var toVarFromType = new Dictionary<string, VarNode>();
-                foreach (var (name, node) in structTypeNode.StructFields)
-                {
-                    toVarFromType[name] = (VarNode) GetValueNodeFromType(node);
-                }
-
-                return new StructVarNode(toVarFromType, structTypeNode);
-            case UserDefinedTypeNode userDefinedTypeNode:
-                return GetValueNodeFromType(userDefinedTypeNode);
-            case { } simpleTypeNode:
-                return new ValueNode(simpleTypeNode);
-        }
-
-        throw new Exception("Got null type node");
-    }
-
-    public ValueNode GetValueNode()
-    {
-        throw new Exception("This function is not supposed to be called");
-    }
-}
-
-public class GetByIndexNode : IntermediateOperationNode
+public class GetByIndexNode : ValueNode
 {
     public ArrayVarNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
@@ -376,13 +334,6 @@ public class GetByIndexNode : IntermediateOperationNode
     {
         ArrayVarNode = varNode;
         Index = index;
-    }
-
-    public new ValueNode GetValueNode()
-    {
-        var node = GetValueNodeFromType(ArrayVarNode.Type);
-        node.Child = this;
-        return node;
     }
 }
 
@@ -404,7 +355,7 @@ public class StructVarNode : VarNode
     }
 }
 
-public class GetFieldNode : IntermediateOperationNode
+public class GetFieldNode : ValueNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }
@@ -423,16 +374,9 @@ public class GetFieldNode : IntermediateOperationNode
         FieldName = fieldNode.Name!;
         FieldNode = fieldNode;
     }
-
-    public new ValueNode GetValueNode()
-    {
-        var node = StructVarNode!.GetField(FieldName!);
-        node.Child = this;
-        return node;
-    }
 }
 
-public class ArrayFunctions : IntermediateOperationNode
+public class ArrayFunctions : ValueNode
 {
     public ArrayVarNode Array { get; set; }
 
@@ -447,15 +391,6 @@ public class SortedArrayNode : ArrayFunctions
     public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
     }
-
-    public new ValueNode GetValueNode()
-    {
-        return new ArrayVarNode((ArrayTypeNode) Array.Type)
-        {
-            IsInitialized = Array.IsInitialized,
-            Child = this,
-        };
-    }
 }
 
 public class ArraySizeNode : ArrayFunctions
@@ -463,29 +398,13 @@ public class ArraySizeNode : ArrayFunctions
     public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
     }
-
-    public new ValueNode GetValueNode()
-    {
-        return new ValueNode(new TypeNode(MyType.Integer))
-        {
-            Child = this,
-        };
-    }
+    
 }
 
 public class ReversedArrayNode : ArrayFunctions
 {
     public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
-    }
-
-    public new ValueNode GetValueNode()
-    {
-        return new ArrayVarNode((ArrayTypeNode) Array.Type)
-        {
-            IsInitialized = Array.IsInitialized,
-            Child = this,
-        };
     }
 }
 
