@@ -136,7 +136,10 @@ class EvalVisitor : IVisitor
                 var bodyForLoop = (BodyNode) node.Children[2]!.Accept(this);
                 
                 ScopeStack.DeleteScope();
-                return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop);
+                return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop)
+                {
+                    Type = bodyForLoop.Type
+                };
             
             case NodeTag.ForeachLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
@@ -149,7 +152,23 @@ class EvalVisitor : IVisitor
 
                 var bodyForEach = (BodyNode) node.Children[2]!.Accept(this);
                 ScopeStack.DeleteScope();
-                return new ForEachLoopNode(idForEach, arrayVarNode, bodyForEach);
+                return new ForEachLoopNode(idForEach, arrayVarNode, bodyForEach)
+                {
+                    Type = bodyForEach.Type
+                };
+            case NodeTag.WhileLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var condExprWhile = (ValueNode) node.Children[0]!.Accept(this);
+                if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
+                {
+                    throw new Exception($"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
+                }
+
+                var bodyWhile = (BodyNode) node.Children[1]!.Accept(this);
+                return new WhileLoopNode(condExprWhile, bodyWhile)
+                {
+                    Type = bodyWhile.Type
+                };
         }
     }
 

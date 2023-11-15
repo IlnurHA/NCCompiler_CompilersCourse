@@ -542,3 +542,15 @@ public class ForEachLoopNode : StatementNode
         Body = body;
     }
 }
+
+public class WhileLoopNode : StatementNode
+{
+    public ValueNode Condition { get; }
+    public BodyNode Body { get; }
+
+    public WhileLoopNode(ValueNode condition, BodyNode body)
+    {
+        Condition = condition;
+        Body = body;
+    }
+}
