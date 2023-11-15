@@ -323,7 +323,8 @@ public class ArrayVarNode : VarNode
     public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
     {
         Elements = values;
-        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), new ValueNode(new TypeNode(MyType.Integer), values.Count));
+        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(),
+            new ValueNode(new TypeNode(MyType.Integer), values.Count));
     }
 
     // For function parameters with arbitrary number of elements
@@ -595,5 +596,25 @@ public class ProgramNode : SymbolicNode
     public void AddDeclaration(SymbolicNode node)
     {
         Declarations.Add(node);
+    }
+}
+
+public class VariableDeclarations : SymbolicNode
+{
+    public Dictionary<string, VarNode> Declarations { get; }
+
+    public VariableDeclarations(Dictionary<string, VarNode> declarations)
+    {
+        Declarations = declarations;
+    }
+
+    public void AddDeclaration(VarNode varNode)
+    {
+        if (Declarations.ContainsKey(varNode.Name!))
+        {
+            throw new Exception("Repeated fields");
+        }
+
+        Declarations[varNode.Name!] = varNode;
     }
 }

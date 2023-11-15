@@ -32,13 +32,13 @@ class EvalVisitor : IVisitor
             case NodeTag.ModifiablePrimaryGettingField:
                 var modPrimField = node.Children[0]!.Accept(this);
                 var idField = node.Children[1]!.Accept(this);
-                
+
                 if (modPrimField is not StructTypeNode && modPrimField is VarNode varNode)
                 {
                     return new GetFieldNode((StructVarNode) ScopeStack.FindVariable(varNode.Name!),
                         (VarNode) idField);
                 }
-                
+
                 return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
@@ -57,6 +57,7 @@ class EvalVisitor : IVisitor
                 {
                     return new SortedArrayNode((ArrayVarNode) ScopeStack.FindVariable(((VarNode) arrGetSorted).Name!));
                 }
+
                 return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = (VarNode) node.Children[0]!.Accept(this);
@@ -111,12 +112,24 @@ class EvalVisitor : IVisitor
                             throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
                         variableIdentifier.Value = value;
                         variableIdentifier.IsInitialized = true;
+                        variableIdentifier.Type = variableType ?? value.Type;
+                    }
+                    else
+                    {
+                        variableIdentifier.Type = variableType;
                     }
 
                     scope.AddVariable(variableIdentifier);
                 }
 
                 return new DeclarationNode(variableIdentifier, value);
+            case NodeTag.VariableDeclarations:
+                var declarationsDecl = node.Children[0] != null
+                    ? (VariableDeclarations) node.Children[0]!.Accept(this)
+                    : new VariableDeclarations(new Dictionary<string, VarNode>());
+                var decl = (DeclarationNode) node.Children[1]!.Accept(this);
+                declarationsDecl.AddDeclaration(decl.Variable);
+                return declarationsDecl;
             case NodeTag.TypeDeclaration:
                 VarNode typeIdentifier = (VarNode) node.Children[0]!.Accept(this);
                 TypeNode typeSynonym = ((TypeNode) node.Children[1]!.Accept(this)).GetFinalTypeNode();
@@ -303,6 +316,17 @@ class EvalVisitor : IVisitor
             case NodeTag.ArrayTypeWithoutSize:
                 var typeWithoutSize = (TypeNode) node.Children[0]!.Accept(this);
                 return new ArrayTypeNode(typeWithoutSize);
+            case NodeTag.RecordType:
+                var declarations = (VariableDeclarations) node.Children[0]!.Accept(this);
+
+                var fields = new Dictionary<string, TypeNode>();
+
+                foreach (var (name, varNode) in declarations.Declarations)
+                {
+                    fields[name] = ((VarNode) varNode).Type;
+                }
+
+                return new StructTypeNode(fields);
 
             default:
                 throw new Exception($"Unexpected node tag: {node.Tag}");
@@ -664,7 +688,7 @@ class EvalVisitor : IVisitor
         {
             OperationType.And => PerformOperation((a, b) => a && b),
             OperationType.Or => PerformOperation((a, b) => a || b),
-            OperationType.Xor => PerformOperation((a, b) => a ^^ b),
+            OperationType.Xor => PerformOperation((a, b) => a ^ b),
             OperationType.Ge => PerformOperation((a, b) => a >= b),
             OperationType.Gt => PerformOperation((a, b) => a > b),
             OperationType.Le => PerformOperation((a, b) => a <= b),
