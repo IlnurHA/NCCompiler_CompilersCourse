@@ -127,12 +127,12 @@ public class UserDefinedTypeNode : TypeNode
     public string name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
 
-    public bool IsTheSame(TypeNode anotherObject)
+    public new bool IsTheSame(TypeNode anotherObject)
     {
         return Type.IsTheSame(anotherObject);
     }
 
-    public TypeNode GetFinalTypeNode()
+    public new TypeNode GetFinalTypeNode()
     {
         switch (Type)
         {

@@ -1,3 +1,7 @@
-routine main() is
-    return
+routine main() is 
+  var a: 
+  record
+    var a: integer
+    var b: integer
+  end
 end
