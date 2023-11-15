@@ -280,11 +280,16 @@ public class AssignmentNode : StatementNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; set; }
+    public List<StatementNode> Statements { get; }
 
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
         Statements = statements;
+    }
+
+    public void AddStatement(StatementNode statement)
+    {
+        Statements.Add(statement);
     }
 }
 

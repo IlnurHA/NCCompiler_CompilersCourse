@@ -210,7 +210,27 @@ class EvalVisitor : IVisitor
                 {
                     Type = newType
                 };
-            
+            case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
+                var undefinedType = new TypeNode(MyType.Undefined);
+                var bodyCont = (BodyNode) node.Children[0]!.Accept(this) ?? new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
+                var bodyStatement = (StatementNode) node.Children[1]!.Accept(this);
+
+                if (!bodyStatement.Type.IsTheSame(undefinedType) && bodyCont.Type.IsTheSame(undefinedType))
+                {
+                    bodyCont.Type = bodyStatement.Type;
+                }
+
+                var newTypeBody = bodyStatement.Type;
+                if (!bodyStatement.Type.IsTheSame(bodyCont.Type))
+                {
+                    newTypeBody = _isValidOperation(new ValueNode(bodyCont.Type), new ValueNode(bodyStatement.Type),
+                        OperationType.Assert);
+                }
+
+                bodyCont.Type = newTypeBody;
+                bodyCont.AddStatement(bodyStatement);
+                return bodyCont;
+                
         }
     }
 
