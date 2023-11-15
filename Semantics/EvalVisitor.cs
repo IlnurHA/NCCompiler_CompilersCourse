@@ -353,7 +353,7 @@ class EvalVisitor : IVisitor
                 var operationNode = node.Children[0]!;
                 return operationNode switch
                 {
-                    LeafNode<string> leafNode => leafNode.Value switch
+                    ComplexNode.LeafNode<string> leafNode => leafNode.Value switch
                     {
                         "-" => OperationType.UnaryMinus,
                         "+" => OperationType.UnaryPlus,
@@ -401,7 +401,7 @@ class EvalVisitor : IVisitor
         }
     }
 
-    public SymbolicNode VisitLeaf<T>(LeafNode<T> node)
+    public SymbolicNode VisitLeaf<T>(ComplexNode.LeafNode<T> node)
     {
         switch (node.Tag)
         {

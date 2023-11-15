@@ -76,7 +76,7 @@ namespace NCCompiler_CompilersCourse.Parser
 
         readonly NodeTag _tag;
         public NodeTag Tag => _tag;
-        
+
         // public NodeTag Tag { get; set; }
 
         protected Node(NodeTag tag)
@@ -99,22 +99,62 @@ namespace NCCompiler_CompilersCourse.Parser
         public override SymbolicNode Accept(IVisitor visitor)
         {
             // TODO - should call the correct method based on the tag
-            return visitor.ModifiablePrimaryVisit(this);
+            switch (Tag)
+            {
+                case NodeTag.ModifiablePrimaryGettingField:
+                case NodeTag.ModifiablePrimaryGettingValueFromArray:
+                case NodeTag.ArrayGetSorted:
+                case NodeTag.ArrayGetSize:
+                case NodeTag.ArrayGetReversed:
+                    return visitor.ModifiablePrimaryVisit(this);
+                case NodeTag.VariableDeclarationFull:
+                case NodeTag.VariableDeclarationIdenType:
+                case NodeTag.VariableDeclarationIdenExpr:
+                case NodeTag.TypeDeclaration:
+                case NodeTag.Break:
+                case NodeTag.Assert:
+                case NodeTag.Return:
+                    return visitor.StatementVisit(this);
+                case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
+                case NodeTag.ParameterDeclaration:
+                case NodeTag.ParametersContinuous:
+                case NodeTag.RoutineCall:
+                    return visitor.RoutineVisit(this);
+                case NodeTag.And:
+                case NodeTag.Or:
+                case NodeTag.Xor:
+                case NodeTag.Le:
+                case NodeTag.Lt:
+                case NodeTag.Ge:
+                case NodeTag.Gt:
+                case NodeTag.Eq:
+                case NodeTag.Ne:
+                case NodeTag.Plus:
+                case NodeTag.Minus:
+                case NodeTag.Mul:
+                case NodeTag.Div:
+                case NodeTag.Rem:
+                case NodeTag.NotExpression:
+                case NodeTag.SignToInteger:
+                case NodeTag.SignToDouble:
+                    return visitor.ExpressionVisit(this);
+                default:
+                    throw new Exception($"Unexpected NodeTag {Tag} in the visit function");
+            }
+        }
+
+        internal class LeafNode<T> : Node
+        {
+            public T Value { get; }
+
+            public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
+            {
+                Value = value;
+            }
+
+            public override SymbolicNode Accept(IVisitor visitor)
+            {
+                return visitor.VisitLeaf(this);
+            }
         }
     }
-
-    internal class LeafNode<T> : Node
-    {
-        public T Value { get; }
-
-        public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
-        {
-            Value = value;
-        }
-
-        public override SymbolicNode Accept(IVisitor visitor)
-        {
-            return visitor.VisitLeaf(this);
-        }
-    }
-}
