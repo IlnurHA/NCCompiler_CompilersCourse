@@ -1,5 +1,5 @@
 routine main() is 
-  var xor_var: bool is true xor false // true
+  var xor_var: boolean is true xor false // true
   assert xor_var, true // OK
 
   // =============================
@@ -18,15 +18,15 @@ routine main() is
   
   // =============================
 
-  var int_to_bool: bool is 1 // true
+  var int_to_bool: boolean is 1 // true
   assert int_to_bool, true // OK
   
-  var int_to_bool2: bool is 0 // false
+  var int_to_bool2: boolean is 0 // false
   assert int_to_bool2, false // OK
 
-  var bools_err: bool is 25 // err
-  var bools_err_2: bool is 1.0 // err
-  var bools_err_2: bool is 0.0 // err
+  var bools_err: boolean is 25 // err
+  var bools_err_2: boolean is 1.0 // err
+  var bools_err_2: boolean is 0.0 // err
   
   var ints: integer is 5.0 + 2.3 // 7
   assert ints, 7 // OK

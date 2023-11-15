@@ -119,7 +119,34 @@ class EvalVisitor : IVisitor
                         variableIdentifier.Type = variableType;
                     }
 
-                    scope.AddVariable(variableIdentifier);
+                    switch (variableIdentifier.Type)
+                    {
+                        case StructTypeNode structType:
+                            var dict = new Dictionary<string, VarNode>();
+
+                            foreach (var (key, typeValue) in structType.StructFields)
+                            {
+                                dict[key] = typeValue switch
+                                {
+                                    ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode),
+                                    StructTypeNode structTypeNode => StructVarNode.FromType(structTypeNode),
+                                    { } nodeTo => new VarNode {Type = nodeTo}
+                                };
+                            }
+
+                            variableIdentifier = new StructVarNode(dict, structType)
+                                {Name = variableIdentifier.Name!, Value = value};
+                            scope.AddVariable(variableIdentifier);
+                            break;
+                        case ArrayTypeNode arrayTypeNode:
+                            variableIdentifier = new ArrayVarNode(arrayTypeNode)
+                                {Name = variableIdentifier.Name!, Value = value};
+                            scope.AddVariable(variableIdentifier);
+                            break;
+                        case { } nodeTo:
+                            scope.AddVariable(variableIdentifier);
+                            break;
+                    }
                 }
 
                 return new DeclarationNode(variableIdentifier, value);

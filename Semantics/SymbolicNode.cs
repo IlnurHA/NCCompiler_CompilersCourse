@@ -367,6 +367,27 @@ public class StructVarNode : VarNode
             throw new Exception($"Trying to get undefined field {fieldName} from {Name} struct");
         return Fields[fieldName];
     }
+
+    public static StructVarNode FromType(StructTypeNode structTypeNode)
+    {
+        var newDict = new Dictionary<string, VarNode>();
+
+        foreach (var (key, value) in structTypeNode.StructFields)
+        {
+            newDict[key] = value switch
+            {
+                ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode),
+                StructTypeNode structTypeNode2 => StructVarNode.FromType(structTypeNode2),
+                { } node => new VarNode()
+                {
+                    IsInitialized = false,
+                    Type = node,
+                }
+            };
+        }
+
+        return new StructVarNode(newDict, structTypeNode);
+    }
 }
 
 public class GetFieldNode : ValueNode

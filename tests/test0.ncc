@@ -1,7 +1,8 @@
 routine main() is 
-  var a: 
-  record
-    var a: integer
-    var b: integer
-  end
+   var a:
+   record 
+    var hello: integer
+    var ends: boolean
+   end
+   a.hello := 5
 end
