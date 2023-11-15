@@ -70,9 +70,8 @@ public class TypeNode : SymbolicNode
     
     public TypeNode GetFinalTypeNode()
     {
-        var type = GetType();
-        if (type != typeof(UserDefinedTypeNode)) return this;
-        return ((UserDefinedTypeNode) this).GetFinalTypeNode();
+        if (this is not UserDefinedTypeNode userDefinedTypeNode) return this;
+        return userDefinedTypeNode.GetFinalTypeNode();
     }
 }
 
@@ -94,8 +93,7 @@ public class ArrayTypeNode : TypeNode
 
     public new bool IsTheSame(TypeNode anotherObject)
     {
-        if (anotherObject.GetType() != typeof(ArrayTypeNode)) return false;
-        var tempObj = (ArrayTypeNode) anotherObject;
+        if (anotherObject is not ArrayTypeNode tempObj) return false;
         return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj) && Size == tempObj.Size;
     }
 }
@@ -107,6 +105,19 @@ public class StructTypeNode : TypeNode
     public StructTypeNode(Dictionary<string, TypeNode> structFields) : base(MyType.CompoundType)
     {
         StructFields = structFields;
+    }
+
+    public new bool IsTheSame(TypeNode anotherObject)
+    {
+        if (anotherObject is not StructTypeNode tempObj) return false;
+        if (StructFields.Count != tempObj.StructFields.Count) return false;
+        foreach (var field in StructFields)
+        {
+            if (!tempObj.StructFields.ContainsKey(field.Key)) return false;
+            if (!field.Value.IsTheSame(tempObj.StructFields[field.Key])) return false;
+        }
+
+        return true;
     }
 }
 
@@ -158,8 +169,8 @@ public class ValueNode : SymbolicNode
 
     public ValueNode GetFinalValueNode()
     {
-        if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
-        TypeNode finalType = ((UserDefinedTypeNode) Type).GetFinalTypeNode();
+        if (Type is not UserDefinedTypeNode userDefinedTypeNode) return this;
+        var finalType = userDefinedTypeNode.GetFinalTypeNode();
         Type = finalType;
         return this;
     }
@@ -184,9 +195,8 @@ public class VarNode : ValueNode
 
     public VarNode GetFinalVarNode()
     {
-        var type = Type.GetType();
-        if (type != typeof(UserDefinedTypeNode)) return this;
-        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
+        if (Type is not UserDefinedTypeNode userDefinedTypeNode) return this;
+        var finalType = userDefinedTypeNode.GetFinalTypeNode();
         Type = finalType;
         return this;
     }
