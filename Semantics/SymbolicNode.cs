@@ -460,6 +460,7 @@ public class FunctionDeclNode : VarNode
         Body = body;
         Parameters = parameters;
         ReturnType = returnType;
+        Name = FunctionName.Name;
     }
 }
 

@@ -130,6 +130,7 @@ Statement   : Assignment    { $$ = $1; }
             | IfStatement   { $$ = $1; }
             | Assert        { $$ = $1; }
             | RETURN Expression { $$ = Node.MakeComplexNode(NodeTag.Return, $2); }
+            | RETURN { $$ = Node.MakeComplexNode(NodeTag.Return); }
             | BREAK { $$ = Node.MakeComplexNode(NodeTag.Break); }
             ;
 

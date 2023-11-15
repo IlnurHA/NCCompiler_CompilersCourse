@@ -101,6 +101,8 @@ internal class ComplexNode : Node
         // TODO - should call the correct method based on the tag
         switch (Tag)
         {
+            case NodeTag.ProgramRoutineDeclaration or NodeTag.ProgramSimpleDeclaration:
+                return visitor.ProgramVisit(this);
             case NodeTag.ModifiablePrimaryGettingField:
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
             case NodeTag.ArrayGetSorted:
@@ -114,7 +116,9 @@ internal class ComplexNode : Node
             case NodeTag.Break:
             case NodeTag.Assert:
             case NodeTag.Return:
+            case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 return visitor.StatementVisit(this);
+            case NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType:
             case NodeTag.ParameterDeclaration:
             case NodeTag.ParametersContinuous:
@@ -137,6 +141,7 @@ internal class ComplexNode : Node
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
             case NodeTag.SignToDouble:
+            case NodeTag.ArrayConst:
                 return visitor.ExpressionVisit(this);
             default:
                 throw new Exception($"Unexpected NodeTag {Tag} in the visit function");

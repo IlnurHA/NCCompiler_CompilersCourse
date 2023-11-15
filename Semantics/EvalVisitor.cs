@@ -85,7 +85,7 @@ class EvalVisitor : IVisitor
                     {
                         variableIdentifier = variableIdentifier.GetFinalVarNode();
                         value = value.GetFinalValueNode();
-                        if (variableType != null && value.Type.IsConvertibleTo(variableType))
+                        if (variableType != null && !value.Type.IsConvertibleTo(variableType))
                             throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
                         variableIdentifier.Value = value;
                         variableIdentifier.IsInitialized = true;
@@ -226,7 +226,7 @@ class EvalVisitor : IVisitor
                 };
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 var undefinedType = new TypeNode(MyType.Undefined);
-                var bodyCont = (BodyNode) node.Children[0]!.Accept(this) ??
+                var bodyCont = node.Children[0] != null ? (BodyNode) node.Children[0]!.Accept(this) :
                                new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
                 var bodyStatement = (StatementNode) node.Children[1]!.Accept(this);
 
@@ -605,7 +605,7 @@ class EvalVisitor : IVisitor
         {
             OperationType.UnaryMinus => PerformOperation((a) => -a),
             OperationType.UnaryPlus => PerformOperation((a) => +a),
-            OperationType.Not => PerformOperation((a) => !a),
+            OperationType.Not => PerformOperation((a) => !Convert.ToBoolean(a)),
             _ => throw new Exception("Something is wrong in _simplifyUnaryOperation")
         };
 
@@ -658,7 +658,7 @@ class EvalVisitor : IVisitor
             _ => identifier
         };
     }
-
+    
     public SymbolicNode ExpressionVisit(ComplexNode node)
     {
         switch (node.Tag)
@@ -733,6 +733,8 @@ class EvalVisitor : IVisitor
     {
         switch (node.Tag)
         {
+            case NodeTag.BooleanLiteral:
+                return new ConstNode(new TypeNode(MyType.Boolean), node.Value!);
             case NodeTag.IntegerLiteral:
                 return new ConstNode(new TypeNode(MyType.Integer), node.Value!);
             case NodeTag.RealLiteral:

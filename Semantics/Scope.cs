@@ -22,7 +22,7 @@ public class Scope : IDisposable
 
     public bool IsFree(string name)
     {
-        return Variables.TryGetValue(name, out _);
+        return !Variables.TryGetValue(name, out _);
     }
 
     public VarNode? FindVariable(string name)
