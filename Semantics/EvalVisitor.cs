@@ -1,5 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using System.Numerics;
+using System.Runtime.InteropServices.JavaScript;
+using Microsoft.VisualBasic.CompilerServices;
 using NCCompiler_CompilersCourse.Parser;
 
 namespace NCCompiler_CompilersCourse.Semantics;
@@ -15,22 +18,22 @@ class EvalVisitor : IVisitor
             case NodeTag.ModifiablePrimaryGettingField:
                 var modPrimField = node.Children[0]!.Accept(this);
                 var idField = node.Children[1]!.Accept(this);
-                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField); // return VarNode
+                return new GetFieldNode((StructVarNode)modPrimField, (VarNode)idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
-                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr); // return VarNode
+                return new GetByIndexNode((ArrayVarNode)arrFromArr, (ValueNode)indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSorted = node.Children[0]!.Accept(this);
                 if (arrGetSorted.GetType() != typeof(ArrayVarNode))
                     throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
-                return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
+                return new SortedArrayNode((ArrayVarNode)arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = node.Children[0]!.Accept(this);
-                return new ArraySizeNode((ArrayVarNode) arrGetSize); // TODO return VarNode
+                return new ArraySizeNode((ArrayVarNode)arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversed = node.Children[0]!.Accept(this);
-                return new ReversedArrayNode((ArrayVarNode) arrGetReversed); // TODO return VarNode
+                return new ReversedArrayNode((ArrayVarNode)arrGetReversed); // TODO return VarNode
         }
 
         throw new Exception("Unimplemented");
@@ -43,20 +46,20 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationFull:
             case NodeTag.VariableDeclarationIdenType:
             case NodeTag.VariableDeclarationIdenExpr:
-                VarNode variableIdentifier = (VarNode) node.Children[0]!.Accept(this);
+                VarNode variableIdentifier = (VarNode)node.Children[0]!.Accept(this);
                 TypeNode? variableType = null;
                 ValueNode? value = null;
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
-                        value = (ValueNode) node.Children[2]!.Accept(this);
+                        variableType = (TypeNode)node.Children[1]!.Accept(this);
+                        value = (ValueNode)node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
+                        variableType = (TypeNode)node.Children[1]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
-                        value = (ValueNode) node.Children[1]!.Accept(this);
+                        value = (ValueNode)node.Children[1]!.Accept(this);
                         break;
                 }
 
@@ -97,18 +100,17 @@ class EvalVisitor : IVisitor
                 if (!ScopeStack.HasLoopScope()) throw new Exception("Unexpected context for 'break' statement");
                 return new BreakNode();
             case NodeTag.Assert:
-                ValueNode leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
-                ValueNode rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+                ValueNode leftAssertExpression = (ValueNode)node.Children[0]!.Accept(this);
+                ValueNode rightAssertExpression = (ValueNode)node.Children[1]!.Accept(this);
 
                 if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
                 {
                     _isValidOperation(leftAssertExpression, rightAssertExpression, operationType: OperationType.Assert);
                 }
-
                 return new AssertNode(leftAssertExpression, rightAssertExpression);
             case NodeTag.Return:
                 if (node.Children.Length == 0) return new ReturnNode();
-                ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
+                ValueNode returnValue = (ValueNode)node.Children[0]!.Accept(this);
                 return new ReturnNode(returnValue);
             case NodeTag.Range or NodeTag.RangeReverse:
                 var leftBound = (ValueNode) node.Children[0]!.Accept(this);
@@ -384,6 +386,11 @@ class EvalVisitor : IVisitor
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
+        if (operand.Type is StructTypeNode or ArrayTypeNode)
+        {
+            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+        }
+
         switch (operationType)
         {
             case OperationType.UnaryMinus:
@@ -414,6 +421,11 @@ class EvalVisitor : IVisitor
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
+        if (operand1.Type is StructTypeNode or ArrayTypeNode || operand2.Type is StructTypeNode or ArrayTypeNode)
+        {
+            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+        }
+
         switch (operationType)
         {
             case OperationType.And:
@@ -524,6 +536,116 @@ class EvalVisitor : IVisitor
         }
     }
 
+    private ConstNode _performOperation(ConstNode operand1, ConstNode operand2, TypeNode resultType,
+        Func<dynamic, dynamic, dynamic> operation)
+    {
+        var booleanType = new TypeNode(MyType.Boolean);
+        var realType = new TypeNode(MyType.Real);
+        var integerType = new TypeNode(MyType.Integer);
+        if (resultType.IsTheSame(realType))
+        {
+            return new ConstNode(resultType,
+                operation(Convert.ToDouble(operand1.Value), Convert.ToDouble(operand2.Value)));
+        }
+
+        if (resultType.IsTheSame(integerType))
+        {
+            return new ConstNode(resultType,
+                operation(Convert.ToInt32(operand1.Value), Convert.ToInt32(operand2.Value)));
+        }
+
+        if (resultType.IsTheSame(booleanType))
+        {
+            return new ConstNode(resultType,
+                operation(Convert.ToBoolean(operand1.Value), Convert.ToBoolean(operand2.Value)));
+        }
+
+        throw new Exception($"resultType {resultType} is neither boolean, integer nor real");
+    }
+
+    private ConstNode _performOperation(ConstNode operand, TypeNode resultType, Func<dynamic, dynamic> operation)
+    {
+        var booleanType = new TypeNode(MyType.Boolean);
+        var realType = new TypeNode(MyType.Real);
+        var integerType = new TypeNode(MyType.Integer);
+        if (resultType.IsTheSame(realType))
+        {
+            return new ConstNode(resultType, operation(Convert.ToDouble(operand.Value)));
+        }
+
+        if (resultType.IsTheSame(integerType))
+        {
+            return new ConstNode(resultType, operation(Convert.ToInt32(operand.Value)));
+        }
+
+        if (resultType.IsTheSame(booleanType))
+        {
+            return new ConstNode(resultType, operation(Convert.ToBoolean(operand.Value)));
+        }
+
+        throw new Exception($"resultType {resultType} is neither boolean, integer nor real");
+    }
+
+    private ConstNode _simplifyOperation(ConstNode operand, TypeNode resultType, OperationType operationType)
+    {
+        return operationType switch
+        {
+            OperationType.UnaryMinus => PerformOperation((a) => -a),
+            OperationType.UnaryPlus => PerformOperation((a) => +a),
+            OperationType.Not => PerformOperation((a) => !a),
+            _ => throw new Exception("Something is wrong in _simplifyUnaryOperation")
+        };
+
+        ConstNode PerformOperation(Func<dynamic, dynamic> operation)
+        {
+            return _performOperation(operand, resultType, operation);
+        }
+    }
+
+    private ConstNode _simplifyOperation(ConstNode operand1, ConstNode operand2, TypeNode resultType,
+        OperationType operationType)
+    {
+        return operationType switch
+        {
+            OperationType.And => PerformOperation((a, b) => a && b),
+            OperationType.Or => PerformOperation((a, b) => a || b),
+            OperationType.Xor => PerformOperation((a, b) => a ^ ^ b),
+            OperationType.Ge => PerformOperation((a, b) => a >= b),
+            OperationType.Gt => PerformOperation((a, b) => a > b),
+            OperationType.Le => PerformOperation((a, b) => a <= b),
+            OperationType.Lt => PerformOperation((a, b) => a < b),
+            OperationType.Eq => PerformOperation((a, b) => a == b),
+            OperationType.Ne => PerformOperation((a, b) => a != b),
+            OperationType.Plus => PerformOperation((a, b) => a + b),
+            OperationType.Minus => PerformOperation((a, b) => a - b),
+            OperationType.Mul => PerformOperation((a, b) => a * b),
+            // TODO division by 0
+            OperationType.Div => PerformOperation((a, b) => a / b),
+            OperationType.Rem => PerformOperation((a, b) => a % b),
+            _ => throw new Exception("Unknown operation")
+        };
+
+        ConstNode PerformOperation(Func<dynamic, dynamic, dynamic> operation)
+        {
+            return _performOperation(operand1, operand2, resultType, operation);
+        }
+    }
+
+    private ValueNode _getVarForIdentifier(ValueNode identifier)
+    {
+        if (identifier is not VarNode varNode1) return identifier;
+        var value1 = ScopeStack.FindVariable(varNode1.Name!);
+        return value1 switch
+        {
+            TypeNode typeNode => throw new Exception(
+                $"Can't perform operation on user-defined type {typeNode.MyType}"),
+            VarNode { Type.MyType: MyType.Undefined } => throw new Exception(
+                "Can't perform operation on undefined type"),
+            VarNode varNode => varNode,
+            _ => identifier
+        };
+    }
+
     public SymbolicNode ExpressionVisit(ComplexNode node)
     {
         switch (node.Tag)
@@ -544,8 +666,16 @@ class EvalVisitor : IVisitor
             case NodeTag.Rem:
                 var operand1 = (ValueNode) node.Children[0]!.Accept(this);
                 var operand2 = (ValueNode) node.Children[1]!.Accept(this);
+                operand1 = _getVarForIdentifier(operand1);
+                operand2 = _getVarForIdentifier(operand2);
                 var operationType = _nodeTagToOperationType(node);
                 var resultType = _isValidOperation(operand1, operand2, operationType);
+                if (operand1 is ConstNode constNode1 && operand2 is ConstNode constNode2)
+                {
+                    var simplifiedConstNode = _simplifyOperation(constNode1, constNode2, resultType, operationType);
+                    return simplifiedConstNode;
+                }
+
                 return new OperationNode(operationType, new List<ValueNode> {operand1, operand2}, resultType);
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
@@ -553,6 +683,11 @@ class EvalVisitor : IVisitor
                 var operand = (ValueNode) node.Children[0]!.Accept(this);
                 operationType = _nodeTagToOperationType(node);
                 resultType = _isValidUnaryOperation(operand, operationType);
+                if (operand is ConstNode constNode)
+                {
+                    return _simplifyOperation(constNode, resultType, operationType);
+                }
+
                 return new OperationNode(operationType, new List<ValueNode> {operand}, resultType);
             case NodeTag.ArrayConst:
                 var expressions = (ExpressionsNode) node.Children[0]!.Accept(this);
