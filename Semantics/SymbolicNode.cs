@@ -293,11 +293,6 @@ public class BodyNode : TypedSymbolicNode
     }
 }
 
-public class StatementWithBodyNode : StatementNode
-{
-    public BodyNode Body { get; set; }
-}
-
 public class OperationNode : ValueNode
 {
     public OperationType OperationType { get; set; }
@@ -438,7 +433,7 @@ public class ParameterNode : TypedSymbolicNode
 
 public class ParametersNode : SymbolicNode
 {
-    public List<ParameterNode> Parameters { get; set; } = new List<ParameterNode>();
+    public List<ParameterNode> Parameters { get;};
 
     public ParametersNode(List<ParameterNode> parameters)
     {
@@ -453,10 +448,10 @@ public class ParametersNode : SymbolicNode
 
 public class FunctionDeclNode : VarNode
 {
-    public VarNode FunctionName { get; set; }
-    public BodyNode Body { get; set; }
-    public ParametersNode? Parameters { get; set; }
-    public TypeNode? ReturnType { get; set; }
+    public VarNode FunctionName { get; }
+    public BodyNode Body { get; }
+    public ParametersNode? Parameters { get; }
+    public TypeNode? ReturnType { get; }
 
     // For full declaration of function
     public FunctionDeclNode(VarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
@@ -466,10 +461,6 @@ public class FunctionDeclNode : VarNode
         Parameters = parameters;
         ReturnType = returnType;
     }
-}
-
-public class ExpressionNode : ValueNode
-{
 }
 
 public class ExpressionsNode : SymbolicNode
@@ -486,7 +477,7 @@ public class ExpressionsNode : SymbolicNode
         Expressions = new List<ValueNode>();
     }
 
-    public void AddExpression(ExpressionNode expressionNode)
+    public void AddExpression(ValueNode expressionNode)
     {
         Expressions.Add(expressionNode);
     }

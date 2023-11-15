@@ -230,6 +230,38 @@ class EvalVisitor : IVisitor
                 bodyCont.Type = newTypeBody;
                 bodyCont.AddStatement(bodyStatement);
                 return bodyCont;
+            case NodeTag.Assignment:
+                var idAssignment = (ValueNode) node.Children[0]!.Accept(this);
+                var exprAssignment = (ValueNode) node.Children[1]!.Accept(this);
+
+                switch (idAssignment)
+                {
+                    case ArrayFunctions:
+                        throw new Exception("Cannot assign ot not assignable entity (ArrayFunctions).");
+                    case GetFieldNode:
+                    case GetByIndexNode:
+                    case StructVarNode:
+                    case ArrayVarNode:
+                        break;
+                    case OperationNode or ConstNode:
+                        throw new Exception(
+                            $"Unexpected Nodes. Got {typeof(ConstNode)} or {typeof(OperationNode)}, expected {typeof(VarNode)}");
+                    case VarNode varNode:
+                        idAssignment = (ValueNode) ScopeStack.FindVariable(varNode.Name!);
+                        break;
+                    default:
+                        throw new Exception("Unexpected type of node");
+                    
+                }
+
+                if (!idAssignment.Type.IsTheSame(exprAssignment.Type) &&
+                    !exprAssignment.Type.IsConvertibleTo(idAssignment.Type))
+                {
+                    throw new Exception($"Unexpected type. Got {exprAssignment.Type.MyType}, expected {idAssignment.Type.MyType}");
+                }
+                return new AssignmentNode((VarNode) idAssignment, exprAssignment);
+            default:
+                throw new Exception($"Unexpected node tag: {node.Tag}");
         }
     }
 
