@@ -7,5 +7,6 @@ interface IVisitor
 {
     SymbolicNode ModifiablePrimaryVisit(ComplexNode node);
     SymbolicNode RoutineVisit(ComplexNode node);
+    SymbolicNode ExpressionVisit(ComplexNode node);
     SymbolicNode VisitLeaf<T>(LeafNode<T> node);
 }

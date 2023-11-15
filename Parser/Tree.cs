@@ -98,6 +98,7 @@ namespace NCCompiler_CompilersCourse.Parser
 
         public override SymbolicNode Accept(IVisitor visitor)
         {
+            // TODO - should call the correct method based on the tag
             return visitor.ModifiablePrimaryVisit(this);
         }
     }
