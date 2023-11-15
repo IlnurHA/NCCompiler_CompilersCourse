@@ -142,19 +142,19 @@ internal class ComplexNode : Node
                 throw new Exception($"Unexpected NodeTag {Tag} in the visit function");
         }
     }
+}
 
-    internal class LeafNode<T> : Node
+internal class LeafNode<T> : Node
+{
+    public T Value { get; }
+
+    public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
     {
-        public T Value { get; }
+        Value = value;
+    }
 
-        public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
-        {
-            Value = value;
-        }
-
-        public override SymbolicNode Accept(IVisitor visitor)
-        {
-            return visitor.VisitLeaf(this);
-        }
+    public override SymbolicNode Accept(IVisitor visitor)
+    {
+        return visitor.VisitLeaf(this);
     }
 }

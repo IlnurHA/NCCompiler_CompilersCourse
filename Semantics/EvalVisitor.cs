@@ -353,7 +353,7 @@ class EvalVisitor : IVisitor
                 var operationNode = node.Children[0]!;
                 return operationNode switch
                 {
-                    ComplexNode.LeafNode<string> leafNode => leafNode.Value switch
+                    LeafNode<string> leafNode => leafNode.Value switch
                     {
                         "-" => OperationType.UnaryMinus,
                         "+" => OperationType.UnaryPlus,
@@ -401,7 +401,7 @@ class EvalVisitor : IVisitor
         }
     }
 
-    public SymbolicNode VisitLeaf<T>(ComplexNode.LeafNode<T> node)
+    public SymbolicNode VisitLeaf<T>(LeafNode<T> node)
     {
         switch (node.Tag)
         {
@@ -421,21 +421,6 @@ class EvalVisitor : IVisitor
                 throw new Exception($"Unexpected node tag for visiting Leaf node {node.Tag}");
         }
     }
-
-    // private bool _isConvertible(TypeNode var1, TypeNode var2)
-    // {
-    //     if (var1.IsTheSame(var2)) return true;
-    //     return (var1.MyType, var2.MyType) switch
-    //     {
-    //         (MyType.Integer, MyType.Real) => true,
-    //         (MyType.Integer, MyType.Boolean) => true,
-    //         (MyType.Real, MyType.Real) => true,
-    //         (MyType.Real, MyType.Integer) => true,
-    //         (MyType.Real, MyType.Boolean) => true,
-    //         (MyType.Boolean, MyType.Integer) => true,
-    //         _ => false
-    //     };
-    // }
 
     private MyType _getPrimitiveType(string primitiveType)
     {

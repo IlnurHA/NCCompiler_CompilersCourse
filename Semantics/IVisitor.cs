@@ -9,5 +9,5 @@ interface IVisitor
     SymbolicNode StatementVisit(ComplexNode node);
     SymbolicNode RoutineVisit(ComplexNode node);
     SymbolicNode ExpressionVisit(ComplexNode node);
-    SymbolicNode VisitLeaf<T>(ComplexNode.LeafNode<T> node);
+    SymbolicNode VisitLeaf<T>(LeafNode<T> node);
 }
