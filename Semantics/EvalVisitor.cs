@@ -15,21 +15,21 @@ class EvalVisitor : IVisitor
             case NodeTag.ModifiablePrimaryGettingField:
                 var modPrimField = node.Children[0]!.Accept(this);
                 var idField = node.Children[1]!.Accept(this);
-                return new GetFieldNode((StructVarNode)modPrimField, (VarNode)idField)
+                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField)
                     .GetValueNode(); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
-                return new GetByIndexNode((ArrayVarNode)arrFromArr, (ValueNode)indexFromArr)
+                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr)
                     .GetValueNode(); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSorted = node.Children[0]!.Accept(this);
                 if (arrGetSorted.GetType() != typeof(ArrayVarNode))
                     throw new Exception($"Should have got 'ArrayVarNode', got '{arrGetSorted}' instead");
-                return new SortedArrayNode((ArrayVarNode)arrGetSorted).GetValueNode(); // TODO return VarNode
+                return new SortedArrayNode((ArrayVarNode) arrGetSorted).GetValueNode(); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSize = node.Children[0]!.Accept(this);
-                return new ArraySizeNode((ArrayVarNode)arrGetSize).GetValueNode(); // TODO return VarNode
+                return new ArraySizeNode((ArrayVarNode) arrGetSize).GetValueNode(); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversed = node.Children[0]!.Accept(this);
                 return new ReversedArrayNode((ArrayVarNode) arrGetReversed).GetValueNode(); // TODO return VarNode
@@ -45,27 +45,27 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationFull:
             case NodeTag.VariableDeclarationIdenType:
             case NodeTag.VariableDeclarationIdenExpr:
-                VarNode identifier = (VarNode)node.Children[0]!.Accept(this);
+                VarNode identifier = (VarNode) node.Children[0]!.Accept(this);
                 TypeNode? type = null;
                 ValueNode? value = null;
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        type = (TypeNode)node.Children[1]!.Accept(this);
-                        value = (ValueNode)node.Children[2]!.Accept(this);
+                        type = (TypeNode) node.Children[1]!.Accept(this);
+                        value = (ValueNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        type = (TypeNode)node.Children[1]!.Accept(this);
+                        type = (TypeNode) node.Children[1]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
-                        value = (ValueNode)node.Children[1]!.Accept(this);
+                        value = (ValueNode) node.Children[1]!.Accept(this);
                         break;
                 }
 
-                
+
                 using (var scope = ScopeStack.GetLastScope())
                 {
-                    if (identifier.Name == null || !scope.IsFree(identifier.Name)) 
+                    if (identifier.Name == null || !scope.IsFree(identifier.Name))
                         throw new Exception($"The variable with name {identifier.Name} already exists in this scope!");
                     if (value != null)
                     {
@@ -77,7 +77,7 @@ class EvalVisitor : IVisitor
                         scope.AddVariable(identifier);
                     }
                 }
-                
+
                 return new DeclarationNode(identifier, value);
             case NodeTag.Break:
                 //return new SymbolicNode(MyType.Break);
@@ -97,7 +97,6 @@ class EvalVisitor : IVisitor
                 //     processedNodeA, processedNodeB
                 // });
                 break;
-            
         }
     }
 
@@ -191,7 +190,16 @@ class EvalVisitor : IVisitor
                         $"Unexpected number of arguments. Got {exprsRoutineCall.Expressions.Count}, expected {function.Parameters.Parameters.Count}.");
                 }
 
-                // TODO check exprs types compared with routine parameters
+                var counter = 0;
+                foreach (var nodeExpr in exprsRoutineCall.Expressions)
+                {
+                    if (!nodeExpr.Type.IsConvertibleTo(function.Parameters.Parameters[counter].Type))
+                    {
+                        throw new Exception(
+                            $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {function.Parameters.Parameters[counter].Type.MyType}");
+                    }
+                }
+
                 return new RoutineCallNode(function, exprsRoutineCall);
             default:
                 throw new Exception($"Unexpected Name Tag: {node.Tag}");

@@ -103,6 +103,11 @@ public class TypeNode : SymbolicNode
     {
         return MyType == anotherObject.MyType;
     }
+    
+    public bool IsConvertibleTo(TypeNode typeNode)
+    {
+        throw new Exception("Unimplemented method: IsConvertibleTo for TypeNode");
+    }
 }
 
 public class ArrayTypeNode : TypeNode
@@ -124,7 +129,7 @@ public class ArrayTypeNode : TypeNode
     public new bool IsTheSame(TypeNode anotherObject)
     {
         if (anotherObject.GetType() != typeof(ArrayTypeNode)) return false;
-        var tempObj = (ArrayTypeNode)anotherObject;
+        var tempObj = (ArrayTypeNode) anotherObject;
         return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj) && Size == tempObj.Size;
     }
 }
@@ -144,12 +149,12 @@ public class UserDefinedTypeNode : TypeNode
     public TypeNode Type { get; set; }
     public string name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
-    
+
     public bool IsTheSame(TypeNode anotherObject)
     {
         return Type.IsTheSame(anotherObject);
     }
-    
+
     public TypeNode GetFinalTypeNode()
     {
         switch (Type)
@@ -163,7 +168,7 @@ public class UserDefinedTypeNode : TypeNode
             case { } simpleTypeNode:
                 return simpleTypeNode;
         }
-        
+
         throw new Exception("Got null type node");
     }
 }
@@ -191,11 +196,11 @@ public class ValueNode : SymbolicNode
     {
         return Child != null;
     }
-    
+
     public ValueNode GetFinalValueNode()
     {
         if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
-        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
+        TypeNode finalType = ((UserDefinedTypeNode) Type).GetFinalTypeNode();
         Type = finalType;
         return this;
     }
@@ -217,11 +222,11 @@ public class VarNode : ValueNode
     {
         Name = name;
     }
-    
+
     public VarNode GetFinalVarNode()
     {
         if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
-        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
+        TypeNode finalType = ((UserDefinedTypeNode) Type).GetFinalTypeNode();
         Type = finalType;
         return this;
     }
@@ -237,12 +242,11 @@ public class StatementNode : TypedSymbolicNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; set; } 
-    
+    public List<StatementNode> Statements { get; set; }
+
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
         Statements = statements;
-        
     }
 }
 
@@ -354,7 +358,7 @@ public class GetByIndexNode : IntermediateOperationNode
     public ArrayVarNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
 
-    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode)varNode.Type).ElementTypeNode)
+    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode) varNode.Type).ElementTypeNode)
     {
         ArrayVarNode = varNode;
         Index = index;
@@ -445,7 +449,7 @@ public class ArraySizeNode : ArrayFunctions
     public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
     }
-    
+
     public new ValueNode GetValueNode()
     {
         return new ValueNode(null, new TypeNode(MyType.Integer))
@@ -461,6 +465,7 @@ public class ReversedArrayNode : ArrayFunctions
     public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
     }
+
     public new ValueNode GetValueNode()
     {
         return new ArrayVarNode((ArrayTypeNode) Array.Type)
@@ -515,21 +520,20 @@ public class FunctionDeclNode : VarNode
 
 public class ExpressionNode : ValueNode
 {
-    
-    
 }
 
 public class ExpressionsNode : SymbolicNode
 {
-    public List<ExpressionNode> Expressions { get; set; } = new List<ExpressionNode>();
+    public List<ValueNode> Expressions { get; }
 
-    public ExpressionsNode(List<ExpressionNode> expressions)
+    public ExpressionsNode(List<ValueNode> expressions)
     {
         Expressions = expressions;
     }
-    
+
     public ExpressionsNode()
     {
+        Expressions = new List<ValueNode>();
     }
 
     public void AddExpression(ExpressionNode expressionNode)
@@ -543,7 +547,8 @@ public class RoutineCallNode : ValueNode
     public FunctionDeclNode Function { get; set; }
     public ExpressionsNode? Expressions { get; set; }
 
-    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(null, function.ReturnType ?? new TypeNode(MyType.Undefined))
+    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(null,
+        function.ReturnType ?? new TypeNode(MyType.Undefined))
     {
         Function = function;
         Expressions = expressions;
