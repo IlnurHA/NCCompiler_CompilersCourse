@@ -130,6 +130,13 @@ public class TypeNode : SymbolicNode
             return false;
         }
     }
+    
+    public TypeNode GetFinalTypeNode()
+    {
+        var type = GetType();
+        if (type != typeof(UserDefinedTypeNode)) return this;
+        return ((UserDefinedTypeNode) this).GetFinalTypeNode();
+    }
 }
 
 public class ArrayTypeNode : TypeNode
@@ -247,8 +254,9 @@ public class VarNode : ValueNode
 
     public VarNode GetFinalVarNode()
     {
-        if (Type.GetType() != typeof(UserDefinedTypeNode)) return this;
-        TypeNode finalType = ((UserDefinedTypeNode) Type).GetFinalTypeNode();
+        var type = Type.GetType();
+        if (type != typeof(UserDefinedTypeNode)) return this;
+        TypeNode finalType = ((UserDefinedTypeNode)Type).GetFinalTypeNode();
         Type = finalType;
         return this;
     }
@@ -260,6 +268,71 @@ public class VarNode : ValueNode
 
 public class StatementNode : TypedSymbolicNode
 {
+}
+
+public class BreakNode : StatementNode
+{
+}
+
+public class AssertNode : StatementNode
+{
+    private ValueNode leftExpression;
+    private ValueNode rightExpression;
+
+    public AssertNode(ValueNode left, ValueNode right)
+    {
+        leftExpression = left;
+        rightExpression = right;
+    }
+}
+
+public class ReturnNode : StatementNode
+{
+    private ValueNode _returnValue;
+
+    public ReturnNode(ValueNode returnValue)
+    {
+        Type = returnValue.Type;
+        _returnValue = returnValue;
+    }
+}
+
+public class DeclarationNode : StatementNode
+{
+    
+    public VarNode Variable { get; set; }
+
+    public DeclarationNode(VarNode varNode, ValueNode? value)
+    {
+        Variable = varNode;
+        Variable.Value = value;
+        Variable.IsInitialized = value != null;
+    }
+}
+
+public class TypeDeclarationNode : StatementNode
+{
+    
+    public VarNode Variable { get; set; }
+
+    public TypeDeclarationNode(VarNode varNode, TypeNode? value)
+    {
+        Variable = varNode;
+        Variable.Value = value;
+        Variable.IsInitialized = value != null;
+    }
+}
+
+public class AssignmentNode : StatementNode
+{
+    public VarNode Variable { get; set; }
+
+    public AssignmentNode(VarNode varNode, ValueNode value)
+    {
+        Variable = varNode;
+        Variable.Value = value;
+        Variable.IsInitialized = true;
+    }
 }
 
 public class BodyNode : TypedSymbolicNode
@@ -301,24 +374,24 @@ public class ArrayVarNode : VarNode
     public ArrayVarNode(string name, TypeNode elementTypeNode, int size) : base(name)
     {
         Elements.EnsureCapacity(size);
-        Type = new ArrayTypeNode(elementTypeNode, size);
+        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), size);
     }
 
     public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
     {
         Elements = values;
-        Type = new ArrayTypeNode(elementTypeNode, values.Count);
+        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), values.Count);
     }
 
     // For function parameters with arbitrary number of elements
     public ArrayVarNode(string name, TypeNode elementTypeNode) : base(name)
     {
-        Type = new ArrayTypeNode(elementTypeNode);
+        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode());
     }
 
     public ArrayVarNode(ArrayTypeNode elementTypeNode) : base(null)
     {
-        Type = elementTypeNode;
+        Type = elementTypeNode.GetFinalTypeNode();
     }
 }
 
@@ -354,30 +427,6 @@ public class IntermediateOperationNode : TypedSymbolicNode
     public ValueNode GetValueNode()
     {
         throw new Exception("This function is not supposed to be called");
-    }
-}
-
-public class DeclarationNode : SymbolicNode
-{
-    public VarNode Variable { get; set; }
-
-    public DeclarationNode(VarNode varNode, ValueNode? value)
-    {
-        Variable = varNode;
-        Variable.Value = value;
-        Variable.IsInitialized = value != null;
-    }
-}
-
-public class AssignmentNode : SymbolicNode
-{
-    public VarNode Variable { get; set; }
-
-    public AssignmentNode(VarNode varNode, ValueNode value)
-    {
-        Variable = varNode;
-        Variable.Value = value;
-        Variable.IsInitialized = true;
     }
 }
 

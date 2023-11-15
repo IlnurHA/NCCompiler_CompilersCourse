@@ -45,58 +45,62 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationFull:
             case NodeTag.VariableDeclarationIdenType:
             case NodeTag.VariableDeclarationIdenExpr:
-                VarNode identifier = (VarNode) node.Children[0]!.Accept(this);
-                TypeNode? type = null;
+                VarNode variableIdentifier = (VarNode) node.Children[0]!.Accept(this);
+                TypeNode? variableType = null;
                 ValueNode? value = null;
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        type = (TypeNode) node.Children[1]!.Accept(this);
+                        variableType = (TypeNode) node.Children[1]!.Accept(this);
                         value = (ValueNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        type = (TypeNode) node.Children[1]!.Accept(this);
+                        variableType = (TypeNode) node.Children[1]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
                         value = (ValueNode) node.Children[1]!.Accept(this);
                         break;
                 }
 
-
                 using (var scope = ScopeStack.GetLastScope())
                 {
-                    if (identifier.Name == null || !scope.IsFree(identifier.Name))
-                        throw new Exception($"The variable with name {identifier.Name} already exists in this scope!");
+                    if (variableIdentifier.Name == null || !scope.IsFree(variableIdentifier.Name))
+                        throw new Exception($"The variable with name {variableIdentifier.Name} already exists in this scope!");
                     if (value != null)
                     {
-                        identifier = identifier.GetFinalVarNode();
+                        variableIdentifier = variableIdentifier.GetFinalVarNode();
                         value = value.GetFinalValueNode();
-                        if (type != null && _isConvertible(type, value.Type))
+                        if (variableType != null && _isConvertible(variableType, value.Type))
                             throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
-                        identifier.Value = value;
-                        scope.AddVariable(identifier);
+                        variableIdentifier.Value = value;
+                        scope.AddVariable(variableIdentifier);
                     }
                 }
 
-                return new DeclarationNode(identifier, value);
+                return new DeclarationNode(variableIdentifier, value);
+            case NodeTag.TypeDeclaration:
+                VarNode typeIdentifier = (VarNode)node.Children[0]!.Accept(this);
+                TypeNode typeSynonym = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
+                typeIdentifier.Value = typeSynonym;
+                using (var scope = ScopeStack.GetLastScope())
+                {
+                    if (typeIdentifier.Name == null || !scope.IsFree(typeIdentifier.Name))
+                        throw new Exception(
+                            $"The user type with name {typeIdentifier.Name} already exists in this scope!");
+                    scope.AddVariable(typeIdentifier);
+                }
+
+                return new TypeDeclarationNode(typeIdentifier, typeSynonym);
+            
             case NodeTag.Break:
-                //return new SymbolicNode(MyType.Break);
-                break;
+                return new BreakNode();
             case NodeTag.Assert:
-                // SymbolicNode? leftAssertExpression = node.Children[0]!.Accept(this);
-                // SymbolicNode? rightAssertExpression = node.Children[1]!.Accept(this);
-                //
-                // if (processedNodeA.MyType != processedNodeB.MyType || processedNodeA.MyType == MyType.CompoundType &&
-                //     !CheckCompoundType(processedNodeA.CompoundType, processedNodeB.CompoundType))
-                // {
-                //     throw new Exception($"Expected similar types ({processedNodeA.MyType}, {processedNodeB.MyType})");
-                // }
-                //
-                // return new SymbolicNode(MyType.Assert, new List<SymbolicNode>
-                // {
-                //     processedNodeA, processedNodeB
-                // });
-                break;
+                ValueNode? leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
+                ValueNode? rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+                return new AssertNode(leftAssertExpression, rightAssertExpression);
+            case NodeTag.Return:
+                ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
+                return new ReturnNode(returnValue);
         }
     }
 
