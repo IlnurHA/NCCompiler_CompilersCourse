@@ -137,6 +137,19 @@ class EvalVisitor : IVisitor
                 
                 ScopeStack.DeleteScope();
                 return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop);
+            
+            case NodeTag.ForeachLoop:
+                ScopeStack.NewScope(Scope.ScopeContext.Loop);
+                var idForEach = (VarNode) node.Children[0]!.Accept(this);
+                var fromForEach = (ValueNode) node.Children[1]!.Accept(this);
+                if (fromForEach is not ArrayVarNode arrayVarNode)
+                    throw new Exception($"Unexpected type. Got {fromForEach.GetType()}, expected array type");
+                idForEach.Type = ((ArrayTypeNode) arrayVarNode.Type).ElementTypeNode;
+                ScopeStack.AddVariable(idForEach);
+
+                var bodyForEach = (BodyNode) node.Children[2]!.Accept(this);
+                ScopeStack.DeleteScope();
+                return new ForEachLoopNode(idForEach, arrayVarNode, bodyForEach);
         }
     }
 

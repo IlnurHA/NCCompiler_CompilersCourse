@@ -528,3 +528,17 @@ public class ForLoopNode : StatementNode
         Body = body;
     }
 }
+
+public class ForEachLoopNode : StatementNode
+{
+    public VarNode IdName { get; }
+    public ArrayVarNode Array { get; }
+    public BodyNode Body { get; }
+
+    public ForEachLoopNode(VarNode idName, ArrayVarNode array, BodyNode body)
+    {
+        IdName = idName;
+        Array = array;
+        Body = body;
+    }
+}
