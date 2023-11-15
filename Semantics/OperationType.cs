@@ -21,5 +21,7 @@ public enum OperationType
     Minus,
     Mul,
     Div,
-    Rem
+    Rem,
+    
+    Assert
 }

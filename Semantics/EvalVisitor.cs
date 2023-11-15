@@ -63,7 +63,8 @@ class EvalVisitor : IVisitor
                 using (var scope = ScopeStack.GetLastScope())
                 {
                     if (variableIdentifier.Name == null || !scope.IsFree(variableIdentifier.Name))
-                        throw new Exception($"The variable with name {variableIdentifier.Name} already exists in this scope!");
+                        throw new Exception(
+                            $"The variable with name {variableIdentifier.Name} already exists in this scope!");
                     if (value != null)
                     {
                         variableIdentifier = variableIdentifier.GetFinalVarNode();
@@ -73,13 +74,14 @@ class EvalVisitor : IVisitor
                         variableIdentifier.Value = value;
                         variableIdentifier.IsInitialized = true;
                     }
+
                     scope.AddVariable(variableIdentifier);
                 }
 
                 return new DeclarationNode(variableIdentifier, value);
             case NodeTag.TypeDeclaration:
-                VarNode typeIdentifier = (VarNode)node.Children[0]!.Accept(this);
-                TypeNode typeSynonym = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
+                VarNode typeIdentifier = (VarNode) node.Children[0]!.Accept(this);
+                TypeNode typeSynonym = ((TypeNode) node.Children[1]!.Accept(this)).GetFinalTypeNode();
                 typeIdentifier.Value = typeSynonym;
                 using (var scope = ScopeStack.GetLastScope())
                 {
@@ -90,14 +92,22 @@ class EvalVisitor : IVisitor
                 }
 
                 return new TypeDeclarationNode(typeIdentifier, typeSynonym);
-            
+
             case NodeTag.Break:
+                if (!ScopeStack.HasLoopScope()) throw new Exception("Unexpected context for 'break' statement");
                 return new BreakNode();
             case NodeTag.Assert:
-                ValueNode? leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
-                ValueNode? rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+                ValueNode leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
+                ValueNode rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+
+                if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
+                {
+                    _isValidOperation(leftAssertExpression, rightAssertExpression, operationType: OperationType.Assert);
+                }
+
                 return new AssertNode(leftAssertExpression, rightAssertExpression);
             case NodeTag.Return:
+                if (node.Children.Length == 0) return new ReturnNode();
                 ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
                 return new ReturnNode(returnValue);
         }
@@ -109,7 +119,7 @@ class EvalVisitor : IVisitor
         {
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
                 or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
-                var funcNameRoutineDecl = (VarNode)node.Children[0]!.Accept(this);
+                var funcNameRoutineDecl = (VarNode) node.Children[0]!.Accept(this);
                 ParametersNode? parametersRoutineDecl = null;
                 TypeNode? returnTypeRoutineDecl = null;
                 BodyNode? bodyRoutineDeclFull;
@@ -117,20 +127,20 @@ class EvalVisitor : IVisitor
                 switch (node.Tag)
                 {
                     case NodeTag.RoutineDeclarationWithTypeAndParams:
-                        parametersRoutineDecl = (ParametersNode)node.Children[1]!.Accept(this);
-                        returnTypeRoutineDecl = (TypeNode)node.Children[2]!.Accept(this);
-                        bodyRoutineDeclFull = (BodyNode)node.Children[3]!.Accept(this);
+                        parametersRoutineDecl = (ParametersNode) node.Children[1]!.Accept(this);
+                        returnTypeRoutineDecl = (TypeNode) node.Children[2]!.Accept(this);
+                        bodyRoutineDeclFull = (BodyNode) node.Children[3]!.Accept(this);
                         break;
                     case NodeTag.RoutineDeclarationWithParams:
-                        parametersRoutineDecl = (ParametersNode)node.Children[1]!.Accept(this);
-                        bodyRoutineDeclFull = (BodyNode)node.Children[2]!.Accept(this);
+                        parametersRoutineDecl = (ParametersNode) node.Children[1]!.Accept(this);
+                        bodyRoutineDeclFull = (BodyNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.RoutineDeclarationWithType:
-                        returnTypeRoutineDecl = (TypeNode)node.Children[1]!.Accept(this);
-                        bodyRoutineDeclFull = (BodyNode)node.Children[2]!.Accept(this);
+                        returnTypeRoutineDecl = (TypeNode) node.Children[1]!.Accept(this);
+                        bodyRoutineDeclFull = (BodyNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.RoutineDeclaration:
-                        bodyRoutineDeclFull = (BodyNode)node.Children[1]!.Accept(this);
+                        bodyRoutineDeclFull = (BodyNode) node.Children[1]!.Accept(this);
                         break;
                     default:
                         throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
@@ -143,8 +153,8 @@ class EvalVisitor : IVisitor
                 return funcDecl;
 
             case NodeTag.ParameterDeclaration:
-                var idParDecl = (VarNode)node.Children[0]!.Accept(this);
-                var typeParDecl = (TypeNode)node.Children[1]!.Accept(this);
+                var idParDecl = (VarNode) node.Children[0]!.Accept(this);
+                var typeParDecl = (TypeNode) node.Children[1]!.Accept(this);
                 idParDecl.Type = typeParDecl;
 
                 if (!ScopeStack.isFreeInLastScope(idParDecl.Name!))
@@ -156,7 +166,7 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 1)
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)node.Children[0]!.Accept(this) });
+                        {(ParameterNode) node.Children[0]!.Accept(this)});
                 }
 
                 var parametersDecl = node.Children[0]!.Accept(this);
@@ -165,17 +175,17 @@ class EvalVisitor : IVisitor
                 if (parametersDecl.GetType() == typeof(ParameterNode))
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)parametersDecl, (ParameterNode)parameterDecl });
+                        {(ParameterNode) parametersDecl, (ParameterNode) parameterDecl});
                 }
 
-                var returnParametersDecl = (ParametersNode)parametersDecl;
-                returnParametersDecl.AddParameter((ParameterNode)parameterDecl);
+                var returnParametersDecl = (ParametersNode) parametersDecl;
+                returnParametersDecl.AddParameter((ParameterNode) parameterDecl);
                 return returnParametersDecl;
             case NodeTag.RoutineCall:
-                var idRoutineCall = (VarNode)node.Children[0]!.Accept(this);
+                var idRoutineCall = (VarNode) node.Children[0]!.Accept(this);
 
 
-                var function = (FunctionDeclNode)ScopeStack.FindVariable(idRoutineCall.Name!);
+                var function = (FunctionDeclNode) ScopeStack.FindVariable(idRoutineCall.Name!);
                 if (function.Parameters == null)
                 {
                     if (node.Children.Length == 2)
@@ -186,7 +196,7 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 1)
                     throw new Exception(
                         $"Unexpected number of arguments. Got 0, expected {function.Parameters.Parameters.Count}.");
-                var exprsRoutineCall = (ExpressionsNode)node.Children[1]!.Accept(this);
+                var exprsRoutineCall = (ExpressionsNode) node.Children[1]!.Accept(this);
 
                 if (exprsRoutineCall.Expressions.Count != function.Parameters.Parameters.Count)
                 {
@@ -281,6 +291,7 @@ class EvalVisitor : IVisitor
             case OperationType.Mul:
             case OperationType.Div:
             case OperationType.Rem:
+            case OperationType.Assert:
                 if (operand1.Type.IsTheSame(realType) || operand2.Type.IsTheSame(realType))
                 {
                     if (!(operand1.Type.IsConvertibleTo(realType) && operand2.Type.IsConvertibleTo(realType)))
@@ -356,7 +367,6 @@ class EvalVisitor : IVisitor
 
     public SymbolicNode ExpressionVisit(ComplexNode node)
     {
-        
         switch (node.Tag)
         {
             case NodeTag.And:
@@ -373,18 +383,18 @@ class EvalVisitor : IVisitor
             case NodeTag.Mul:
             case NodeTag.Div:
             case NodeTag.Rem:
-                var operand1 = (ValueNode)node.Children[0]!.Accept(this);
-                var operand2 = (ValueNode)node.Children[1]!.Accept(this);
+                var operand1 = (ValueNode) node.Children[0]!.Accept(this);
+                var operand2 = (ValueNode) node.Children[1]!.Accept(this);
                 var operationType = _nodeTagToOperationType(node);
                 var resultType = _isValidOperation(operand1, operand2, operationType);
-                return new OperationNode(operationType, new List<ValueNode> { operand1, operand2 }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> {operand1, operand2}, resultType);
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
             case NodeTag.SignToDouble:
-                var operand = (ValueNode)node.Children[0]!.Accept(this);
+                var operand = (ValueNode) node.Children[0]!.Accept(this);
                 operationType = _nodeTagToOperationType(node);
                 resultType = _isValidUnaryOperation(operand, operationType);
-                return new OperationNode(operationType, new List<ValueNode> { operand }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> {operand}, resultType);
             default:
                 throw new Exception($"Invalid operation tag: {node.Tag}");
         }

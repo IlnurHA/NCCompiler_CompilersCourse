@@ -67,7 +67,7 @@ public class TypeNode : SymbolicNode
             return false;
         }
     }
-    
+
     public TypeNode GetFinalTypeNode()
     {
         if (this is not UserDefinedTypeNode userDefinedTypeNode) return this;
@@ -228,18 +228,22 @@ public class AssertNode : StatementNode
 
 public class ReturnNode : StatementNode
 {
-    private ValueNode _returnValue;
+    private ValueNode? _returnValue;
 
     public ReturnNode(ValueNode returnValue)
     {
         Type = returnValue.Type;
         _returnValue = returnValue;
     }
+
+    public ReturnNode()
+    {
+        Type = new TypeNode(MyType.Undefined);
+    }
 }
 
 public class DeclarationNode : StatementNode
 {
-    
     public VarNode Variable { get; set; }
 
     public DeclarationNode(VarNode varNode, ValueNode? value)
@@ -252,7 +256,6 @@ public class DeclarationNode : StatementNode
 
 public class TypeDeclarationNode : StatementNode
 {
-    
     public VarNode Variable { get; set; }
 
     public TypeDeclarationNode(VarNode varNode, TypeNode? value)
@@ -299,8 +302,9 @@ public class OperationNode : ValueNode
     {
         OperationType = operationType;
     }
-    
-    public OperationNode(OperationType operationType, List<ValueNode> operands, TypeNode typeNode) : base(type: typeNode)
+
+    public OperationNode(OperationType operationType, List<ValueNode> operands, TypeNode typeNode) : base(
+        type: typeNode)
     {
         OperationType = operationType;
         Operands = operands;
@@ -408,7 +412,6 @@ public class ArraySizeNode : ArrayFunctions
     public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
     }
-    
 }
 
 public class ReversedArrayNode : ArrayFunctions
