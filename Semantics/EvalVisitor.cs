@@ -33,46 +33,48 @@ class EvalVisitor : IVisitor
                 var modPrimFieldBuffer = node.Children[0]!.Accept(this);
                 var idFieldBuffer = node.Children[1]!.Accept(this);
 
-                if (idFieldBuffer is not PrimitiveVarNode idField) throw new Exception("Unexpected node type for field");
-                
-                var modPrimField = (StructVarNode) (modPrimFieldBuffer is PrimitiveVarNode varNode
-                    ? ScopeStack.FindVariable(varNode.Name!)
-                    : modPrimFieldBuffer);
+                if (idFieldBuffer is not PrimitiveVarNode idField)
+                    throw new Exception("Unexpected node type for field");
+
+                var modPrimField = _getFromScopeStackIfNeeded<StructVarNode>(modPrimFieldBuffer);
 
                 return new GetFieldNode(modPrimField, idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
-                var arrFromArr = node.Children[0]!.Accept(this);
-                var indexFromArr = node.Children[1]!.Accept(this);
+                var arrFromArrBuffer = node.Children[0]!.Accept(this);
+                var indexFromArrBuffer = node.Children[1]!.Accept(this);
 
-                if (arrFromArr is not ArrayVarNode && arrFromArr is VarNode varNode2)
-                {
-                    return new GetByIndexNode((ArrayVarNode) ScopeStack.FindVariable(varNode2.Name!),
-                        (ValueNode) indexFromArr);
-                }
+                if (indexFromArrBuffer is not ValueNode indexFromArr)
+                    throw new Exception("Unexpected node type for index");
 
-                return new GetByIndexNode((ArrayVarNode) arrFromArr, (ValueNode) indexFromArr); // return VarNode
+                var arrFromArr = _getFromScopeStackIfNeeded<ArrayVarNode>(arrFromArrBuffer);
+
+                return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
-                var arrGetSorted = node.Children[0]!.Accept(this);
-                if (arrGetSorted is not ArrayVarNode)
-                {
-                    return new SortedArrayNode((ArrayVarNode) ScopeStack.FindVariable(((VarNode) arrGetSorted).Name!));
-                }
+                var arrGetSortedBuffer = node.Children[0]!.Accept(this);
+                var arrGetSorted = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetSortedBuffer);
 
-                return new SortedArrayNode((ArrayVarNode) arrGetSorted); // TODO return VarNode
+                return new SortedArrayNode(arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
-                var arrGetSize = (VarNode) node.Children[0]!.Accept(this);
-                if (arrGetSize is not ArrayVarNode)
-                {
-                    return new ArraySizeNode((ArrayVarNode) ScopeStack.FindVariable(arrGetSize.Name!));
-                }
+                var arrGetSizeBuffer = node.Children[0]!.Accept(this);
+                var arrGetSize = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetSizeBuffer);
 
-                return new ArraySizeNode((ArrayVarNode) arrGetSize); // TODO return VarNode
+                return new ArraySizeNode(arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
-                var arrGetReversed = node.Children[0]!.Accept(this);
-                return new ReversedArrayNode((ArrayVarNode) arrGetReversed); // TODO return VarNode
+                var arrGetReversedBuffer = node.Children[0]!.Accept(this);
+                var arrGetReversed = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetReversedBuffer);
+                
+                return new ReversedArrayNode(arrGetReversed); // TODO return VarNode
         }
 
         throw new Exception("Unimplemented");
+    }
+
+    private TDesiredType _getFromScopeStackIfNeeded<TDesiredType>(SymbolicNode node)
+    {
+        if (node is PrimitiveVarNode varNode)
+            return (TDesiredType) Convert.ChangeType(ScopeStack.FindVariable(varNode.Name!), typeof(TDesiredType));
+        if (node is TDesiredType) return (TDesiredType) Convert.ChangeType(node, typeof(TDesiredType));
+        throw new Exception($"Cannot convert {node} to {typeof(TDesiredType)}");
     }
 
     public SymbolicNode StatementVisit(ComplexNode node)
