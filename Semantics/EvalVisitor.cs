@@ -310,10 +310,12 @@ class EvalVisitor : IVisitor
             
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 var undefinedType = new TypeNode(MyType.Undefined);
+                
                 var bodyCont = node.Children[0] != null
-                    ? (BodyNode) node.Children[0]!.Accept(this)
+                    ? _getDesiredType<BodyNode>(node.Children[0]!.Accept(this))
                     : new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
-                var bodyStatement = (StatementNode) node.Children[1]!.Accept(this);
+                
+                var bodyStatement = _getDesiredType<StatementNode>(node.Children[1]!.Accept(this));
 
                 if (!bodyStatement.Type.IsTheSame(undefinedType) && bodyCont.Type.IsTheSame(undefinedType))
                 {
@@ -330,9 +332,10 @@ class EvalVisitor : IVisitor
                 bodyCont.Type = newTypeBody;
                 bodyCont.AddStatement(bodyStatement);
                 return bodyCont;
+            
             case NodeTag.Assignment:
-                var idAssignment = (ValueNode) node.Children[0]!.Accept(this);
-                var exprAssignment = (ValueNode) node.Children[1]!.Accept(this);
+                var idAssignment = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
+                var exprAssignment = _getDesiredType<ValueNode>(node.Children[1]!.Accept(this));
 
                 switch (idAssignment)
                 {
@@ -345,7 +348,7 @@ class EvalVisitor : IVisitor
                         idAssignment = (ValueNode) ScopeStack.FindVariable(varNode.Name!);
                         break;
                     default:
-                        throw new Exception("Unexpected type of node");
+                        throw new Exception($"Unexpected type of node {idAssignment.GetType()}");
                 }
 
                 if (!idAssignment.Type.IsTheSame(exprAssignment.Type) &&
@@ -355,23 +358,24 @@ class EvalVisitor : IVisitor
                         $"Unexpected type. Got {exprAssignment.Type.MyType}, expected {idAssignment.Type.MyType}");
                 }
 
-                return new AssignmentNode((VarNode) idAssignment, exprAssignment);
+                return new AssignmentNode(_getDesiredType<VarNode>(idAssignment), exprAssignment);
+            
             case NodeTag.ArrayType:
-                var size = (ValueNode) node.Children[0]!.Accept(this);
-                var type = (TypeNode) node.Children[1]!.Accept(this);
+                var size = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
+                var type = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
 
                 return new ArrayTypeNode(type, size);
             case NodeTag.ArrayTypeWithoutSize:
-                var typeWithoutSize = (TypeNode) node.Children[0]!.Accept(this);
+                var typeWithoutSize = _getFromScopeStackIfNeeded<TypeNode>(node.Children[0]!.Accept(this));
                 return new ArrayTypeNode(typeWithoutSize);
+            
             case NodeTag.RecordType:
-                var declarations = (VariableDeclarations) node.Children[0]!.Accept(this);
-
+                var declarations = _getDesiredType<VariableDeclarations>(node.Children[0]!.Accept(this));
                 var fields = new Dictionary<string, TypeNode>();
 
                 foreach (var (name, varNode) in declarations.Declarations)
                 {
-                    fields[name] = ((VarNode) varNode).Type;
+                    fields[name] = varNode.Type;
                 }
 
                 return new StructTypeNode(fields);

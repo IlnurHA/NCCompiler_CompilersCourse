@@ -370,7 +370,7 @@ public class ArrayVarNode : VarNode
 
     public ArrayVarNode(ArrayTypeNode elementTypeNode)
     {
-        Type = elementTypeNode.GetFinalTypeNode();
+        Type = elementTypeNode;
     }
 }
 
