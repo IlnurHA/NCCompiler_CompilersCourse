@@ -36,7 +36,8 @@ class EvalVisitor : IVisitor
                 if (idFieldBuffer is not PrimitiveVarNode idField)
                     throw new Exception("Unexpected node type for field");
 
-                var modPrimField = _getFromScopeStackIfNeeded<StructVarNode>(modPrimFieldBuffer);
+                var modPrimField =
+                    (StructVarNode) _getFromScopeStackIfNeeded(modPrimFieldBuffer, typeof(StructVarNode));
 
                 return new GetFieldNode(modPrimField, idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
@@ -46,22 +47,23 @@ class EvalVisitor : IVisitor
                 if (indexFromArrBuffer is not ValueNode indexFromArr)
                     throw new Exception("Unexpected node type for index");
 
-                var arrFromArr = _getFromScopeStackIfNeeded<ArrayVarNode>(arrFromArrBuffer);
+                var arrFromArr = (ArrayVarNode) _getFromScopeStackIfNeeded(arrFromArrBuffer, typeof(ArrayVarNode));
 
                 return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSortedBuffer = node.Children[0]!.Accept(this);
-                var arrGetSorted = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetSortedBuffer);
+                var arrGetSorted = (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetSortedBuffer, typeof(ArrayVarNode));
 
                 return new SortedArrayNode(arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSizeBuffer = node.Children[0]!.Accept(this);
-                var arrGetSize = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetSizeBuffer);
+                var arrGetSize = (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetSizeBuffer, typeof(ArrayVarNode));
 
                 return new ArraySizeNode(arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversedBuffer = node.Children[0]!.Accept(this);
-                var arrGetReversed = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetReversedBuffer);
+                var arrGetReversed =
+                    (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetReversedBuffer, typeof(ArrayVarNode));
 
                 return new ReversedArrayNode(arrGetReversed); // TODO return VarNode
         }
@@ -69,18 +71,24 @@ class EvalVisitor : IVisitor
         throw new Exception("Unimplemented");
     }
 
-    private TDesiredType _getFromScopeStackIfNeeded<TDesiredType>(SymbolicNode node)
+    private object _getFromScopeStackIfNeeded(SymbolicNode node, Type type)
     {
         if (node is PrimitiveVarNode varNode)
-            return (TDesiredType) Convert.ChangeType(ScopeStack.FindVariable(varNode.Name!), typeof(TDesiredType));
-        if (node is TDesiredType) return (TDesiredType) Convert.ChangeType(node, typeof(TDesiredType));
-        throw new Exception($"Cannot convert {node} to {typeof(TDesiredType)}");
+        {
+            var foundVar = ScopeStack.FindVariable(varNode.Name);
+            if (foundVar.GetType() != type)
+                throw new Exception($"Unexpected type of found variable. Expected {type}, got {foundVar.GetType()}");
+            return foundVar;
+        }
+
+        if (node.GetType() == type) return node;
+        throw new Exception($"Cannot convert {node} to {type}");
     }
 
-    private TDesiredType _getDesiredType<TDesiredType>(SymbolicNode node)
+    private object _getDesiredType(SymbolicNode node, Type type)
     {
-        if (node is TDesiredType) return (TDesiredType) Convert.ChangeType(node, typeof(TDesiredType));
-        throw new Exception($"Cannot convert {node} to {typeof(TDesiredType)}");
+        if (node.GetType() == type) return node;
+        throw new Exception($"Cannot convert {node} to {type}");
     }
 
     public SymbolicNode StatementVisit(ComplexNode node)
@@ -121,7 +129,8 @@ class EvalVisitor : IVisitor
 
                     if (valueBuffer is null)
                     {
-                        var typeDeclTypeVar = _getFromScopeStackIfNeeded<TypeNode>(variableTypeBuffer!);
+                        var typeDeclTypeVar =
+                            (TypeNode) _getFromScopeStackIfNeeded(variableTypeBuffer!, typeof(TypeNode));
                         var typeDeclarationNode = new TypeVariableDeclaration(variableIdentifier, typeDeclTypeVar);
                         var typeDeclIdVar = typeDeclarationNode.Variable;
                         ScopeStack.AddVariable(typeDeclIdVar);
@@ -130,15 +139,15 @@ class EvalVisitor : IVisitor
 
                     if (variableTypeBuffer is null)
                     {
-                        var value = _getDesiredType<ValueNode>(valueBuffer);
+                        var value = (ValueNode) _getDesiredType(valueBuffer, typeof(ValueNode));
                         var valueDeclarationNode = new ValueVariableDeclaration(variableIdentifier, value);
                         var valueDeclIdVar = valueDeclarationNode.Variable;
                         ScopeStack.AddVariable(valueDeclIdVar);
                         return valueDeclarationNode;
                     }
 
-                    var fullDeclType = _getFromScopeStackIfNeeded<TypeNode>(variableTypeBuffer!);
-                    var fullDeclValue = _getDesiredType<ValueNode>(valueBuffer);
+                    var fullDeclType = (TypeNode) _getFromScopeStackIfNeeded(variableTypeBuffer!, typeof(TypeNode));
+                    var fullDeclValue = (ValueNode) _getDesiredType(valueBuffer, typeof(ValueNode));
 
                     if (!fullDeclValue.Type.IsConvertibleTo(fullDeclType))
                         throw new Exception($"Cannot convert type {fullDeclValue.Type} to {fullDeclType}");
@@ -151,15 +160,15 @@ class EvalVisitor : IVisitor
                 var declarationsDecl = node.Children[0] != null
                     ? (VariableDeclarations) node.Children[0]!.Accept(this)
                     : new VariableDeclarations(new Dictionary<string, VarNode>());
-                var decl = _getDesiredType<DeclarationNode>(node.Children[1]!.Accept(this));
+                var decl = (DeclarationNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(DeclarationNode));
                 declarationsDecl.AddDeclaration(decl.Variable);
                 return declarationsDecl;
             case NodeTag.TypeDeclaration:
                 var typeIdentifierBuffer = node.Children[0]!.Accept(this);
                 var typeSynonymBuffer = node.Children[1]!.Accept(this);
 
-                var typeIdentifier = _getDesiredType<PrimitiveVarNode>(typeIdentifierBuffer);
-                var typeSynonym = _getFromScopeStackIfNeeded<TypeNode>(typeSynonymBuffer);
+                var typeIdentifier = (PrimitiveVarNode) _getDesiredType(typeIdentifierBuffer, typeof(PrimitiveVarNode));
+                var typeSynonym = (TypeNode) _getFromScopeStackIfNeeded(typeSynonymBuffer, typeof(TypeNode));
 
                 using (var scope = ScopeStack.GetLastScope())
                 {
@@ -179,8 +188,8 @@ class EvalVisitor : IVisitor
                 var leftAssertExpressionBuffer = node.Children[0]!.Accept(this);
                 var rightAssertExpressionBuffer = node.Children[1]!.Accept(this);
 
-                var leftAssertExpression = _getDesiredType<ValueNode>(leftAssertExpressionBuffer);
-                var rightAssertExpression = _getDesiredType<ValueNode>(rightAssertExpressionBuffer);
+                var leftAssertExpression = (ValueNode) _getDesiredType(leftAssertExpressionBuffer, typeof(ValueNode));
+                var rightAssertExpression = (ValueNode) _getDesiredType(rightAssertExpressionBuffer, typeof(ValueNode));
 
                 if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
                 {
@@ -191,15 +200,15 @@ class EvalVisitor : IVisitor
             case NodeTag.Return:
                 if (node.Children.Length == 0) return new EmptyReturnNode();
                 var returnValueBuffer = node.Children[0]!.Accept(this);
-                var returnValue = _getDesiredType<ValueNode>(returnValueBuffer);
+                var returnValue = (ValueNode) _getDesiredType(returnValueBuffer, typeof(ValueNode));
 
                 return new ValueReturnNode(returnValue);
             case NodeTag.Range or NodeTag.RangeReverse:
                 var leftBoundBuffer = (ValueNode) node.Children[0]!.Accept(this);
                 var rightBoundBuffer = (ValueNode) node.Children[1]!.Accept(this);
 
-                var leftBound = _getDesiredType<ValueNode>(leftBoundBuffer);
-                var rightBound = _getDesiredType<ValueNode>(rightBoundBuffer);
+                var leftBound = (ValueNode) _getDesiredType(leftBoundBuffer, typeof(ValueNode));
+                var rightBound = (ValueNode) _getDesiredType(rightBoundBuffer, typeof(ValueNode));
 
                 var integerType = new TypeNode(MyType.Integer);
                 if (!leftBound.Type.IsConvertibleTo(integerType))
@@ -218,7 +227,7 @@ class EvalVisitor : IVisitor
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
                 var idForLoopBuffer = node.Children[0]!.Accept(this);
 
-                var primitiveVarNode = _getDesiredType<PrimitiveVarNode>(idForLoopBuffer);
+                var primitiveVarNode = (PrimitiveVarNode) _getDesiredType(idForLoopBuffer, typeof(PrimitiveVarNode));
 
                 var idForLoop = new VarNode(primitiveVarNode.Name)
                 {
@@ -226,8 +235,8 @@ class EvalVisitor : IVisitor
                 };
                 ScopeStack.AddVariable(idForLoop);
 
-                var rangeForLoop = _getDesiredType<RangeNode>(node.Children[1]!.Accept(this));
-                var bodyForLoop = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
+                var rangeForLoop = (RangeNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(RangeNode));
+                var bodyForLoop = (BodyNode) _getDesiredType(node.Children[2]!.Accept(this), typeof(BodyNode));
 
                 ScopeStack.DeleteScope();
                 return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop)
@@ -238,17 +247,18 @@ class EvalVisitor : IVisitor
             case NodeTag.ForeachLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
                 var idForEachBuffer = node.Children[0]!.Accept(this);
-                var idForEachPrimitiveVarNode = _getDesiredType<PrimitiveVarNode>(idForEachBuffer);
+                var idForEachPrimitiveVarNode =
+                    (PrimitiveVarNode) _getDesiredType(idForEachBuffer, typeof(PrimitiveVarNode));
 
                 var fromForEachBuffer = node.Children[1]!.Accept(this);
-                var fromForEach = _getFromScopeStackIfNeeded<ArrayVarNode>(fromForEachBuffer);
+                var fromForEach = (ArrayVarNode) _getFromScopeStackIfNeeded(fromForEachBuffer, typeof(ArrayVarNode));
 
                 var idForEach = DeclarationNode.GetAppropriateVarNode(idForEachPrimitiveVarNode,
                     fromForEach.Type.ElementTypeNode, null);
 
                 ScopeStack.AddVariable(idForEach);
 
-                var bodyForEach = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
+                var bodyForEach = (BodyNode) _getDesiredType(node.Children[2]!.Accept(this), typeof(BodyNode));
                 ScopeStack.DeleteScope();
                 return new ForEachLoopNode(idForEach, fromForEach, bodyForEach)
                 {
@@ -256,14 +266,14 @@ class EvalVisitor : IVisitor
                 };
             case NodeTag.WhileLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
-                var condExprWhile = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
+                var condExprWhile = (ValueNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(ValueNode));
                 if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
                 }
 
-                var bodyWhile = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
+                var bodyWhile = (BodyNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(BodyNode));
                 return new WhileLoopNode(condExprWhile, bodyWhile)
                 {
                     Type = bodyWhile.Type
@@ -271,14 +281,14 @@ class EvalVisitor : IVisitor
 
             case NodeTag.IfStatement:
                 ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
-                var condIf = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
+                var condIf = (ValueNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(ValueNode));
                 if (!condIf.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean");
                 }
 
-                var bodyIf = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
+                var bodyIf = (BodyNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(BodyNode));
                 return new IfStatement(condIf, bodyIf)
                 {
                     Type = bodyIf.Type
@@ -286,15 +296,15 @@ class EvalVisitor : IVisitor
 
             case NodeTag.IfElseStatement:
                 ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
-                var condIfElse = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
+                var condIfElse = (ValueNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(ValueNode));
                 if (!condIfElse.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for if statement condition: Got {condIfElse.Type.MyType}, expected boolean");
                 }
 
-                var bodyIfElse = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
-                var bodyElse = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
+                var bodyIfElse = (BodyNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(BodyNode));
+                var bodyElse = (BodyNode) _getDesiredType(node.Children[2]!.Accept(this), typeof(BodyNode));
 
                 var newType = bodyIfElse.Type;
 
@@ -303,19 +313,21 @@ class EvalVisitor : IVisitor
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
                 }
+
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
                     Type = newType
                 };
-            
+
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 var undefinedType = new TypeNode(MyType.Undefined);
-                
+
                 var bodyCont = node.Children[0] != null
-                    ? _getDesiredType<BodyNode>(node.Children[0]!.Accept(this))
+                    ? (BodyNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(BodyNode))
                     : new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
-                
-                var bodyStatement = _getDesiredType<StatementNode>(node.Children[1]!.Accept(this));
+
+                var bodyStatement =
+                    (StatementNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(StatementNode));
 
                 if (!bodyStatement.Type.IsTheSame(undefinedType) && bodyCont.Type.IsTheSame(undefinedType))
                 {
@@ -332,10 +344,10 @@ class EvalVisitor : IVisitor
                 bodyCont.Type = newTypeBody;
                 bodyCont.AddStatement(bodyStatement);
                 return bodyCont;
-            
+
             case NodeTag.Assignment:
-                var idAssignment = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
-                var exprAssignment = _getDesiredType<ValueNode>(node.Children[1]!.Accept(this));
+                var idAssignment = (ValueNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(ValueNode));
+                var exprAssignment = (ValueNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(ValueNode));
 
                 switch (idAssignment)
                 {
@@ -358,19 +370,22 @@ class EvalVisitor : IVisitor
                         $"Unexpected type. Got {exprAssignment.Type.MyType}, expected {idAssignment.Type.MyType}");
                 }
 
-                return new AssignmentNode(_getDesiredType<VarNode>(idAssignment), exprAssignment);
-            
+                return new AssignmentNode((VarNode) _getDesiredType(idAssignment, typeof(VarNode)), exprAssignment);
+
             case NodeTag.ArrayType:
-                var size = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
-                var type = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
+                var size = (ValueNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(ValueNode));
+                var type = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this), typeof(TypeNode));
 
                 return new ArrayTypeNode(type, size);
             case NodeTag.ArrayTypeWithoutSize:
-                var typeWithoutSize = _getFromScopeStackIfNeeded<TypeNode>(node.Children[0]!.Accept(this));
+                var typeWithoutSize =
+                    (TypeNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this), typeof(TypeNode));
                 return new ArrayTypeNode(typeWithoutSize);
-            
+
             case NodeTag.RecordType:
-                var declarations = _getDesiredType<VariableDeclarations>(node.Children[0]!.Accept(this));
+                var declarations =
+                    (VariableDeclarations) _getDesiredType(node.Children[0]!.Accept(this),
+                        typeof(VariableDeclarations));
                 var fields = new Dictionary<string, TypeNode>();
 
                 foreach (var (name, varNode) in declarations.Declarations)
@@ -391,8 +406,8 @@ class EvalVisitor : IVisitor
         {
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
                 or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
-                var funcNameRoutineDecl = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
-                
+                var funcNameRoutineDecl = (PrimitiveVarNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(PrimitiveVarNode));
+
                 ParametersNode? parametersRoutineDecl = null;
                 TypeNode? returnTypeRoutineDecl = null;
                 BodyNode? bodyRoutineDeclFull;
@@ -402,26 +417,26 @@ class EvalVisitor : IVisitor
                     case NodeTag.RoutineDeclarationWithTypeAndParams:
                         var interNode = node.Children[1]!.Accept(this);
                         parametersRoutineDecl = interNode is not ParameterNode declTypeParam
-                            ? _getDesiredType<ParametersNode>(interNode)
+                            ? (ParametersNode) _getDesiredType(interNode, typeof(ParametersNode))
                             : new ParametersNode(new List<ParameterNode> {declTypeParam});
-                        
-                        returnTypeRoutineDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[2]!.Accept(this));
-                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[3]!.Accept(this));
+
+                        returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[2]!.Accept(this), typeof(TypeNode));
+                        bodyRoutineDeclFull = (BodyNode) _getDesiredType(node.Children[3]!.Accept(this), typeof(BodyNode));
                         break;
                     case NodeTag.RoutineDeclarationWithParams:
                         var interNodeDecl = node.Children[1]!.Accept(this);
 
                         parametersRoutineDecl = interNodeDecl is not ParameterNode declParam
-                            ? _getDesiredType<ParametersNode>(interNodeDecl)
+                            ? (ParametersNode) _getDesiredType(interNodeDecl, typeof(ParametersNode))
                             : new ParametersNode(new List<ParameterNode> {declParam});
                         bodyRoutineDeclFull = (BodyNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.RoutineDeclarationWithType:
-                        returnTypeRoutineDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
-                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
+                        returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this), typeof(TypeNode));
+                        bodyRoutineDeclFull = (BodyNode) _getDesiredType(node.Children[2]!.Accept(this), typeof(BodyNode));
                         break;
                     case NodeTag.RoutineDeclaration:
-                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
+                        bodyRoutineDeclFull = (BodyNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(BodyNode));
                         break;
                     default:
                         throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
@@ -446,8 +461,8 @@ class EvalVisitor : IVisitor
                 return funcDecl;
 
             case NodeTag.ParameterDeclaration:
-                var idParDeclBuffer = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
-                var typeParDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
+                var idParDeclBuffer = (PrimitiveVarNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(PrimitiveVarNode));
+                var typeParDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this), typeof(TypeNode));
 
                 var idParDecl = DeclarationNode.GetAppropriateVarNode(idParDeclBuffer, typeParDecl, null);
 
@@ -475,11 +490,11 @@ class EvalVisitor : IVisitor
                 var returnParametersDecl = (ParametersNode) parametersDecl;
                 returnParametersDecl.AddParameter((ParameterNode) parameterDecl);
                 return returnParametersDecl;
-            
-            case NodeTag.RoutineCall:
-                var idRoutineCallBuffer = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
 
-                var function = _getDesiredType<FunctionDeclNode>(ScopeStack.FindVariable(idRoutineCallBuffer.Name));
+            case NodeTag.RoutineCall:
+                var idRoutineCallBuffer = (PrimitiveVarNode) _getDesiredType(node.Children[0]!.Accept(this), typeof(PrimitiveVarNode));
+
+                var function = (FunctionDeclNode) _getFromScopeStackIfNeeded(ScopeStack.FindVariable(idRoutineCallBuffer.Name), typeof(FunctionDeclNode));
                 if (function.Parameters is null)
                 {
                     if (node.Children.Length == 2)
@@ -490,7 +505,7 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 1)
                     throw new Exception(
                         $"Unexpected number of arguments. Got 0, expected {function.Parameters.Parameters.Count}.");
-                var exprsRoutineCall = _getDesiredType<ExpressionsNode>(node.Children[1]!.Accept(this));
+                var exprsRoutineCall = (ExpressionsNode) _getDesiredType(node.Children[1]!.Accept(this), typeof(ExpressionsNode));
 
                 if (exprsRoutineCall.Expressions.Count != function.Parameters.Parameters.Count)
                 {
@@ -502,13 +517,12 @@ class EvalVisitor : IVisitor
                 {
                     var nodeExpr = exprsRoutineCall.Expressions[counter];
                     var functionParam = function.Parameters.Parameters[counter];
-                    
+
                     if (!nodeExpr.Type.IsConvertibleTo(functionParam.Type))
                     {
                         throw new Exception(
                             $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {functionParam.Type.MyType}");
                     }
-
                 }
 
                 return new RoutineCallNode(function, exprsRoutineCall);
