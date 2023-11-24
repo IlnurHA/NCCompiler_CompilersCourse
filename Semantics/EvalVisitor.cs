@@ -256,43 +256,45 @@ class EvalVisitor : IVisitor
                 };
             case NodeTag.WhileLoop:
                 ScopeStack.NewScope(Scope.ScopeContext.Loop);
-                var condExprWhile = (ValueNode) node.Children[0]!.Accept(this);
+                var condExprWhile = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
                 if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
                 }
 
-                var bodyWhile = (BodyNode) node.Children[1]!.Accept(this);
+                var bodyWhile = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
                 return new WhileLoopNode(condExprWhile, bodyWhile)
                 {
                     Type = bodyWhile.Type
                 };
+
             case NodeTag.IfStatement:
                 ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
-                var condIf = (ValueNode) node.Children[0]!.Accept(this);
+                var condIf = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
                 if (!condIf.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean");
                 }
 
-                var bodyIf = (BodyNode) node.Children[1]!.Accept(this);
+                var bodyIf = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
                 return new IfStatement(condIf, bodyIf)
                 {
                     Type = bodyIf.Type
                 };
+
             case NodeTag.IfElseStatement:
                 ScopeStack.NewScope(Scope.ScopeContext.IfStatement);
-                var condIfElse = (ValueNode) node.Children[0]!.Accept(this);
+                var condIfElse = _getDesiredType<ValueNode>(node.Children[0]!.Accept(this));
                 if (!condIfElse.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for if statement condition: Got {condIfElse.Type.MyType}, expected boolean");
                 }
 
-                var bodyIfElse = (BodyNode) node.Children[1]!.Accept(this);
-                var bodyElse = (BodyNode) node.Children[2]!.Accept(this);
+                var bodyIfElse = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
+                var bodyElse = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
 
                 var newType = bodyIfElse.Type;
 
@@ -301,11 +303,11 @@ class EvalVisitor : IVisitor
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
                 }
-
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
                     Type = newType
                 };
+            
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
                 var undefinedType = new TypeNode(MyType.Undefined);
                 var bodyCont = node.Children[0] != null
