@@ -391,7 +391,8 @@ class EvalVisitor : IVisitor
         {
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
                 or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
-                var funcNameRoutineDecl = (VarNode) node.Children[0]!.Accept(this);
+                var funcNameRoutineDecl = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
+                
                 ParametersNode? parametersRoutineDecl = null;
                 TypeNode? returnTypeRoutineDecl = null;
                 BodyNode? bodyRoutineDeclFull;
@@ -400,34 +401,34 @@ class EvalVisitor : IVisitor
                 {
                     case NodeTag.RoutineDeclarationWithTypeAndParams:
                         var interNode = node.Children[1]!.Accept(this);
-
-                        parametersRoutineDecl = interNode is not ParameterNode
-                            ? (ParametersNode) interNode
-                            : new ParametersNode(new List<ParameterNode> {(ParameterNode) interNode});
-                        returnTypeRoutineDecl = (TypeNode) node.Children[2]!.Accept(this);
-                        bodyRoutineDeclFull = (BodyNode) node.Children[3]!.Accept(this);
+                        parametersRoutineDecl = interNode is not ParameterNode declTypeParam
+                            ? _getDesiredType<ParametersNode>(interNode)
+                            : new ParametersNode(new List<ParameterNode> {declTypeParam});
+                        
+                        returnTypeRoutineDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[2]!.Accept(this));
+                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[3]!.Accept(this));
                         break;
                     case NodeTag.RoutineDeclarationWithParams:
                         var interNodeDecl = node.Children[1]!.Accept(this);
 
-                        parametersRoutineDecl = interNodeDecl is not ParameterNode
-                            ? (ParametersNode) interNodeDecl
-                            : new ParametersNode(new List<ParameterNode> {(ParameterNode) interNodeDecl});
+                        parametersRoutineDecl = interNodeDecl is not ParameterNode declParam
+                            ? _getDesiredType<ParametersNode>(interNodeDecl)
+                            : new ParametersNode(new List<ParameterNode> {declParam});
                         bodyRoutineDeclFull = (BodyNode) node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.RoutineDeclarationWithType:
-                        returnTypeRoutineDecl = (TypeNode) node.Children[1]!.Accept(this);
-                        bodyRoutineDeclFull = (BodyNode) node.Children[2]!.Accept(this);
+                        returnTypeRoutineDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
+                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[2]!.Accept(this));
                         break;
                     case NodeTag.RoutineDeclaration:
-                        bodyRoutineDeclFull = (BodyNode) node.Children[1]!.Accept(this);
+                        bodyRoutineDeclFull = _getDesiredType<BodyNode>(node.Children[1]!.Accept(this));
                         break;
                     default:
                         throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
                 }
 
                 var returnType = new TypeNode(MyType.Undefined);
-                if (returnTypeRoutineDecl != null)
+                if (returnTypeRoutineDecl is not null)
                 {
                     returnType = returnTypeRoutineDecl;
                 }
@@ -445,9 +446,10 @@ class EvalVisitor : IVisitor
                 return funcDecl;
 
             case NodeTag.ParameterDeclaration:
-                var idParDecl = (VarNode) node.Children[0]!.Accept(this);
-                var typeParDecl = (TypeNode) node.Children[1]!.Accept(this);
-                idParDecl.Type = typeParDecl;
+                var idParDeclBuffer = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
+                var typeParDecl = _getFromScopeStackIfNeeded<TypeNode>(node.Children[1]!.Accept(this));
+
+                var idParDecl = DeclarationNode.GetAppropriateVarNode(idParDeclBuffer, typeParDecl, null);
 
                 if (!ScopeStack.isFreeInLastScope(idParDecl.Name!))
                     throw new Exception($"Variable with the given name has already declared: {idParDecl.Name}");
