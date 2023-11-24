@@ -61,6 +61,11 @@ public class ScopeStack
     {
         Scopes[^1].AddVariable(node);
     }
+    
+    public void AddVariable(UserDefinedTypeNode node)
+    {
+        Scopes[^1].AddType(node);
+    }
 
     public Scope GetLastScope()
     {
