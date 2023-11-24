@@ -208,7 +208,9 @@ public class VarNode : ValueNode
 
 public class PrimitiveVarNode : VarNode
 {
-    public PrimitiveVarNode(string name) : base(name) {}
+    public PrimitiveVarNode(string name) : base(name)
+    {
+    }
 }
 
 public class StatementNode : TypedSymbolicNode
@@ -251,11 +253,49 @@ public class DeclarationNode : StatementNode
 {
     public VarNode Variable { get; set; }
 
-    public DeclarationNode(VarNode varNode, ValueNode? value)
+    public static VarNode GetAppropriateVarNode(PrimitiveVarNode primitiveVarNode, TypeNode type, ValueNode? value)
     {
-        Variable = varNode;
-        Variable.Value = value;
-        Variable.IsInitialized = value != null;
+        switch (type)
+        {
+            case UserDefinedTypeNode userDefinedTypeNode:
+                return GetAppropriateVarNode(primitiveVarNode, userDefinedTypeNode.GetFinalTypeNode(), value);
+            case ArrayTypeNode arrayTypeNode:
+                return new ArrayVarNode(primitiveVarNode.Name!, arrayTypeNode.ElementTypeNode, value);
+            case StructTypeNode structTypeNode:
+                var newNode = StructVarNode.FromType(structTypeNode);
+                newNode.Name = primitiveVarNode.Name!;
+                if (value is not null) newNode.Value = value;
+                return newNode;
+            case { } typeNode:
+                return new VarNode(primitiveVarNode.Name!)
+                    {Type = typeNode, Value = value, IsInitialized = value is not null};
+        }
+
+        throw new Exception($"Got unexpected type node {type.GetType()}");
+    }
+}
+
+public class FullVariableDeclaration : DeclarationNode
+{
+    public FullVariableDeclaration(PrimitiveVarNode primitiveVarNode, TypeNode type, ValueNode value)
+    {
+        Variable = GetAppropriateVarNode(primitiveVarNode, type, value);
+    }
+}
+
+public class TypeVariableDeclaration : DeclarationNode
+{
+    public TypeVariableDeclaration(PrimitiveVarNode primitiveVarNode, TypeNode type)
+    {
+        Variable = GetAppropriateVarNode(primitiveVarNode, type, null);
+    }
+}
+
+public class ValueVariableDeclaration : DeclarationNode
+{
+    public ValueVariableDeclaration(PrimitiveVarNode primitiveVarNode, ValueNode value)
+    {
+        Variable = GetAppropriateVarNode(primitiveVarNode, value.Type, value);
     }
 }
 
@@ -382,8 +422,8 @@ public class StructVarNode : VarNode
             newDict[key] = value switch
             {
                 ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode),
-                StructTypeNode structTypeNode2 => StructVarNode.FromType(structTypeNode2),
-                { } node => new VarNode()
+                StructTypeNode structTypeNode2 => FromType(structTypeNode2),
+                { } node => new VarNode
                 {
                     IsInitialized = false,
                     Type = node,

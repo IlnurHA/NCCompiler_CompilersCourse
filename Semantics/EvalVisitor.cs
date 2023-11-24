@@ -62,7 +62,7 @@ class EvalVisitor : IVisitor
             case NodeTag.ArrayGetReversed:
                 var arrGetReversedBuffer = node.Children[0]!.Accept(this);
                 var arrGetReversed = _getFromScopeStackIfNeeded<ArrayVarNode>(arrGetReversedBuffer);
-                
+
                 return new ReversedArrayNode(arrGetReversed); // TODO return VarNode
         }
 
@@ -84,74 +84,68 @@ class EvalVisitor : IVisitor
             case NodeTag.VariableDeclarationFull:
             case NodeTag.VariableDeclarationIdenType:
             case NodeTag.VariableDeclarationIdenExpr:
-                VarNode variableIdentifier = (VarNode) node.Children[0]!.Accept(this);
-                TypeNode? variableType = null;
-                ValueNode? value = null;
+                var variableIdentifierBuffer = node.Children[0]!.Accept(this);
+                SymbolicNode? variableTypeBuffer = null;
+                SymbolicNode? valueBuffer = null;
+
+                // VarNode variableIdentifier = (VarNode) node.Children[0]!.Accept(this);
+                // TypeNode? variableType = null;
+                // ValueNode? value = null;
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
-                        value = (ValueNode) node.Children[2]!.Accept(this);
+                        variableTypeBuffer = node.Children[1]!.Accept(this);
+                        valueBuffer = node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableType = (TypeNode) node.Children[1]!.Accept(this);
+                        variableTypeBuffer = node.Children[1]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
-                        value = (ValueNode) node.Children[1]!.Accept(this);
+                        valueBuffer = node.Children[1]!.Accept(this);
                         break;
                 }
+
+                if (variableIdentifierBuffer is not PrimitiveVarNode variableIdentifier)
+                    throw new Exception("Unexpected node type for name of identifier");
 
                 using (var scope = ScopeStack.GetLastScope())
                 {
-                    if (variableIdentifier.Name == null || !scope.IsFree(variableIdentifier.Name))
+                    if (!scope.IsFree(variableIdentifier.Name!))
+                        throw new Exception($"Given name {variableIdentifier.Name} is not free");
+
+                    if (valueBuffer is null)
+                    {
+                        var typeDeclTypeVar = _getFromScopeStackIfNeeded<TypeNode>(variableTypeBuffer!);
+                        var typeDeclarationNode = new TypeVariableDeclaration(variableIdentifier, typeDeclTypeVar);
+                        var typeDeclIdVar = typeDeclarationNode.Variable;
+                        ScopeStack.AddVariable(typeDeclIdVar);
+                        return typeDeclarationNode;
+                    }
+
+                    if (variableTypeBuffer is null)
+                    {
+                        if (valueBuffer is not ValueNode value)
+                            throw new Exception(
+                                $"Unexpected node type for value. Expected ValueNode got {valueBuffer.GetType()}");
+
+                        var valueDeclarationNode = new ValueVariableDeclaration(variableIdentifier, value);
+                        var valueDeclIdVar = valueDeclarationNode.Variable;
+                        ScopeStack.AddVariable(valueDeclIdVar);
+                        return valueDeclarationNode;
+                    }
+
+                    var fullDeclType = _getFromScopeStackIfNeeded<TypeNode>(variableTypeBuffer!);
+                    if (valueBuffer is not ValueNode fullDeclValue)
                         throw new Exception(
-                            $"The variable with name {variableIdentifier.Name} already exists in this scope!");
-                    if (value != null)
-                    {
-                        variableIdentifier = variableIdentifier.GetFinalVarNode();
-                        value = value.GetFinalValueNode();
-                        if (variableType != null && !value.Type.IsConvertibleTo(variableType))
-                            throw new Exception($"Unexpected type of value for variable. Given type: {value.Type}");
-                        variableIdentifier.Value = value;
-                        variableIdentifier.IsInitialized = true;
-                        variableIdentifier.Type = variableType ?? value.Type;
-                    }
-                    else
-                    {
-                        variableIdentifier.Type = variableType;
-                    }
+                            $"Unexpected node type for value. Expected ValueNode got {valueBuffer.GetType()}");
 
-                    switch (variableIdentifier.Type)
-                    {
-                        case StructTypeNode structType:
-                            var dict = new Dictionary<string, VarNode>();
+                    if (!fullDeclValue.Type.IsConvertibleTo(fullDeclType))
+                        throw new Exception($"Cannot convert type {fullDeclValue.Type} to {fullDeclType}");
 
-                            foreach (var (key, typeValue) in structType.StructFields)
-                            {
-                                dict[key] = typeValue switch
-                                {
-                                    ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode),
-                                    StructTypeNode structTypeNode => StructVarNode.FromType(structTypeNode),
-                                    { } nodeTo => new VarNode {Type = nodeTo}
-                                };
-                            }
-
-                            variableIdentifier = new StructVarNode(dict, structType)
-                                {Name = variableIdentifier.Name!, Value = value};
-                            scope.AddVariable(variableIdentifier);
-                            break;
-                        case ArrayTypeNode arrayTypeNode:
-                            variableIdentifier = new ArrayVarNode(arrayTypeNode)
-                                {Name = variableIdentifier.Name!, Value = value};
-                            scope.AddVariable(variableIdentifier);
-                            break;
-                        case { } nodeTo:
-                            scope.AddVariable(variableIdentifier);
-                            break;
-                    }
+                    var fullDeclNode = new FullVariableDeclaration(variableIdentifier, fullDeclType, fullDeclValue);
+                    ScopeStack.AddVariable(fullDeclNode.Variable);
+                    return fullDeclNode;
                 }
-
-                return new DeclarationNode(variableIdentifier, value);
             case NodeTag.VariableDeclarations:
                 var declarationsDecl = node.Children[0] != null
                     ? (VariableDeclarations) node.Children[0]!.Accept(this)
