@@ -475,12 +475,12 @@ class EvalVisitor : IVisitor
                 var returnParametersDecl = (ParametersNode) parametersDecl;
                 returnParametersDecl.AddParameter((ParameterNode) parameterDecl);
                 return returnParametersDecl;
+            
             case NodeTag.RoutineCall:
-                var idRoutineCall = (VarNode) node.Children[0]!.Accept(this);
+                var idRoutineCallBuffer = _getDesiredType<PrimitiveVarNode>(node.Children[0]!.Accept(this));
 
-
-                var function = (FunctionDeclNode) ScopeStack.FindVariable(idRoutineCall.Name!);
-                if (function.Parameters == null)
+                var function = _getDesiredType<FunctionDeclNode>(ScopeStack.FindVariable(idRoutineCallBuffer.Name));
+                if (function.Parameters is null)
                 {
                     if (node.Children.Length == 2)
                         throw new Exception("Unexpected number of arguments. Expected zero arguments");
@@ -490,7 +490,7 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 1)
                     throw new Exception(
                         $"Unexpected number of arguments. Got 0, expected {function.Parameters.Parameters.Count}.");
-                var exprsRoutineCall = (ExpressionsNode) node.Children[1]!.Accept(this);
+                var exprsRoutineCall = _getDesiredType<ExpressionsNode>(node.Children[1]!.Accept(this));
 
                 if (exprsRoutineCall.Expressions.Count != function.Parameters.Parameters.Count)
                 {
@@ -498,14 +498,17 @@ class EvalVisitor : IVisitor
                         $"Unexpected number of arguments. Got {exprsRoutineCall.Expressions.Count}, expected {function.Parameters.Parameters.Count}.");
                 }
 
-                var counter = 0;
-                foreach (var nodeExpr in exprsRoutineCall.Expressions)
+                for (var counter = 0; counter < exprsRoutineCall.Expressions.Count; counter++)
                 {
-                    if (!nodeExpr.Type.IsConvertibleTo(function.Parameters.Parameters[counter].Type))
+                    var nodeExpr = exprsRoutineCall.Expressions[counter];
+                    var functionParam = function.Parameters.Parameters[counter];
+                    
+                    if (!nodeExpr.Type.IsConvertibleTo(functionParam.Type))
                     {
                         throw new Exception(
-                            $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {function.Parameters.Parameters[counter].Type.MyType}");
+                            $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {functionParam.Type.MyType}");
                     }
+
                 }
 
                 return new RoutineCallNode(function, exprsRoutineCall);
