@@ -238,18 +238,6 @@ public class AssertNode : StatementNode
 
 public class ReturnNode : StatementNode
 {
-    private ValueNode? _returnValue;
-
-    public ReturnNode(ValueNode returnValue)
-    {
-        Type = returnValue.Type;
-        _returnValue = returnValue;
-    }
-
-    public ReturnNode()
-    {
-        Type = new TypeNode(MyType.Undefined);
-    }
 }
 
 public class DeclarationNode : StatementNode
@@ -683,5 +671,23 @@ public class VariableDeclarations : SymbolicNode
         }
 
         Declarations[varNode.Name!] = varNode;
+    }
+}
+
+public class EmptyReturnNode : ReturnNode
+{
+    public EmptyReturnNode()
+    {
+        Type = new TypeNode(MyType.Undefined);
+    }
+}
+
+public class ValueReturnNode : ReturnNode
+{
+    public ValueNode Value { get; }
+
+    public ValueReturnNode(ValueNode value)
+    {
+        Value = value;
     }
 }

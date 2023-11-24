@@ -161,7 +161,7 @@ class EvalVisitor : IVisitor
                     throw new Exception($"Unexpected node type for identifier name {typeIdentifierBuffer.GetType()}");
 
                 var typeSynonym = _getFromScopeStackIfNeeded<TypeNode>(typeSynonymBuffer);
-                
+
                 using (var scope = ScopeStack.GetLastScope())
                 {
                     if (!scope.IsFree(typeIdentifier.Name!))
@@ -177,8 +177,16 @@ class EvalVisitor : IVisitor
                 if (!ScopeStack.HasLoopScope()) throw new Exception("Unexpected context for 'break' statement");
                 return new BreakNode();
             case NodeTag.Assert:
-                ValueNode leftAssertExpression = (ValueNode) node.Children[0]!.Accept(this);
-                ValueNode rightAssertExpression = (ValueNode) node.Children[1]!.Accept(this);
+                var leftAssertExpressionBuffer = node.Children[0]!.Accept(this);
+                var rightAssertExpressionBuffer = node.Children[1]!.Accept(this);
+
+                if (leftAssertExpressionBuffer is not ValueNode leftAssertExpression)
+                    throw new Exception(
+                        $"Unexpected type node for expression. Expected ValueNode, got {leftAssertExpressionBuffer.GetType()}");
+
+                if (rightAssertExpressionBuffer is not ValueNode rightAssertExpression)
+                    throw new Exception(
+                        $"Unexpected type node for expression. Expected ValueNode, got {rightAssertExpressionBuffer.GetType()}");
 
                 if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
                 {
@@ -187,9 +195,14 @@ class EvalVisitor : IVisitor
 
                 return new AssertNode(leftAssertExpression, rightAssertExpression);
             case NodeTag.Return:
-                if (node.Children.Length == 0) return new ReturnNode();
-                ValueNode returnValue = (ValueNode) node.Children[0]!.Accept(this);
-                return new ReturnNode(returnValue);
+                if (node.Children.Length == 0) return new EmptyReturnNode();
+                var returnValueBuffer = node.Children[0]!.Accept(this);
+
+                if (returnValueBuffer is not ValueNode returnValue)
+                    throw new Exception(
+                        $"Unexpected type node for expression. Expected ValueNode, got {returnValueBuffer.GetType()}");
+
+                return new ValueReturnNode(returnValue);
             case NodeTag.Range or NodeTag.RangeReverse:
                 var leftBound = (ValueNode) node.Children[0]!.Accept(this);
                 var rightBound = (ValueNode) node.Children[1]!.Accept(this);
