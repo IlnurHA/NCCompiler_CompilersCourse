@@ -30,16 +30,16 @@ class EvalVisitor : IVisitor
         switch (node.Tag)
         {
             case NodeTag.ModifiablePrimaryGettingField:
-                var modPrimField = node.Children[0]!.Accept(this);
-                var idField = node.Children[1]!.Accept(this);
+                var modPrimFieldBuffer = node.Children[0]!.Accept(this);
+                var idFieldBuffer = node.Children[1]!.Accept(this);
 
-                if (modPrimField is not StructTypeNode && modPrimField is VarNode varNode)
-                {
-                    return new GetFieldNode((StructVarNode) ScopeStack.FindVariable(varNode.Name!),
-                        (VarNode) idField);
-                }
+                if (idFieldBuffer is not PrimitiveVarNode idField) throw new Exception("Unexpected node type for field");
+                
+                var modPrimField = (StructVarNode) (modPrimFieldBuffer is PrimitiveVarNode varNode
+                    ? ScopeStack.FindVariable(varNode.Name!)
+                    : modPrimFieldBuffer);
 
-                return new GetFieldNode((StructVarNode) modPrimField, (VarNode) idField); // return VarNode
+                return new GetFieldNode(modPrimField, idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArr = node.Children[0]!.Accept(this);
                 var indexFromArr = node.Children[1]!.Accept(this);
@@ -834,7 +834,7 @@ class EvalVisitor : IVisitor
             case NodeTag.RealLiteral:
                 return new ConstNode(new TypeNode(MyType.Real), node.Value!);
             case NodeTag.Identifier:
-                return new VarNode((node.Value! as string)!);
+                return new PrimitiveVarNode((node.Value! as string)!);
             case NodeTag.PrimitiveType:
                 return new TypeNode(_getPrimitiveType((node.Value! as string)!));
             case NodeTag.Unary:

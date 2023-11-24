@@ -206,6 +206,11 @@ public class VarNode : ValueNode
     }
 }
 
+public class PrimitiveVarNode : VarNode
+{
+    public PrimitiveVarNode(string name) : base(name) {}
+}
+
 public class StatementNode : TypedSymbolicNode
 {
 }
