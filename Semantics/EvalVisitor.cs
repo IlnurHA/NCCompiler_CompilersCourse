@@ -154,18 +154,24 @@ class EvalVisitor : IVisitor
                 declarationsDecl.AddDeclaration(decl.Variable);
                 return declarationsDecl;
             case NodeTag.TypeDeclaration:
-                VarNode typeIdentifier = (VarNode) node.Children[0]!.Accept(this);
-                TypeNode typeSynonym = ((TypeNode) node.Children[1]!.Accept(this)).GetFinalTypeNode();
-                typeIdentifier.Value = typeSynonym;
+                var typeIdentifierBuffer = node.Children[0]!.Accept(this);
+                var typeSynonymBuffer = node.Children[1]!.Accept(this);
+
+                if (typeIdentifierBuffer is not PrimitiveVarNode typeIdentifier)
+                    throw new Exception($"Unexpected node type for identifier name {typeIdentifierBuffer.GetType()}");
+
+                var typeSynonym = _getFromScopeStackIfNeeded<TypeNode>(typeSynonymBuffer);
+                
                 using (var scope = ScopeStack.GetLastScope())
                 {
-                    if (typeIdentifier.Name == null || !scope.IsFree(typeIdentifier.Name))
+                    if (!scope.IsFree(typeIdentifier.Name!))
                         throw new Exception(
                             $"The user type with name {typeIdentifier.Name} already exists in this scope!");
-                    scope.AddVariable(typeIdentifier);
-                }
 
-                return new TypeDeclarationNode(typeIdentifier, typeSynonym);
+                    var newTypeVar = new TypeDeclarationNode(typeIdentifier, typeSynonym);
+                    scope.AddType(newTypeVar.DeclaredType);
+                    return newTypeVar;
+                }
 
             case NodeTag.Break:
                 if (!ScopeStack.HasLoopScope()) throw new Exception("Unexpected context for 'break' statement");

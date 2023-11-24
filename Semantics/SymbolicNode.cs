@@ -124,7 +124,7 @@ public class StructTypeNode : TypeNode
 public class UserDefinedTypeNode : TypeNode
 {
     public TypeNode Type { get; set; }
-    public string name { get; set; }
+    public string Name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
 
     public new bool IsTheSame(TypeNode anotherObject)
@@ -208,8 +208,11 @@ public class VarNode : ValueNode
 
 public class PrimitiveVarNode : VarNode
 {
-    public PrimitiveVarNode(string name) : base(name)
+    public new string Name { get; }
+
+    public PrimitiveVarNode(string name)
     {
+        Name = name;
     }
 }
 
@@ -301,13 +304,11 @@ public class ValueVariableDeclaration : DeclarationNode
 
 public class TypeDeclarationNode : StatementNode
 {
-    public VarNode Variable { get; set; }
+    public UserDefinedTypeNode DeclaredType { get; }
 
-    public TypeDeclarationNode(VarNode varNode, TypeNode? value)
+    public TypeDeclarationNode(PrimitiveVarNode varNode, TypeNode type)
     {
-        Variable = varNode;
-        Variable.Value = value;
-        Variable.IsInitialized = value != null;
+        DeclaredType = new UserDefinedTypeNode {Name = varNode.Name, Type = type};
     }
 }
 
