@@ -347,6 +347,7 @@ public class OperationNode : ValueNode
 
 public class ArrayVarNode : VarNode
 {
+    public new ArrayTypeNode Type { get; }
     public List<ValueNode> Elements = new List<ValueNode>();
 
     public ArrayVarNode(string name, TypeNode elementTypeNode, ValueNode size) : base(name)
