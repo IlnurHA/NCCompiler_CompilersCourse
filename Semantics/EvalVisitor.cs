@@ -264,6 +264,8 @@ class EvalVisitor : IVisitor
                 }
 
                 var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
+                
+                ScopeStack.DeleteScope();
                 return new WhileLoopNode(condExprWhile, bodyWhile)
                 {
                     Type = bodyWhile.Type
