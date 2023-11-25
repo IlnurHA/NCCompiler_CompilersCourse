@@ -1,3 +1,13 @@
+routine foo(): integer is
+    var x is 5
+    
+    if x = 5 then
+        return 2
+    else 
+    end
+    return 1
+end
+
 routine main() is 
    var a:
    record 

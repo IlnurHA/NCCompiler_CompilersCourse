@@ -304,8 +304,12 @@ class EvalVisitor : IVisitor
                     : (BodyNode) node.Children[2]!.Accept(this);
 
                 var newType = bodyIfElse.Type;
+                var undefinedTypeIf = new TypeNode();
 
-                if (!bodyIfElse.Type.IsTheSame(bodyElse.Type))
+                if (bodyIfElse.Type.IsTheSame(undefinedTypeIf))
+                {
+                    newType = bodyElse.Type;
+                } else if (!bodyElse.Type.IsTheSame(undefinedTypeIf) && !bodyIfElse.Type.IsTheSame(bodyElse.Type))
                 {
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
