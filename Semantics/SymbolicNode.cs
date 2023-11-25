@@ -183,13 +183,13 @@ public class VarNode : ValueNode
         Name = name;
     }
 
-    public VarNode GetFinalVarNode()
-    {
-        if (Type is not UserDefinedTypeNode userDefinedTypeNode) return this;
-        var finalType = userDefinedTypeNode.GetFinalTypeNode();
-        Type = finalType;
-        return this;
-    }
+    // public VarNode GetFinalVarNode()
+    // {
+    //     if (Type is not UserDefinedTypeNode userDefinedTypeNode) return this;
+    //     var finalType = userDefinedTypeNode.GetFinalTypeNode();
+    //     Type = finalType;
+    //     return this;
+    // }
 
     public VarNode()
     {
@@ -224,6 +224,8 @@ public class AssertNode : StatementNode
         leftExpression = left;
         rightExpression = right;
     }
+    
+    
 }
 
 public class ReturnNode : StatementNode
@@ -502,7 +504,7 @@ public class ParametersNode : SymbolicNode
     }
 }
 
-public class FunctionDeclNode : VarNode
+public class RoutineDeclarationNode : VarNode
 {
     public PrimitiveVarNode FunctionName { get; }
     public BodyNode Body { get; }
@@ -510,7 +512,7 @@ public class FunctionDeclNode : VarNode
     public TypeNode? ReturnType { get; }
 
     // For full declaration of function
-    public FunctionDeclNode(PrimitiveVarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
+    public RoutineDeclarationNode(PrimitiveVarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
     {
         FunctionName = functionName;
         Body = body;
@@ -542,13 +544,13 @@ public class ExpressionsNode : TypedSymbolicNode
 
 public class RoutineCallNode : ValueNode
 {
-    public FunctionDeclNode Function { get; set; }
+    public RoutineDeclarationNode Routine { get; set; }
     public ExpressionsNode? Expressions { get; set; }
 
-    public RoutineCallNode(FunctionDeclNode function, ExpressionsNode expressions) : base(
-        function.ReturnType ?? new TypeNode(MyType.Undefined))
+    public RoutineCallNode(RoutineDeclarationNode routine, ExpressionsNode expressions) : base(
+        routine.ReturnType ?? new TypeNode(MyType.Undefined))
     {
-        Function = function;
+        Routine = routine;
         Expressions = expressions;
     }
 }

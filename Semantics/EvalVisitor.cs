@@ -98,11 +98,11 @@ class EvalVisitor : IVisitor
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableTypeBuffer = node.Children[1]!.Accept(this);
+                        variableTypeBuffer = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
                         valueBuffer = node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableTypeBuffer = node.Children[1]!.Accept(this);
+                        variableTypeBuffer = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
                         valueBuffer = node.Children[1]!.Accept(this);
@@ -168,7 +168,8 @@ class EvalVisitor : IVisitor
 
                     var newTypeVar = new TypeDeclarationNode(typeIdentifier, typeSynonym);
                     scope.AddType(newTypeVar.DeclaredType);
-                    return newTypeVar;
+                    // return newTypeVar;
+                    return null;
                 }
 
             case NodeTag.Break:
@@ -463,7 +464,7 @@ class EvalVisitor : IVisitor
                     returnType = returnTypeRoutineDecl;
                 }
 
-                ScopeStack.AddVariable(new FunctionDeclNode(funcNameRoutineDecl, parametersRoutineDecl,
+                ScopeStack.AddVariable(new RoutineDeclarationNode(funcNameRoutineDecl, parametersRoutineDecl,
                     returnTypeRoutineDecl, new BodyNode()));
                 bodyRoutineDeclFull = node.Children[bodyIndex] is null
                     ? new BodyNode()
@@ -476,7 +477,7 @@ class EvalVisitor : IVisitor
                 }
 
                 ScopeStack.DeleteScope();
-                var funcDecl = new FunctionDeclNode(funcNameRoutineDecl, parametersRoutineDecl,
+                var funcDecl = new RoutineDeclarationNode(funcNameRoutineDecl, parametersRoutineDecl,
                     returnTypeRoutineDecl, bodyRoutineDeclFull);
                 ScopeStack.AddVariable(funcDecl);
                 return funcDecl;
@@ -516,7 +517,7 @@ class EvalVisitor : IVisitor
                 var idRoutineCallBuffer = (PrimitiveVarNode) node.Children[0]!.Accept(this);
 
                 var function =
-                    (FunctionDeclNode) _getFromScopeStackIfNeeded(ScopeStack.FindVariable(idRoutineCallBuffer.Name));
+                    (RoutineDeclarationNode) _getFromScopeStackIfNeeded(ScopeStack.FindVariable(idRoutineCallBuffer.Name));
                 if (function.Parameters is null)
                 {
                     if (node.Children.Length == 2)
