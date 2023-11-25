@@ -1,5 +1,5 @@
 ﻿/* Routine to check that number is prime */
-routine is_prime(num: integer) is
+routine is_prime(num: integer): boolean is
   if num = 1 or num = 2 then
     return true
   end

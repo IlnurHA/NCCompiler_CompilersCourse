@@ -44,5 +44,7 @@ routine main() is
   third.val := 4
   third.left := null
   third.right := null
-  assert find(first, 1).val, 1 // OK
+  
+  var result is find(first, 1)
+  assert result.val, 1 // OK
 end

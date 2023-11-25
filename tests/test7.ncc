@@ -1,6 +1,6 @@
 routine reverse_array(a: array[]integer): array[]integer is
     var result: array[a.size]integer
-    for i in reverse a.size..1 loop
+    for i in reverse 1..a.size loop
         result[a.size - i + 1] := a[i]
     end
     return result

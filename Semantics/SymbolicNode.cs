@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Linq.Expressions;
-using NCCompiler_CompilersCourse.Parser;
-
-namespace NCCompiler_CompilersCourse.Semantics;
+﻿namespace NCCompiler_CompilersCourse.Semantics;
 
 public abstract class SymbolicNode
 {
@@ -302,13 +298,12 @@ public class TypeDeclarationNode : StatementNode
 
 public class AssignmentNode : StatementNode
 {
-    public VarNode Variable { get; set; }
+    public ValueNode Variable { get; set; }
 
-    public AssignmentNode(VarNode varNode, ValueNode value)
+    public AssignmentNode(ValueNode varNode, ValueNode value)
     {
         Variable = varNode;
         Variable.Value = value;
-        Variable.IsInitialized = true;
     }
 }
 
@@ -318,7 +313,14 @@ public class BodyNode : TypedSymbolicNode
 
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
+        Type = typeNode;
         Statements = statements;
+    }
+    
+    public BodyNode()
+    {
+        Statements = new List<StatementNode>();
+        Type = new TypeNode(MyType.Undefined);
     }
 
     public void AddStatement(StatementNode statement)
@@ -352,7 +354,8 @@ public class ArrayVarNode : VarNode
 
     public ArrayVarNode(string name, TypeNode elementTypeNode, ValueNode size) : base(name)
     {
-        Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(), size);
+        Type = new ArrayTypeNode(elementTypeNode, size);
+        base.Type = Type;
     }
 
     public ArrayVarNode(string name, TypeNode elementTypeNode, List<ValueNode> values) : base(name)
@@ -360,17 +363,20 @@ public class ArrayVarNode : VarNode
         Elements = values;
         Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode(),
             new ValueNode(new TypeNode(MyType.Integer), values.Count));
+        base.Type = Type;
     }
 
     // For function parameters with arbitrary number of elements
     public ArrayVarNode(string name, TypeNode elementTypeNode) : base(name)
     {
         Type = new ArrayTypeNode(elementTypeNode.GetFinalTypeNode());
+        base.Type = Type;
     }
 
     public ArrayVarNode(ArrayTypeNode elementTypeNode)
     {
         Type = elementTypeNode;
+        base.Type = Type;
     }
 }
 
@@ -379,7 +385,7 @@ public class GetByIndexNode : ValueNode
     public ArrayVarNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
 
-    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(((ArrayTypeNode) varNode.Type).ElementTypeNode)
+    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(varNode.Type.ElementTypeNode)
     {
         ArrayVarNode = varNode;
         Index = index;
@@ -437,7 +443,7 @@ public class GetFieldNode : ValueNode
         FieldName = fieldName;
     }
 
-    public GetFieldNode(StructVarNode structVarNode, VarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name!)
+    public GetFieldNode(StructVarNode structVarNode, PrimitiveVarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name)
         .Type)
     {
         StructVarNode = structVarNode;
@@ -504,13 +510,13 @@ public class ParametersNode : SymbolicNode
 
 public class FunctionDeclNode : VarNode
 {
-    public VarNode FunctionName { get; }
+    public PrimitiveVarNode FunctionName { get; }
     public BodyNode Body { get; }
     public ParametersNode? Parameters { get; }
     public TypeNode? ReturnType { get; }
 
     // For full declaration of function
-    public FunctionDeclNode(VarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
+    public FunctionDeclNode(PrimitiveVarNode functionName, ParametersNode? parameters, TypeNode? returnType, BodyNode body)
     {
         FunctionName = functionName;
         Body = body;
@@ -690,5 +696,6 @@ public class ValueReturnNode : ReturnNode
     public ValueReturnNode(ValueNode value)
     {
         Value = value;
+        Type = value.Type;
     }
 }

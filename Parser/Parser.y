@@ -138,7 +138,7 @@ Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.Mak
             ;
 
 RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1, $3); }
-                | IDENTIFIER     { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1); }
+                | IDENTIFIER LEFT_BRACKET RIGHT_BRACKET                 { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1); }
                 ;
 
 Expressions     : Expression                    { $$ = $1; }
@@ -207,6 +207,7 @@ Primary   : Sign INTEGRAL_LITERAL {$$ = Node.MakeComplexNode(NodeTag.SignToInteg
     | TRUE | FALSE
     | ModifiablePrimary { $$ = $1;}
     | LEFT_SQUARED_BRACKET Expressions RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.ArrayConst, $2);}
+    | LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET { $$ = Node.MakeComplexNode(NodeTag.EmptyArrayConst);}
     | ArrayFunctions
     ;
 

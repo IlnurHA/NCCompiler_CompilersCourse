@@ -41,6 +41,7 @@ internal enum NodeTag
     SignToInteger,
     SignToDouble,
     ArrayConst,
+    EmptyArrayConst,
     And,
     Or,
     Xor,
@@ -148,7 +149,7 @@ internal class ComplexNode : Node
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
             case NodeTag.SignToDouble:
-            case NodeTag.ArrayConst:
+            case NodeTag.ArrayConst or NodeTag.EmptyArrayConst:
                 return visitor.ExpressionVisit(this);
             default:
                 throw new Exception($"Unexpected NodeTag {Tag} in the visit function");
