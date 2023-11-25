@@ -39,6 +39,8 @@ public class TypeNode : SymbolicNode
 
     public TypeNode ConvertTo(TypeNode toTypeNode)
     {
+        if (this is UserDefinedTypeNode definedTypeNode) return definedTypeNode.Type.ConvertTo(toTypeNode);
+        if (toTypeNode is UserDefinedTypeNode userDefinedTypeNode) return ConvertTo(userDefinedTypeNode.Type);
         if (toTypeNode.IsTheSame(this)) return this;
         return (toTypeNode.MyType, MyType) switch
         {

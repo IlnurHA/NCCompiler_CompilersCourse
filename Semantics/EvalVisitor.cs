@@ -279,6 +279,7 @@ class EvalVisitor : IVisitor
                 }
 
                 var bodyIf = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
+                ScopeStack.DeleteScope();
                 return new IfStatement(condIf, bodyIf)
                 {
                     Type = bodyIf.Type
@@ -307,7 +308,7 @@ class EvalVisitor : IVisitor
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
                 }
-
+                ScopeStack.DeleteScope();
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
                     Type = newType
@@ -406,6 +407,7 @@ class EvalVisitor : IVisitor
                 ParametersNode? parametersRoutineDecl = null;
                 TypeNode? returnTypeRoutineDecl = null;
                 BodyNode? bodyRoutineDeclFull;
+                int bodyIndex = 0;
                 ScopeStack.NewScope(Scope.ScopeContext.Routine);
                 switch (node.Tag)
                 {
@@ -416,7 +418,7 @@ class EvalVisitor : IVisitor
                             : new ParametersNode(new List<ParameterNode> {declTypeParam});
 
                         returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[2]!.Accept(this));
-                        bodyRoutineDeclFull = node.Children[3] is null ? new BodyNode() : (BodyNode) node.Children[3]!.Accept(this);
+                        bodyIndex = 3;
                         break;
                     case NodeTag.RoutineDeclarationWithParams:
                         var interNodeDecl = node.Children[1]!.Accept(this);
@@ -424,14 +426,14 @@ class EvalVisitor : IVisitor
                         parametersRoutineDecl = interNodeDecl is not ParameterNode declParam
                             ? (ParametersNode) interNodeDecl
                             : new ParametersNode(new List<ParameterNode> {declParam});
-                        bodyRoutineDeclFull = node.Children[2] is null ? new BodyNode() : (BodyNode) node.Children[2]!.Accept(this);
+                        bodyIndex = 2;
                         break;
                     case NodeTag.RoutineDeclarationWithType:
                         returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
-                        bodyRoutineDeclFull = node.Children[2] is null ? new BodyNode() : (BodyNode) node.Children[2]!.Accept(this);
+                        bodyIndex = 2;
                         break;
                     case NodeTag.RoutineDeclaration:
-                        bodyRoutineDeclFull = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
+                        bodyIndex = 1;
                         break;
                     default:
                         throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
@@ -442,6 +444,12 @@ class EvalVisitor : IVisitor
                 {
                     returnType = returnTypeRoutineDecl;
                 }
+
+                ScopeStack.AddVariable(new FunctionDeclNode(funcNameRoutineDecl, parametersRoutineDecl,
+                    returnTypeRoutineDecl, new BodyNode()));
+                bodyRoutineDeclFull = node.Children[bodyIndex] is null
+                    ? new BodyNode()
+                    : (BodyNode) node.Children[bodyIndex]!.Accept(this);
 
                 if (!bodyRoutineDeclFull.Type.IsConvertibleTo(returnType))
                 {
@@ -537,7 +545,7 @@ class EvalVisitor : IVisitor
                 var expressionsContNode = new ExpressionsNode();
                 if (expressionsContBuffer is ValueNode expressionsCont)
                 {
-                    expressionsContNode.AddExpression(expressionsCont);
+                    expressionsContNode.AddExpression((ValueNode) _getFromScopeStackIfNeeded(expressionsCont));
                 }
                 else if (expressionsContBuffer is ExpressionsNode exprNode) expressionsContNode = exprNode;
                 else
