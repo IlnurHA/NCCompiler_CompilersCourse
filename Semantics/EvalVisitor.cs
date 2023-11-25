@@ -396,6 +396,18 @@ class EvalVisitor : IVisitor
                 }
 
                 return new StructTypeNode(fields);
+            
+            case NodeTag.Cast:
+                var typeCastBuffer = node.Children[0]!.Accept(this);
+                var typeValueBuffer = node.Children[1]!.Accept(this);
+
+                var typeCast = (TypeNode) _getFromScopeStackIfNeeded(typeCastBuffer);
+                var typeValue = (ValueNode) _getFromScopeStackIfNeeded(typeValueBuffer);
+
+                if (!typeValue.Type.IsConvertibleTo(typeCast))
+                    throw new Exception($"Cannot convert {typeValue.Type} to {typeCast}");
+
+                return new CastNode(typeCast, typeValue);
 
             default:
                 throw new Exception($"Unexpected node tag: {node.Tag}");

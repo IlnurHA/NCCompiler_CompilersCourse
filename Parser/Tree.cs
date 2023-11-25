@@ -124,6 +124,7 @@ internal class ComplexNode : Node
             case NodeTag.Range or NodeTag.RangeReverse:
             case NodeTag.RecordType or NodeTag.VariableDeclarations:
             case NodeTag.Assignment:
+            case NodeTag.Cast:
                 return visitor.StatementVisit(this);
             case NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType:

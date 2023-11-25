@@ -164,14 +164,6 @@ public class ValueNode : SymbolicNode
         Value = null;
         Type = new TypeNode(MyType.Undefined);
     }
-
-    public ValueNode GetFinalValueNode()
-    {
-        if (Type is not UserDefinedTypeNode userDefinedTypeNode) return this;
-        var finalType = userDefinedTypeNode.GetFinalTypeNode();
-        Type = finalType;
-        return this;
-    }
 }
 
 public class ConstNode : ValueNode
@@ -700,4 +692,9 @@ public class ValueReturnNode : ReturnNode
         Value = value;
         Type = value.Type;
     }
+}
+
+public class CastNode : ValueNode
+{
+    public CastNode(TypeNode type, ValueNode value) : base(type, value) { }
 }

@@ -14,5 +14,5 @@ routine main() is
     var hello: integer
     var ends: boolean
    end
-   a.hello := 5
+   a.hello := integer(true)
 end
