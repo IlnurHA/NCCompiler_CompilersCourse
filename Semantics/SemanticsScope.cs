@@ -1,6 +1,6 @@
 ﻿namespace NCCompiler_CompilersCourse.Semantics;
 
-public class Scope : IDisposable
+public class SemanticsScope : IDisposable
 {
     public enum ScopeContext
     {
@@ -15,7 +15,7 @@ public class Scope : IDisposable
     public ScopeContext ScopeContextVar { get; }
     public string? ScopeContextName { get; }
 
-    public Scope(ScopeContext scopeContext = ScopeContext.Global, string? scopeContextName = null)
+    public SemanticsScope(ScopeContext scopeContext = ScopeContext.Global, string? scopeContextName = null)
     {
         ScopeContextVar = scopeContext;
         ScopeContextName = scopeContextName;
@@ -25,7 +25,7 @@ public class Scope : IDisposable
     {
         return !(Variables.TryGetValue(name, out _) || DefinedTypes.TryGetValue(name, out _));
     }
-
+    
     public SymbolicNode? FindVariable(string name)
     {
         var isFound = Variables.TryGetValue(name, out var result);

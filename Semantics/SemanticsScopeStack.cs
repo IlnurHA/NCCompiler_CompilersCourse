@@ -1,10 +1,10 @@
 ﻿namespace NCCompiler_CompilersCourse.Semantics;
 
-public class ScopeSemanticsStack
+public class SemanticsScopeStack
 {
     public List<SemanticsScope> Scopes { get; set; } = new ();
 
-    public ScopeSemanticsStack()
+    public SemanticsScopeStack()
     {
         Scopes.Add(new SemanticsScope());
     }
