@@ -1,17 +1,17 @@
 ﻿namespace NCCompiler_CompilersCourse.Semantics;
 
-public class ScopeStack
+public class ScopeSemanticsStack
 {
-    public List<Scope> Scopes { get; set; } = new ();
+    public List<SemanticsScope> Scopes { get; set; } = new ();
 
-    public ScopeStack()
+    public ScopeSemanticsStack()
     {
-        Scopes.Add(new Scope());
+        Scopes.Add(new SemanticsScope());
     }
 
-    public void NewScope(Scope.ScopeContext scopeContext)
+    public void NewScope(SemanticsScope.ScopeContext scopeContext)
     {
-        Scopes.Add(new Scope(scopeContext: scopeContext));
+        Scopes.Add(new SemanticsScope(scopeContext: scopeContext));
     }
 
     public void DeleteScope()
@@ -67,7 +67,7 @@ public class ScopeStack
         Scopes[^1].AddType(node);
     }
 
-    public Scope GetLastScope()
+    public SemanticsScope GetLastScope()
     {
         return Scopes.Last();
     }
@@ -76,7 +76,7 @@ public class ScopeStack
     {
         for (int i = Scopes.Count - 1; i >= 0; i--)
         {
-            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Routine)
+            if (Scopes[i].ScopeContextVar == SemanticsScope.ScopeContext.Routine)
             {
                 return true;
             }
@@ -85,11 +85,11 @@ public class ScopeStack
         return false;
     }
 
-    public (Scope, int) GetLastRoutineScope()
+    public (SemanticsScope, int) GetLastRoutineScope()
     {
         for (int i = Scopes.Count - 1; i >= 0; i--)
         {
-            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Routine)
+            if (Scopes[i].ScopeContextVar == SemanticsScope.ScopeContext.Routine)
             {
                 return (Scopes[i], i);
             }
@@ -102,7 +102,7 @@ public class ScopeStack
     {
         for (int i = Scopes.Count - 1; i >= 0; i--)
         {
-            if (Scopes[i].ScopeContextVar == Scope.ScopeContext.Loop)
+            if (Scopes[i].ScopeContextVar == SemanticsScope.ScopeContext.Loop)
             {
                 return true;
             }
