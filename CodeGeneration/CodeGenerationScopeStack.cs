@@ -1,12 +1,36 @@
-﻿namespace NCCompiler_CompilersCourse.CodeGeneration;
+﻿using System.Security.Cryptography;
+using System.Text;
+using NCCompiler_CompilersCourse.Semantics;
+
+namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class CodeGenerationScopeStack
 {
+    private readonly string _hash;
     private List<CodeGenerationScope> Scopes { get; set; } = new ();
-    
-    public void AddVariableInLastScope(CodeGenerationVariable node)
+
+    public CodeGenerationScopeStack()
     {
-        Scopes[^1].AddVariable(node);
+        _hash = Guid.NewGuid().ToString()[..8];
+    }
+    public void AddVariableInLastScope(string name, TypeNode type)
+    {
+        Scopes[^1].AddVariable(name, type);
+    }
+    
+    public void AddSpecialVariableInLastScope(TypeNode type)
+    {
+        Scopes[^1].AddSpecialVariable(type);
+    }
+    
+    public void CreateNewScope(SemanticsScope.ScopeContext scopeContext)
+    {
+        Scopes.Add(new CodeGenerationScope(_hash));
+    }
+
+    public void DeleteLastScope()
+    {
+        Scopes.RemoveAt(Scopes.Count - 1);
     }
     
     public bool HasVariableInLastScope(string name)
