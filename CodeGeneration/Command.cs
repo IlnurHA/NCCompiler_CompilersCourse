@@ -1,4 +1,6 @@
-﻿namespace NCCompiler_CompilersCourse.CodeGeneration;
+﻿using NCCompiler_CompilersCourse.Semantics;
+
+namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public abstract class BaseCommand
 {
@@ -94,5 +96,164 @@ public class DuplicateCommand : BaseCommand
     public override string Translate()
     {
         return "dup";
+    }
+}
+public class LoadLocalAddressToStackCommand : BaseCommand
+{
+    public string VarName { get; }
+
+    public LoadLocalAddressToStackCommand(string varName)
+    {
+        VarName = varName;
+    }
+
+    public override string Translate()
+    {
+        return "ldloca.s" + '\t' + VarName;
+    }
+}
+public class SetFieldCommand : BaseCommand
+{
+    public string Type { get; }
+    // Struct name with necessary namespaces
+    public string StructName { get; }
+    public string FieldName { get; }
+
+    public SetFieldCommand(string type, string structName, string fieldName)
+    {
+        Type = type;
+        StructName = structName;
+        FieldName = fieldName;
+    }
+
+    public override string Translate()
+    {
+        return $"stfld\t{Type} {StructName}::{FieldName}";
+    }
+}
+
+public class LoadFieldCommand : BaseCommand
+{
+    // Getting object from stack and pushes value of specified field
+    
+    public string Type { get; }
+    // Struct name with necessary namespaces
+    public string StructName { get; }
+    public string FieldName { get; }
+    
+    public LoadFieldCommand(string type, string structName, string fieldName)
+    {
+        Type = type;
+        StructName = structName;
+        FieldName = fieldName;
+    }
+    
+    public override string Translate()
+    {
+        return $"ldfld\t{Type} {StructName}::{FieldName}";
+    }
+}
+
+public class InitObjectCommand : BaseCommand
+{
+    // Pops address from stack and initializes object type to it
+    
+    // Together with necessary namespaces
+    public string ObjectName { get; }
+
+    public InitObjectCommand(string objectName)
+    {
+        ObjectName = objectName;
+    }
+
+    public override string Translate()
+    {
+        return $"initobj\t{ObjectName}";
+    }
+}
+
+public class LoadConstantCommand : BaseCommand
+{
+    public object Value;
+
+    public LoadConstantCommand(object value)
+    {
+        Value = value;
+    }
+
+    public override string Translate()
+    {
+        var type = "i4";
+
+        if (Value is float) type = "r4";
+        
+        return $"ldc.{type}\t{Value}";
+    }
+}
+
+public class OperationCommand : BaseCommand
+{
+    public string Operation;
+    private OperationType opType; 
+
+    public string FromOperationType(OperationType operationType)
+    {
+        return operationType switch
+        {
+            OperationType.UnaryMinus => "neg",
+            OperationType.UnaryPlus => "nop",
+            OperationType.Not => "ldc.i4.0\nceq",
+            OperationType.And => "and",
+            OperationType.Or => "or",
+            OperationType.Xor => "xor",
+            OperationType.Ge => "clt.un\nldc.i4.0\nceq",
+            OperationType.Gt => "cgt",
+            OperationType.Le => "cgt.un\nldc.i4.0\nceq",
+            OperationType.Lt => "clt",
+            OperationType.Eq => "ceq",
+            OperationType.Ne => "ceq\nldc.i4.0\nceq",
+            OperationType.Plus => "add",
+            OperationType.Minus => "sub",
+            OperationType.Mul => "mul",
+            OperationType.Div => "div",
+            OperationType.Rem => "rem",
+            _ => throw new ArgumentOutOfRangeException(nameof(operationType), operationType, null)
+        };
+    }
+
+    public OperationCommand(OperationType operationType)
+    {
+        Operation = FromOperationType(operationType);
+        opType = operationType;
+    }
+
+    public List<BaseCommand> GetOperations()
+    {
+        return opType switch
+        {
+            OperationType.Not => new List<BaseCommand>
+                {new LoadConstantCommand(0), new OperationCommand(OperationType.Eq)},
+            OperationType.Ge => new List<BaseCommand>
+            {
+                new OperationCommand(OperationType.Lt), new LoadConstantCommand(0),
+                new OperationCommand(OperationType.Eq)
+            },
+            OperationType.Le => new List<BaseCommand>
+            {
+                new OperationCommand(OperationType.Gt), new LoadConstantCommand(0),
+                new OperationCommand(OperationType.Eq)
+            },
+            OperationType.Ne => new List<BaseCommand>
+            {
+                new OperationCommand(OperationType.Eq), new LoadConstantCommand(0),
+                new OperationCommand(OperationType.Eq)
+            },
+            _ => new List<BaseCommand> {this},
+        };
+
+    }
+    public override string Translate()
+    {
+        return Operation;
     }
 }

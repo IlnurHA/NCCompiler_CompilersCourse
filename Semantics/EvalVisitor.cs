@@ -51,18 +51,32 @@ class EvalVisitor : IVisitor
                 return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSortedBuffer = node.Children[0]!.Accept(this);
-                var arrGetSorted = (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetSortedBuffer);
+                var arrGetSorted = (ValueNode) _getFromScopeStackIfNeeded(arrGetSortedBuffer);
+
+                if (arrGetSorted.Type is not ArrayTypeNode arrGetSortedType)
+                    throw new Exception($"Cannot sort {arrGetSorted.Type.GetType()}");
+
+                if (arrGetSortedType.ElementTypeNode.MyType == MyType.CompoundType)
+                {
+                    throw new Exception("Cannot sort compound types!");
+                }
 
                 return new SortedArrayNode(arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSizeBuffer = node.Children[0]!.Accept(this);
-                var arrGetSize = (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetSizeBuffer);
+                var arrGetSize = (VarNode) _getFromScopeStackIfNeeded(arrGetSizeBuffer);
+
+                if (arrGetSize.Type is not ArrayTypeNode)
+                    throw new Exception($"Cannot sort {arrGetSize.Type.GetType()}");
 
                 return new ArraySizeNode(arrGetSize); // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversedBuffer = node.Children[0]!.Accept(this);
                 var arrGetReversed =
-                    (ArrayVarNode) _getFromScopeStackIfNeeded(arrGetReversedBuffer);
+                    (ValueNode) _getFromScopeStackIfNeeded(arrGetReversedBuffer);
+
+                if (arrGetReversed.Type is not ArrayTypeNode)
+                    throw new Exception($"Cannot sort {arrGetReversed.Type.GetType()}");
 
                 return new ReversedArrayNode(arrGetReversed); // TODO return VarNode
         }
@@ -98,11 +112,11 @@ class EvalVisitor : IVisitor
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableTypeBuffer = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
+                        variableTypeBuffer = ((TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
                         valueBuffer = node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableTypeBuffer = ((TypeNode)node.Children[1]!.Accept(this)).GetFinalTypeNode();
+                        variableTypeBuffer = ((TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
                         valueBuffer = node.Children[1]!.Accept(this);
@@ -173,7 +187,8 @@ class EvalVisitor : IVisitor
                 }
 
             case NodeTag.Break:
-                if (!SemanticsScopeStack.HasLoopScope()) throw new Exception("Unexpected context for 'break' statement");
+                if (!SemanticsScopeStack.HasLoopScope())
+                    throw new Exception("Unexpected context for 'break' statement");
                 return new BreakNode();
             case NodeTag.Assert:
                 var leftAssertExpressionBuffer = node.Children[0]!.Accept(this);
@@ -265,7 +280,7 @@ class EvalVisitor : IVisitor
                 }
 
                 var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
-                
+
                 SemanticsScopeStack.DeleteScope();
                 return new WhileLoopNode(condExprWhile, bodyWhile)
                 {
@@ -310,11 +325,13 @@ class EvalVisitor : IVisitor
                 if (bodyIfElse.Type.IsTheSame(undefinedTypeIf))
                 {
                     newType = bodyElse.Type;
-                } else if (!bodyElse.Type.IsTheSame(undefinedTypeIf) && !bodyIfElse.Type.IsTheSame(bodyElse.Type))
+                }
+                else if (!bodyElse.Type.IsTheSame(undefinedTypeIf) && !bodyIfElse.Type.IsTheSame(bodyElse.Type))
                 {
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
                         OperationType.Assert);
                 }
+
                 SemanticsScopeStack.DeleteScope();
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
@@ -371,7 +388,7 @@ class EvalVisitor : IVisitor
                     !exprAssignment.Type.IsConvertibleTo(idAssignment.Type))
                 {
                     throw new Exception(
-                        $"Unexpected type. Got {exprAssignment.Type.MyType}, expected {idAssignment.Type.MyType}");
+                        $"Unexpected type. Got {exprAssignment.Type.GetType()}, expected {idAssignment.Type.GetType()}");
                 }
 
                 return new AssignmentNode(idAssignment, exprAssignment);
@@ -397,7 +414,7 @@ class EvalVisitor : IVisitor
                 }
 
                 return new StructTypeNode(fields);
-            
+
             case NodeTag.Cast:
                 var typeCastBuffer = node.Children[0]!.Accept(this);
                 var typeValueBuffer = node.Children[1]!.Accept(this);
@@ -517,7 +534,8 @@ class EvalVisitor : IVisitor
                 var idRoutineCallBuffer = (PrimitiveVarNode) node.Children[0]!.Accept(this);
 
                 var function =
-                    (RoutineDeclarationNode) _getFromScopeStackIfNeeded(SemanticsScopeStack.FindVariable(idRoutineCallBuffer.Name));
+                    (RoutineDeclarationNode) _getFromScopeStackIfNeeded(
+                        SemanticsScopeStack.FindVariable(idRoutineCallBuffer.Name));
                 if (function.Parameters is null)
                 {
                     if (node.Children.Length == 2)
@@ -920,6 +938,9 @@ class EvalVisitor : IVisitor
                 return new ArrayConst(expressions)
                 {
                     Type = new ArrayTypeNode(typeExpr)
+                    {
+                        Size = new ConstNode(integerType, expressions.Expressions.Count),
+                    }
                 };
             case NodeTag.EmptyArrayConst:
                 return new ArrayConst(new ExpressionsNode()) {Type = new ArrayTypeNode(new TypeNode())};

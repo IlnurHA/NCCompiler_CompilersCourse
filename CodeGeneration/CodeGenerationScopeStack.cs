@@ -18,9 +18,9 @@ public class CodeGenerationScopeStack
         Scopes[^1].AddVariable(name, type);
     }
     
-    public void AddSpecialVariableInLastScope(TypeNode type)
+    public string AddSpecialVariableInLastScope(TypeNode type)
     {
-        Scopes[^1].AddSpecialVariable(type);
+        return Scopes[^1].AddSpecialVariable(type);
     }
     
     public void CreateNewScope(SemanticsScope.ScopeContext scopeContext)
