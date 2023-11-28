@@ -186,12 +186,40 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitIfStatement(IfStatement ifStatement, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // ... -> ...
+        
+        // ... -> ..., bool
+        ifStatement.Condition.Accept(this, commands);
+        
+        // ..., bool -> ...
+        var jump = new JumpIfFalse();
+        commands.Enqueue(jump);
+        ifStatement.Body.Accept(this, commands);
+        // TODO: Add noop operation
+        jump.SetAddress(commands.Count);
     }
 
     public void VisitIfElseStatement(IfElseStatement ifElseStatement, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // ... -> ...
+        
+        // ... -> ..., bool
+        ifElseStatement.Condition.Accept(this, commands);
+        
+        var jumpToElse = new JumpIfFalse();
+        var jumpToEnd = new JumpCommand();
+        
+        // ..., bool -> ...
+        commands.Enqueue(jumpToElse);
+        ifElseStatement.Body.Accept(this, commands);
+        
+        commands.Enqueue(jumpToEnd);
+        // TODO: Add noop operation
+        jumpToElse.SetAddress(commands.Count);
+        
+        ifElseStatement.BodyElse.Accept(this, commands);
+        // TODO: Add noop operation
+        jumpToEnd.SetAddress(commands.Count);
     }
 
     public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands)

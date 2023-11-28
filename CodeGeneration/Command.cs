@@ -24,9 +24,9 @@ public class CallCommand : BaseCommand
 
 public class JumpCommand : BaseCommand
 {
-    public string? Address { get; set; }
+    public int? Address { get; set; }
 
-    public void SetAddress(string address)
+    public void SetAddress(int address)
     {
         Address = address;
     }
@@ -46,6 +46,14 @@ public class JumpIfTrue : JumpCommand
     public override string Translate()
     {
         return "brtrue.s" + '\t' + Address;
+    }
+}
+
+public class JumpIfFalse : JumpCommand
+{
+    public override string Translate()
+    {
+        return "brfalse.s" + "\t" + Address;
     }
 }
 
