@@ -4,10 +4,17 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class CodeGenerationVariable
 {
-    private string _name;
+    private readonly string _name;
     private int _id;
     private string _type;
 
+    public CodeGenerationVariable(string name, TypeNode typeNode, int id)
+    {
+        _name = name;
+        _id = id;
+        _type = NodeToType(typeNode);
+    }
+    
     private static string MyTypeToType(MyType myType)
     {
         return myType switch
@@ -31,12 +38,5 @@ public class CodeGenerationVariable
     public string GetName()
     {
         return _name;
-    }
-    
-    public CodeGenerationVariable(string name, int id, TypeNode typeNode)
-    {
-        _name = name;
-        _id = id;
-        _type = NodeToType(typeNode);
     }
 }

@@ -2,21 +2,26 @@
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
 
-public interface IVisitorCodeGen
+public interface IVisitorCodeGeneration
 {
     // public void VisitTypeNode(TypeNode typeNode, Queue<string> commands);
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands);
+    
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands);
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands);
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands);
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands);
     public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<BaseCommand> commands);
-    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration, Queue<BaseCommand> commands);
+
+    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration,
+        Queue<BaseCommand> commands);
 
     public void VisitValueVariableDeclaration(ValueVariableDeclaration valueVariableDeclaration,
         Queue<BaseCommand> commands);
 
-    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration, Queue<BaseCommand> commands);
+    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration,
+        Queue<BaseCommand> commands);
+
     public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<BaseCommand> commands);
     public void VisitBreakNode(BreakNode breakNode, Queue<BaseCommand> commands);
     public void VisitAssertNode(AssertNode assertNode, Queue<BaseCommand> commands);
@@ -29,7 +34,6 @@ public interface IVisitorCodeGen
     public void VisitIfElseStatement(IfElseStatement ifElseStatement, Queue<BaseCommand> commands);
     public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands);
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands);
-
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands);
     public void VisitArrayTypeNode(ArrayTypeNode arrayTypeNode, Queue<BaseCommand> commands);
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands);
@@ -45,4 +49,8 @@ public interface IVisitorCodeGen
     public void VisitOperationNode(OperationNode operationNode, Queue<BaseCommand> commands);
     public void VisitArrayConst(ArrayConst arrayConst, Queue<BaseCommand> commands);
     public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<BaseCommand> commands);
+    void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> queue);
+    void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> queue);
+    void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue);
+    void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue);
 }

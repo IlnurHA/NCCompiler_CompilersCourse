@@ -2,7 +2,7 @@
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
 
-public class TranslationVisitor : IVisitorCodeGen
+public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 {
     public CodeGenerationScopeStack ScopeStack { get; }
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
@@ -16,6 +16,11 @@ public class TranslationVisitor : IVisitorCodeGen
     }
 
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void VisitValueVariableDeclaration(ValueVariableDeclaration arraySizeNode, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
     }
@@ -97,11 +102,6 @@ public class TranslationVisitor : IVisitorCodeGen
         throw new NotImplementedException();
     }
 
-    public void VisitValueVariableDeclaration(ValueVariableDeclaration valueVariableDeclaration, Queue<BaseCommand> commands)
-    {
-        throw new NotImplementedException();
-    }
-
     public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
@@ -134,7 +134,9 @@ public class TranslationVisitor : IVisitorCodeGen
 
     public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        RangeNode range = forLoopNode.Range;
+        // int left = range.LeftBound;
+        // int right = range.RightBound;
     }
 
     public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<BaseCommand> commands)
@@ -166,7 +168,7 @@ public class TranslationVisitor : IVisitorCodeGen
     {
         throw new NotImplementedException();
     }
-    
+
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
@@ -221,8 +223,28 @@ public class TranslationVisitor : IVisitorCodeGen
     {
         throw new NotImplementedException();
     }
-    // Redundant Visit
+
     public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<BaseCommand> commands)
+    {
+        throw new NotImplementedException();
+    }
+    
+    public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> queue)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> queue)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue)
     {
         throw new NotImplementedException();
     }

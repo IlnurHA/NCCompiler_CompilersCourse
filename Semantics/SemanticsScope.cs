@@ -1,4 +1,6 @@
-﻿namespace NCCompiler_CompilersCourse.Semantics;
+﻿using NCCompiler_CompilersCourse.CodeGeneration;
+
+namespace NCCompiler_CompilersCourse.Semantics;
 
 public class SemanticsScope : IDisposable
 {
