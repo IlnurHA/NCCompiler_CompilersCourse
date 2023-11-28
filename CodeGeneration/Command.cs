@@ -33,6 +33,7 @@ public class JumpCommand : BaseCommand
 
     public override string Translate()
     {
+        // TODO Write format command that will translate address to correct label
         return "br.s" + '\t' + Address;
     }
 }
@@ -169,6 +170,14 @@ public class InitObjectCommand : BaseCommand
     }
 }
 
+public class NopCommand : BaseCommand
+{
+    public override string Translate()
+    {
+        return "nop";
+    }
+}
+
 public class LoadConstantCommand : BaseCommand
 {
     public object Value;
@@ -279,7 +288,7 @@ public class LoadArgumentFromFunction : BaseCommand
     }
 }
 
-public class StoreStackField : BaseCommand
+public class StoreStructField : BaseCommand
 {
     public override string Translate()
     {
