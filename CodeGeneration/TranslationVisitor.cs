@@ -21,7 +21,31 @@ public class TranslationVisitor : IVisitor
 
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<string> commands)
     {
-        throw new NotImplementedException();
+        // Loading should be performed in Array Variable
+        // load Array to stack
+        //      if from struct:
+        //          getField from struct
+        //      if just array:
+        //          get from variable
+        
+        // Assuming that Array on top of the stack
+        
+        // call sort function
+        // result is written by address (No need to specify address)
+        
+        // TODO! Recursive call for Array
+
+        string type = ((ArrayTypeNode) sortedArrayNode.Type).ElementTypeNode switch
+        {
+            var elem => elem.MyType switch
+            {
+                MyType.Integer => "int32",
+                MyType.Real => "float32",
+                MyType.Boolean => "bool",
+                _ => throw new Exception($"Unexpected type for sorting: {elem.GetType()}"),
+            }
+        };
+        commands.Enqueue($"call         void [System.Runtime]System.Array::Sort<{type}>(!!0/*{type}*/[])");
     }
 
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<string> commands)
@@ -159,6 +183,7 @@ public class TranslationVisitor : IVisitor
         throw new NotImplementedException();
     }
 
+    // Redundant Visit
     public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<string> commands)
     {
         throw new NotImplementedException();
