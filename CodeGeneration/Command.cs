@@ -301,3 +301,41 @@ public class NewArrayCommand : BaseCommand
         return $"newarr\t{Type}";
     }
 }
+
+public class CallVirtualCommand : CallCommand
+{
+    public CallVirtualCommand(string function) : base(function) {}
+    public override string Translate()
+    {
+        return $"callvirt\t{FunctionName}";
+    }
+}
+
+public class CastCommand : BaseCommand
+{
+    public string Type { get; }
+
+    public string fromTypeNode(TypeNode typeNode)
+    {
+        throw new NotImplementedException();
+    }
+
+    public CastCommand(TypeNode typeNode)
+    {
+        Type = fromTypeNode(typeNode);
+    }
+
+    public override string Translate()
+    {
+        return $"castclass\t{Type}";
+    }
+}
+
+public class ArrayLength : BaseCommand
+{
+    // ..., arr -> ..., length
+    public override string Translate()
+    {
+        return "ldlen";
+    }
+}
