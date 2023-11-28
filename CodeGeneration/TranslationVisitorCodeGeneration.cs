@@ -239,8 +239,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // For each element -> load index and load value (make visit) and stelem.i4
         // loads address to the top of the stack
         
-        ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
+        var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
+        var counter = 0;
         
+        foreach (var elements in arrayConst.Expressions.Expressions)
+        {
+            commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
+            commands.Enqueue(new LoadConstantCommand(counter));
+            elements.Accept(this, commands);
+            commands.Enqueue(new SetElementByIndex());
+
+            counter++;
+        }
+        
+        commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
     }
 
     public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<BaseCommand> commands)
@@ -264,6 +276,16 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     }
 
     public void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue)
+    {
+        queue.Enqueue(new ReturnCommand());
+    }
+
+    public void VisitVarNode(VarNode varNode, Queue<BaseCommand> queue)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> queue)
     {
         throw new NotImplementedException();
     }

@@ -257,3 +257,11 @@ public class OperationCommand : BaseCommand
         return Operation;
     }
 }
+
+public class SetElementByIndex : BaseCommand
+{
+    public override string Translate()
+    {
+        return "stelem.i4";
+    }
+}
