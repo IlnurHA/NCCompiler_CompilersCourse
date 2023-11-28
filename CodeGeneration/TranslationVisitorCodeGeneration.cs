@@ -43,6 +43,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands)
     {
+        arraySizeNode.Array.Accept(this, commands);
         // ..., arr -> ..., length
         commands.Enqueue(new ArrayLength());
     }
@@ -469,7 +470,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         }
         if (codeGenVar is null) throw new Exception("Variable is not declared");
         
-        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        if (isArgument) queue.Enqueue(new LoadFunctionArgument(codeGenVar.Id));
         else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
@@ -487,7 +488,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         }
         if (codeGenVar is null) throw new Exception("Variable is not declared");
         
-        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        if (isArgument) queue.Enqueue(new LoadFunctionArgument(codeGenVar.Id));
         else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
@@ -515,7 +516,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         }
         if (codeGenVar is null) throw new Exception("Variable is not declared");
         
-        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        if (isArgument) queue.Enqueue(new LoadFunctionArgument(codeGenVar.Id));
         else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
@@ -527,7 +528,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         {
             if (!(varNode.Value is ValueNode || varNode.Value.GetType().IsSubclassOf(typeof(ValueNode))))
                 throw new Exception("Found var node value with incorrect type during struct initialization");
-            queue.Enqueue(new LoadArgumentFromFunction(0));
+            queue.Enqueue(new LoadFunctionArgument(0));
             ((ValueNode)varNode.Value).Accept(this, queue);
             queue.Enqueue(new StoreStructField());
         }

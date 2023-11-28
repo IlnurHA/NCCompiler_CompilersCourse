@@ -272,11 +272,11 @@ public class SetElementByIndex : BaseCommand
     }
 }
 
-public class LoadArgumentFromFunction : BaseCommand
+public class LoadFunctionArgument : BaseCommand
 {
     public int Index = 1;
 
-    public LoadArgumentFromFunction(int index)
+    public LoadFunctionArgument(int index)
     {
         Index = index;
     }
@@ -432,6 +432,7 @@ public class LoadFieldCommand : BaseCommand
 
 public class LoadByIndexCommand : BaseCommand
 {
+    // ..., arr, index -> ..., value
     public string Type { get; }
     
     public LoadByIndexCommand(TypeNode typeNode)

@@ -1,4 +1,5 @@
-﻿using NCCompiler_CompilersCourse.CodeGeneration;
+﻿using System.Diagnostics;
+using NCCompiler_CompilersCourse.CodeGeneration;
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
@@ -82,7 +83,7 @@ public class TypeNode : SymbolicNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
-        visitor.VisitTypeNode(this, queue);
+        throw new UnreachableException();
     }
 }
 
