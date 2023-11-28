@@ -311,7 +311,7 @@ public class CallVirtualCommand : CallCommand
     }
 }
 
-public class CastCommand : BaseCommand
+public class CastClassCommand : BaseCommand
 {
     public string Type { get; }
 
@@ -320,7 +320,7 @@ public class CastCommand : BaseCommand
         throw new NotImplementedException();
     }
 
-    public CastCommand(TypeNode typeNode)
+    public CastClassCommand(TypeNode typeNode)
     {
         Type = fromTypeNode(typeNode);
     }
@@ -337,5 +337,27 @@ public class ArrayLength : BaseCommand
     public override string Translate()
     {
         return "ldlen";
+    }
+}
+
+public class PrimitiveCastCommand : BaseCommand
+{
+    public string Type { get; }
+
+    private string fromTypeNode(TypeNode typeNode)
+    {
+        if (typeNode.MyType == MyType.Integer || typeNode.MyType == MyType.Boolean) return "i4";
+        if (typeNode.MyType == MyType.Real) return "r4";
+        throw new Exception($"Unsupported type: {typeNode.MyType}-{typeNode.GetType()}");
+    }
+
+    public PrimitiveCastCommand(TypeNode typeNode)
+    {
+        Type = fromTypeNode(typeNode);
+    }
+
+    public override string Translate()
+    {
+        return $"conv.{Type}";
     }
 }

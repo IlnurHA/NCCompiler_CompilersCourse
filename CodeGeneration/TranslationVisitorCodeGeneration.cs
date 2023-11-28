@@ -80,7 +80,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new CallVirtualCommand("instance object [System.Runtime]System.Array::Clone()"));
 
         // Cast
-        commands.Enqueue(new CastCommand(arrayFunctions.Type));
+        commands.Enqueue(new CastClassCommand(arrayFunctions.Type));
 
         // Set to special variable
         commands.Enqueue(new SetLocalCommand(specialVar.Id));
@@ -190,7 +190,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // ... -> ...
+        
+        
+        // ... -> ..., address
+        assignmentNode.Variable.Accept(this, commands);
+
+        // ..., address -> ...
+        // commands.Enqueue();
     }
 
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
@@ -210,7 +217,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitCastNode(CastNode castNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // TODO check
+        // ... -> ..., value
+        ((ValueNode) castNode.Value!).Accept(this, commands);
+        
+        // Casting Value
+        // ..., value -> ..., castedValue
+        commands.Enqueue(new PrimitiveCastCommand(castNode.Type));
     }
 
     public void VisitRoutineDeclarationNode(RoutineDeclarationNode routineDeclarationNode, Queue<BaseCommand> commands)
