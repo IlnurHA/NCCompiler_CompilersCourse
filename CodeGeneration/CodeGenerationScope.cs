@@ -25,11 +25,12 @@ public class CodeGenerationScope
         _lastId += 1;
     }
 
-    public void AddSpecialVariable(TypeNode type)
+    public string AddSpecialVariable(TypeNode type)
     {
         string name = $"{_hash}_{_specialCounter}";
         AddVariable(name, type);
         _specialCounter += 1;
+        return name;
     }
     
     public bool HasVariable(string name)
