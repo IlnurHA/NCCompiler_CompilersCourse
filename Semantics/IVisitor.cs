@@ -2,7 +2,7 @@
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
-interface IVisitor
+public interface IVisitor
 {
     SymbolicNode ProgramVisit(ComplexNode node);
     SymbolicNode ModifiablePrimaryVisit(ComplexNode node);
