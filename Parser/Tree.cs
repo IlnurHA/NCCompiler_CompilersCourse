@@ -2,7 +2,7 @@
 
 namespace NCCompiler_CompilersCourse.Parser;
 
-internal enum NodeTag
+public enum NodeTag
 {
     ProgramSimpleDeclaration,
     ProgramRoutineDeclaration,
@@ -68,7 +68,7 @@ internal enum NodeTag
     ArrayGetSorted,
 }
 
-internal abstract class Node
+public abstract class Node
 {
     public static ComplexNode MakeComplexNode(NodeTag nodeTag, params Node[] children)
     {
@@ -88,7 +88,7 @@ internal abstract class Node
     public abstract SymbolicNode Accept(IVisitor visitor);
 }
 
-internal class ComplexNode : Node
+public class ComplexNode : Node
 {
     public Node?[] Children { get; }
 
@@ -158,7 +158,7 @@ internal class ComplexNode : Node
     }
 }
 
-internal class LeafNode<T> : Node
+public class LeafNode<T> : Node
 {
     public T Value { get; }
 

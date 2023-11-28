@@ -22,7 +22,7 @@ public class CallCommand : BaseCommand
 
 public class JumpCommand : BaseCommand
 {
-    public string Address { get; set; }
+    public string? Address { get; set; }
 
     public void SetAddress(string address)
     {

@@ -215,7 +215,12 @@ public class VarNode : ValueNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
-        throw new Exception($"Trying to visit {GetType().Name} node with no accept implemented!");
+        visitor.VisitVarNode(this, queue);
+    }
+    
+    public void AcceptStructField(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitStructFieldNode(this, queue);
     }
 }
 
