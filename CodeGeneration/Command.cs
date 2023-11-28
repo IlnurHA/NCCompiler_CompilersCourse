@@ -265,3 +265,39 @@ public class SetElementByIndex : BaseCommand
         return "stelem.i4";
     }
 }
+
+public class LoadArgumentFromFunction : BaseCommand
+{
+    public int Index = 1;
+
+    public LoadArgumentFromFunction(int index)
+    {
+        Index = index;
+    }
+    public override string Translate()
+    {
+        if (Index < 0) throw new Exception("Index for argument from function should be non-negative");
+        if (Index < 10) return $"ldarg.{Index}";
+        return $"ldarg.s\t{Index}";
+    }
+}
+
+public class NewArrayCommand : BaseCommand
+{
+    public string Type { get; }
+
+    public string FromTypeNode(TypeNode typeNode)
+    {
+        throw new NotImplementedException();
+    }
+
+    public NewArrayCommand(TypeNode typeNode)
+    {
+        Type = FromTypeNode(typeNode);
+    }
+
+    public override string Translate()
+    {
+        return $"newarr\t{Type}";
+    }
+}

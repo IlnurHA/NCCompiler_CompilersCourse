@@ -5,13 +5,14 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 public class CodeGenerationVariable
 {
     private readonly string _name;
-    private int _id;
+    public int Id { get; }
     private string _type;
+    public bool IsArgument { get; }
 
     public CodeGenerationVariable(string name, TypeNode typeNode, int id)
     {
         _name = name;
-        _id = id;
+        Id = id;
         _type = NodeToType(typeNode);
     }
     

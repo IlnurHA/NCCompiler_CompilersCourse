@@ -241,6 +241,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         
         var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
         var counter = 0;
+
+        var specialVariable = ScopeStack.GetVariable(nameOfTemp)!;
+        
+        // create new array
+        commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count));
+        commands.Enqueue(new NewArrayCommand(arrayConst.Expressions.Type));
+        commands.Enqueue(new SetLocalCommand(specialVariable.Id));
         
         foreach (var elements in arrayConst.Expressions.Expressions)
         {
@@ -255,6 +262,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
     }
 
+    // Redundant Visit
     public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
@@ -262,7 +270,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     
     public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> queue)
     {
-        throw new NotImplementedException();
+        // If visited as var node in expression -> make send address of arrayVarNode to top of the stack
+        // TODO: check if argument of function or localVariable
+        
+        // as value in expression
+        var codeGenVariable = ScopeStack.GetVariable(arrayVarNode.Name!);
+        if (codeGenVariable is null)
+        {
+            throw new Exception($"Cannot find variable of this name {arrayVarNode.Name}");
+        }
+        
+        if (codeGenVariable.IsArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVariable.Id));
+        else queue.Enqueue(new LoadLocalCommand(codeGenVariable.Id));
     }
 
     public void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> queue)
@@ -270,6 +289,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         throw new NotImplementedException();
     }
 
+    // Redundant Visit
     public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue)
     {
         throw new NotImplementedException();
