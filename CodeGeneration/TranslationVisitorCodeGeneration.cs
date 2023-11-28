@@ -13,12 +13,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        getFieldNode.StructVarNode.Accept(this, commands);
+        commands.Enqueue(new LoadFieldCommand(getFieldNode.Type, getFieldNode.StructVarNode.Name!, getFieldNode.FieldName));
     }
 
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        getByIndexNode.ArrayVarNode.Accept(this, commands);
+        getByIndexNode.Index.Accept(this, commands);
+        commands.Enqueue(new LoadByIndexCommand(getByIndexNode.Type));
     }
 
     public void VisitValueVariableDeclaration(ValueVariableDeclaration arraySizeNode, Queue<BaseCommand> commands)

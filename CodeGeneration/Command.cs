@@ -151,28 +151,6 @@ public class SetFieldCommand : BaseCommand
     }
 }
 
-public class LoadFieldCommand : BaseCommand
-{
-    // Getting object from stack and pushes value of specified field
-    
-    public string Type { get; }
-    // Struct name with necessary namespaces
-    public string StructName { get; }
-    public string FieldName { get; }
-    
-    public LoadFieldCommand(string type, string structName, string fieldName)
-    {
-        Type = type;
-        StructName = structName;
-        FieldName = fieldName;
-    }
-    
-    public override string Translate()
-    {
-        return $"ldfld\t{Type} {StructName}::{FieldName}";
-    }
-}
-
 public class InitObjectCommand : BaseCommand
 {
     // Pops address from stack and initializes object type to it
@@ -416,5 +394,48 @@ public class SetArgumentByNameCommand : BaseCommand
     public override string Translate()
     {
         return $"starg.s\t{Name}";
+    }
+}
+
+public class LoadFieldCommand : BaseCommand
+{
+    public string Type { get; }
+    public string Struct { get; }
+    public string Field { get; }
+
+    public string fromTypeNode(TypeNode typeNode)
+    {
+        throw new NotImplementedException();
+    }
+
+    public LoadFieldCommand(TypeNode typeNode, string @struct, string field)
+    {
+        Type = fromTypeNode(typeNode);
+        Struct = @struct;
+        Field = field;
+    }
+
+    public override string Translate()
+    {
+        return $"ldfld\t{Type} {Struct}::{Field}";
+    }
+}
+
+public class LoadByIndexCommand : BaseCommand
+{
+    public string Type { get; }
+    
+    public LoadByIndexCommand(TypeNode typeNode)
+    {
+        Type = fromTypeNode(typeNode);
+    }
+
+    public string fromTypeNode(TypeNode typeNode)
+    {
+        throw new NotImplementedException();
+    }
+    public override string Translate()
+    {
+        return $"ldelema\t{Type}";
     }
 }
