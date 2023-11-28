@@ -28,39 +28,25 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands)
     {
-        // Loading should be performed in Array Variable
-        // load Array to stack
-        //      if from struct:
-        //          getField from struct
-        //      if just array:
-        //          get from variable
-
-        // Assuming that Array on top of the stack
-
-        // call sort function
-        // result is written by address (No need to specify address)
-
-        // TODO! Recursive call for Array
-
-        string type = ((ArrayTypeNode)sortedArrayNode.Type).ElementTypeNode switch
-        {
-            var elem => elem.MyType switch
-            {
-                MyType.Integer => "int32",
-                MyType.Real => "float32",
-                MyType.Boolean => "bool",
-                _ => throw new Exception($"Unexpected type for sorting: {elem.GetType()}"),
-            }
-        };
-        commands.Enqueue(new CallCommand($"void [System.Runtime]System.Array::Sort<{type}>(!!0/*{type}*/[])"));
+        // ..., arr -> ..., arr
+        // + Declared special variable
+        string type = _getTypeOfArrayElement(((ArrayTypeNode) sortedArrayNode.Type).ElementTypeNode);
+        var (_, specialVar) = _makeCopyOfArrayAndPerformFunctionCall(
+            $"void [System.Runtime]System.Array::Sort<{type}>(!!0/*{type}*/[])",
+            sortedArrayNode, commands);
+        // Load for return
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id));
     }
 
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // ..., arr -> ..., length
+        commands.Enqueue(new ArrayLength());
     }
 
-    public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<BaseCommand> commands)
+
+    private (string, CodeGenerationVariable) _makeCopyOfArrayAndPerformFunctionCall(string function,
+        ArrayFunctions arrayFunctions, Queue<BaseCommand> commands)
     {
         /* Needs array on the stack, makes new variable and assigns value to it */
         // ..., array -> ..., array
@@ -79,13 +65,37 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Assign modified copy to new variable
         // And load it to stack
         // call reverse function
-        // result is written by address (No need to specify address)
+        // result is on top of the stack
 
         // TODO! Recursive call for Array + Copying array
 
-        reversedArrayNode.Array.Accept(this, commands);
+        // ... -> ..., arr
+        arrayFunctions.Array.Accept(this, commands);
 
-        string type = ((ArrayTypeNode)reversedArrayNode.Type).ElementTypeNode switch
+        // make new temp variable
+        var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayFunctions.Type);
+        var specialVar = ScopeStack.GetVariable(nameOfTemp)!;
+
+        // Clone
+        commands.Enqueue(new CallVirtualCommand("instance object [System.Runtime]System.Array::Clone()"));
+
+        // Cast
+        commands.Enqueue(new CastClassCommand(arrayFunctions.Type));
+
+        // Set to special variable
+        commands.Enqueue(new SetLocalCommand(specialVar.Id));
+
+        // Load for call
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id));
+
+        // Reverse func
+        commands.Enqueue(new CallCommand(function));
+        return (nameOfTemp, specialVar);
+    }
+
+    private string _getTypeOfArrayElement(TypeNode typeNode)
+    {
+        return typeNode switch
         {
             var elem => elem.MyType switch
             {
@@ -95,7 +105,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 _ => throw new Exception($"Unexpected type for sorting: {elem.GetType()}"),
             }
         };
-        commands.Enqueue(new CallCommand($"void [System.Runtime]System.Array::Reverse<{type}>(!!0/*{type}*/[])"));
+    }
+
+    public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<BaseCommand> commands)
+    {
+        // ..., arr -> ..., arr
+        // + Declared special variable
+        string type = _getTypeOfArrayElement(((ArrayTypeNode) reversedArrayNode.Type).ElementTypeNode);
+        var (_, specialVar) = _makeCopyOfArrayAndPerformFunctionCall(
+            $"void [System.Runtime]System.Array::Reverse<{type}>(!!0/*{type}*/[])",
+            reversedArrayNode, commands);
+        // Load for return
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id));
     }
 
     public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration,
@@ -180,7 +201,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // ... -> ...
+        
+        
+        // ... -> ..., address
+        assignmentNode.Variable.Accept(this, commands);
+
+        // ..., address -> ...
+        // commands.Enqueue();
     }
 
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
@@ -200,7 +228,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitCastNode(CastNode castNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // TODO check
+        // ... -> ..., value
+        ((ValueNode) castNode.Value!).Accept(this, commands);
+        
+        // Casting Value
+        // ..., value -> ..., castedValue
+        commands.Enqueue(new PrimitiveCastCommand(castNode.Type));
     }
 
     public void VisitRoutineDeclarationNode(RoutineDeclarationNode routineDeclarationNode, Queue<BaseCommand> commands)
@@ -229,7 +263,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 types.Add($"{CodeGenerationVariable.NodeToType(expression.Type)}");
             }
         }
-
         var returnTypeString = routineCallNode.Routine.ReturnType == null
             ? "void"
             : $"instance {CodeGenerationVariable.NodeToType(routineCallNode.Routine.ReturnType)}";
@@ -239,6 +272,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     }
 
     // Should be called only for routine call
+
     public void VisitExpressionsNode(ExpressionsNode expressionsNode, Queue<BaseCommand> commands)
     {
         foreach (ValueNode expression in expressionsNode.Expressions)
@@ -277,10 +311,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // For each element -> load index and load value (make visit) and stelem.i4
         // loads address to the top of the stack
 
-        ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
-
         var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
-        var counter = 0;
 
         var specialVariable = ScopeStack.GetVariable(nameOfTemp)!;
 
@@ -289,6 +320,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new NewArrayCommand(arrayConst.Expressions.Type));
         commands.Enqueue(new SetLocalCommand(specialVariable.Id));
 
+        var counter = 0;
         foreach (var elements in arrayConst.Expressions.Expressions)
         {
             commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
