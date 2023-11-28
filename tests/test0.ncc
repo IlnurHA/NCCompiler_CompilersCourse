@@ -1,3 +1,8 @@
+type node is
+    record
+        var a is [1, 2, 3, 4]
+    end
+
 routine foo(): integer is
     var x is 5
     
@@ -15,4 +20,9 @@ routine main() is
     var ends: boolean
    end
    a.hello := integer(true)
+   
+   var b: node
+   var new_arr is b.a.sorted
+   var arrayOfArrays: array[4]array[4]integer
+   arrayOfArrays[0] := b.a.reversed
 end

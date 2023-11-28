@@ -32,7 +32,7 @@ public class TypeNode : SymbolicNode
         MyType = MyType.Undefined;
     }
 
-    public bool IsTheSame(TypeNode anotherObject)
+    public virtual bool IsTheSame(TypeNode anotherObject)
     {
         return MyType == anotherObject.MyType;
     }
@@ -89,10 +89,14 @@ public class ArrayTypeNode : TypeNode
         ElementTypeNode = elementTypeNode;
     }
 
-    public new bool IsTheSame(TypeNode anotherObject)
+    public override bool IsTheSame(TypeNode anotherObject)
     {
         if (anotherObject is not ArrayTypeNode tempObj) return false;
-        return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj) && Size == tempObj.Size;
+        return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj.ElementTypeNode) &&
+               ((Size == null && tempObj.Size == null) ||
+                (Size is not null && tempObj.Size is not null &&
+                 (Size.Value is null && tempObj.Size.Value is null || 
+                  (Size.Value is not null && Size.Value.Equals(tempObj.Size.Value)))));
     }
 }
 
@@ -105,7 +109,7 @@ public class StructTypeNode : TypeNode
         StructFields = structFields;
     }
 
-    public new bool IsTheSame(TypeNode anotherObject)
+    public override bool IsTheSame(TypeNode anotherObject)
     {
         if (anotherObject is not StructTypeNode tempObj) return false;
         if (StructFields.Count != tempObj.StructFields.Count) return false;
@@ -125,7 +129,7 @@ public class UserDefinedTypeNode : TypeNode
     public string Name { get; set; }
     public new MyType MyType { get; set; } = MyType.DeclaredType;
 
-    public new bool IsTheSame(TypeNode anotherObject)
+    public override bool IsTheSame(TypeNode anotherObject)
     {
         return Type.IsTheSame(anotherObject);
     }
@@ -243,7 +247,11 @@ public class DeclarationNode : StatementNode
             case UserDefinedTypeNode userDefinedTypeNode:
                 return GetAppropriateVarNode(primitiveVarNode, userDefinedTypeNode.GetFinalTypeNode(), value);
             case ArrayTypeNode arrayTypeNode:
-                return new ArrayVarNode(primitiveVarNode.Name!, arrayTypeNode.ElementTypeNode, value);
+                return new ArrayVarNode(arrayTypeNode)
+                {
+                    Value = value,
+                    Name = primitiveVarNode.Name,
+                };
             case StructTypeNode structTypeNode:
                 var newNode = StructVarNode.FromType(structTypeNode);
                 newNode.Name = primitiveVarNode.Name!;
@@ -425,34 +433,59 @@ public class StructVarNode : VarNode
 
         return new StructVarNode(newDict, structTypeNode);
     }
+    
+    // public static StructVarNode FromType(StructTypeNode structTypeNode, string StructName)
+    // {
+    //     var newDict = new Dictionary<string, VarNode>();
+    //
+    //     foreach (var (key, value) in structTypeNode.StructFields)
+    //     {
+    //         newDict[key] = value switch
+    //         {
+    //             ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode)
+    //             {
+    //                 Name = $"{StructName}::{key}"
+    //             },
+    //             StructTypeNode structTypeNode2 => FromType(structTypeNode2, ),
+    //             { } node => new VarNode
+    //             {
+    //                 IsInitialized = false,
+    //                 Type = node,
+    //             }
+    //         };
+    //     }
+    //
+    //     return new StructVarNode(newDict, structTypeNode);
+    // }
 }
 
-public class GetFieldNode : ValueNode
+public class GetFieldNode : VarNode
 {
     public StructVarNode StructVarNode { get; set; }
     public string FieldName { get; set; }
     public VarNode? FieldNode { get; set; }
 
-    public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.GetField(fieldName).Type)
+    public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.Name!)
     {
         StructVarNode = structVarNode;
         FieldName = fieldName;
+        Type = structVarNode.GetField(fieldName).Type;
     }
 
-    public GetFieldNode(StructVarNode structVarNode, PrimitiveVarNode fieldNode) : base(structVarNode.GetField(fieldNode.Name)
-        .Type)
+    public GetFieldNode(StructVarNode structVarNode, PrimitiveVarNode fieldNode) : base(structVarNode.Name!)
     {
         StructVarNode = structVarNode;
         FieldName = fieldNode.Name!;
         FieldNode = fieldNode;
+        Type = structVarNode.GetField(fieldNode.Name).Type;
     }
 }
 
 public class ArrayFunctions : ValueNode
 {
-    public ArrayVarNode Array { get; set; }
+    public ValueNode Array { get; set; }
 
-    public ArrayFunctions(ArrayVarNode arrayVarNode, TypeNode typeNode) : base(typeNode)
+    public ArrayFunctions(ValueNode arrayVarNode, TypeNode typeNode) : base(typeNode)
     {
         Array = arrayVarNode;
     }
@@ -460,21 +493,21 @@ public class ArrayFunctions : ValueNode
 
 public class SortedArrayNode : ArrayFunctions
 {
-    public SortedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
+    public SortedArrayNode(ValueNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
     }
 }
 
 public class ArraySizeNode : ArrayFunctions
 {
-    public ArraySizeNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
+    public ArraySizeNode(ValueNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
     }
 }
 
 public class ReversedArrayNode : ArrayFunctions
 {
-    public ReversedArrayNode(ArrayVarNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
+    public ReversedArrayNode(ValueNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
     }
 }
