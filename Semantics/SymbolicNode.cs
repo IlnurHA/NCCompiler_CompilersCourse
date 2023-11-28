@@ -276,13 +276,13 @@ public class BreakNode : StatementNode
 
 public class AssertNode : StatementNode
 {
-    private ValueNode leftExpression;
-    private ValueNode rightExpression;
+    public ValueNode LeftExpression { get; }
+    public ValueNode RightExpression { get; }
 
     public AssertNode(ValueNode left, ValueNode right)
     {
-        leftExpression = left;
-        rightExpression = right;
+        LeftExpression = left;
+        RightExpression = right;
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)

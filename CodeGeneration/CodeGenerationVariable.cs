@@ -26,7 +26,7 @@ public class CodeGenerationVariable
             var type => throw new Exception($"Error. Incorrect operand type {type}.")
         };
     }
-    private static string NodeToType(TypeNode typeNode)
+    public static string NodeToType(TypeNode typeNode)
     {
         return typeNode switch
         {

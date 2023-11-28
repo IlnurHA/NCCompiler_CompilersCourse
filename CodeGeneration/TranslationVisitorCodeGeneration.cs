@@ -98,12 +98,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new CallCommand($"void [System.Runtime]System.Array::Reverse<{type}>(!!0/*{type}*/[])"));
     }
 
-    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration, Queue<BaseCommand> commands)
+    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration,
+        Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
     }
 
-    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration, Queue<BaseCommand> commands)
+    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration,
+        Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
     }
@@ -123,7 +125,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitAssertNode(AssertNode assertNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        assertNode.LeftExpression.Accept(this, commands);
+        assertNode.RightExpression.Accept(this, commands);
+        commands.Enqueue(new OperationCommand(OperationType.Eq));
+        commands.Enqueue(new CallCommand("void [System.Runtime]System.Diagnostics.Debug::Assert(bool, string)"));
     }
 
 
@@ -205,13 +210,32 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitParametersNode(ParametersNode parametersNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        foreach (ParameterNode parameter in parametersNode.Parameters)
+        {
+            ScopeStack.AddArgumentInLastScope(parameter.Variable.Name!, parameter.Variable.Type);
+        }
     }
 
     public void VisitRoutineCallNode(RoutineCallNode routineCallNode, Queue<BaseCommand> commands)
     {
         // TODO Load expressions. Call by name then
-        throw new NotImplementedException();
+        List<string> types = new List<string>();
+        if (routineCallNode.Expressions != null)
+        {
+            ExpressionsNode expressions = routineCallNode.Expressions;
+            expressions.Accept(this, commands);
+            foreach (var expression in expressions.Expressions)
+            {
+                types.Add($"{CodeGenerationVariable.NodeToType(expression.Type)}");
+            }
+        }
+
+        var returnTypeString = routineCallNode.Routine.ReturnType == null
+            ? "void"
+            : $"instance {CodeGenerationVariable.NodeToType(routineCallNode.Routine.ReturnType)}";
+        commands.Enqueue(new CallCommand(
+            returnTypeString +
+            $" Program::{routineCallNode.Routine.Name}({string.Join(" ", types.ToArray())})"));
     }
 
     // Should be called only for routine call
@@ -254,17 +278,17 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // loads address to the top of the stack
 
         ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
-        
+
         var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
         var counter = 0;
 
         var specialVariable = ScopeStack.GetVariable(nameOfTemp)!;
-        
+
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count));
         commands.Enqueue(new NewArrayCommand(arrayConst.Expressions.Type));
         commands.Enqueue(new SetLocalCommand(specialVariable.Id));
-        
+
         foreach (var elements in arrayConst.Expressions.Expressions)
         {
             commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
@@ -274,7 +298,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
             counter++;
         }
-        
+
         commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp));
     }
 
@@ -288,14 +312,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         // If visited as var node in expression -> make send address of arrayVarNode to top of the stack
         // TODO: check if argument of function or localVariable
-        
+
         // as value in expression
         var codeGenVariable = ScopeStack.GetVariable(arrayVarNode.Name!);
         if (codeGenVariable is null)
         {
             throw new Exception($"Cannot find variable of this name {arrayVarNode.Name}");
         }
-        
+
         if (codeGenVariable.IsArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVariable.Id));
         else queue.Enqueue(new LoadLocalCommand(codeGenVariable.Id));
     }
@@ -327,11 +351,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         ScopeStack.AddVariableInLastScope(varNode.Name, varNode.Type);
         if (varNode.Value != null)
         {
-            
             if (!(varNode.Value is ValueNode || varNode.Value.GetType().IsSubclassOf(typeof(ValueNode))))
                 throw new Exception("Found var node value with incorrect type during struct initialization");
             queue.Enqueue(new LoadArgumentFromFunction(0));
-            ((ValueNode) varNode.Value).Accept(this, queue);
+            ((ValueNode)varNode.Value).Accept(this, queue);
             queue.Enqueue(new StoreStackField());
         }
     }

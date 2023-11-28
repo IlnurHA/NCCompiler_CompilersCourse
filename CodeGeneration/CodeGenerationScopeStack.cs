@@ -23,6 +23,11 @@ public class CodeGenerationScopeStack
         return Scopes[^1].AddSpecialVariable(type);
     }
     
+    public void AddArgumentInLastScope(string name, TypeNode type)
+    {
+        Scopes[^1].AddArgument(name, type);
+    }
+    
     public void CreateNewScope(SemanticsScope.ScopeContext scopeContext)
     {
         Scopes.Add(new CodeGenerationScope(_hash));
