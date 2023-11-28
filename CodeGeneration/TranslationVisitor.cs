@@ -76,7 +76,9 @@ public class TranslationVisitor : IVisitor
 
     public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<string> commands)
     {
-        throw new NotImplementedException();
+        RangeNode range = forLoopNode.Range;
+        // int left = range.LeftBound;
+        // int right = range.RightBound;
     }
 
     public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<string> commands)
