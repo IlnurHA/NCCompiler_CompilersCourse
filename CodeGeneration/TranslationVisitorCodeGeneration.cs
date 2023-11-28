@@ -211,12 +211,26 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitConstNode(ConstNode constNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // Adds value to stack
+
+        commands.Enqueue(new LoadConstantCommand(constNode.Value!));
     }
 
     public void VisitOperationNode(OperationNode operationNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        // Operands add to stack operands
+        // Adds Necessary Commands To perform operation
+        // Result on the stack
+        
+        foreach (var operand in operationNode.Operands)
+        {
+            operand.Accept(this, commands);
+        }
+
+        foreach (var command in new OperationCommand(operationNode.OperationType).GetOperations())
+        {
+            commands.Enqueue(command);
+        }
     }
 
     public void VisitArrayConst(ArrayConst arrayConst, Queue<BaseCommand> commands)
