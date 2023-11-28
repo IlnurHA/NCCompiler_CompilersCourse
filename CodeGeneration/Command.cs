@@ -282,6 +282,14 @@ public class LoadArgumentFromFunction : BaseCommand
     }
 }
 
+public class StoreStackField : BaseCommand
+{
+    public override string Translate()
+    {
+        return "stfld";
+    }
+}
+
 public class NewArrayCommand : BaseCommand
 {
     public string Type { get; }

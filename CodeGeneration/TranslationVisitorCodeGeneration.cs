@@ -4,7 +4,8 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 {
-    public CodeGenerationScopeStack ScopeStack { get; }
+    private CodeGenerationScopeStack ScopeStack { get; } = new();
+
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
@@ -33,15 +34,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         //          getField from struct
         //      if just array:
         //          get from variable
-        
+
         // Assuming that Array on top of the stack
-        
+
         // call sort function
         // result is written by address (No need to specify address)
-        
+
         // TODO! Recursive call for Array
 
-        string type = ((ArrayTypeNode) sortedArrayNode.Type).ElementTypeNode switch
+        string type = ((ArrayTypeNode)sortedArrayNode.Type).ElementTypeNode switch
         {
             var elem => elem.MyType switch
             {
@@ -70,9 +71,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         //          getField from struct
         //      if just array:
         //          get from variable
-        
+
         // Assuming that Array on top of the stack
-        
+
         // Make a copy of array on the stack (Using clone function)
         // Cast it to necessary type
         // Assign modified copy to new variable
@@ -81,10 +82,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // result is written by address (No need to specify address)
 
         // TODO! Recursive call for Array + Copying array
-        
+
         reversedArrayNode.Array.Accept(this, commands);
 
-        string type = ((ArrayTypeNode) reversedArrayNode.Type).ElementTypeNode switch
+        string type = ((ArrayTypeNode)reversedArrayNode.Type).ElementTypeNode switch
         {
             var elem => elem.MyType switch
             {
@@ -109,12 +110,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        foreach (VarNode variableDeclaration in variableDeclarations.Declarations.Values)
+        {
+            variableDeclaration.AcceptStructField(this, commands);
+        }
     }
 
     public void VisitBreakNode(BreakNode breakNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        commands.Enqueue(new JumpForBreakCommand());
     }
 
     public void VisitAssertNode(AssertNode assertNode, Queue<BaseCommand> commands)
@@ -122,21 +126,26 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         throw new NotImplementedException();
     }
 
+
     public void VisitValueReturnNode(ValueReturnNode valueReturnNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        valueReturnNode.Value.Accept(this, commands);
+        commands.Enqueue(new ReturnCommand());
     }
 
+    /*
+     * Range node visit.
+     * Puts left then right bounds on the stack.
+     */
     public void VisitRangeNode(RangeNode rangeNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        rangeNode.LeftBound.Accept(this, commands);
+        rangeNode.RightBound.Accept(this, commands);
     }
 
     public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<BaseCommand> commands)
     {
         RangeNode range = forLoopNode.Range;
-        // int left = range.LeftBound;
-        // int right = range.RightBound;
     }
 
     public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<BaseCommand> commands)
@@ -201,12 +210,17 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitRoutineCallNode(RoutineCallNode routineCallNode, Queue<BaseCommand> commands)
     {
+        // TODO Load expressions. Call by name then
         throw new NotImplementedException();
     }
 
+    // Should be called only for routine call
     public void VisitExpressionsNode(ExpressionsNode expressionsNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        foreach (ValueNode expression in expressionsNode.Expressions)
+        {
+            expression.Accept(this, commands);
+        }
     }
 
     public void VisitConstNode(ConstNode constNode, Queue<BaseCommand> commands)
@@ -221,7 +235,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Operands add to stack operands
         // Adds Necessary Commands To perform operation
         // Result on the stack
-        
+
         foreach (var operand in operationNode.Operands)
         {
             operand.Accept(this, commands);
@@ -238,6 +252,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Creating new temp variable for array with specified type
         // For each element -> load index and load value (make visit) and stelem.i4
         // loads address to the top of the stack
+
+        ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
         
         var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
         var counter = 0;
@@ -267,7 +283,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         throw new NotImplementedException();
     }
-    
+
     public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> queue)
     {
         // If visited as var node in expression -> make send address of arrayVarNode to top of the stack
@@ -307,6 +323,16 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> queue)
     {
-        throw new NotImplementedException();
+        if (varNode.Name == null) throw new Exception("Not found name of variable during struct initialization");
+        ScopeStack.AddVariableInLastScope(varNode.Name, varNode.Type);
+        if (varNode.Value != null)
+        {
+            
+            if (!(varNode.Value is ValueNode || varNode.Value.GetType().IsSubclassOf(typeof(ValueNode))))
+                throw new Exception("Found var node value with incorrect type during struct initialization");
+            queue.Enqueue(new LoadArgumentFromFunction(0));
+            ((ValueNode) varNode.Value).Accept(this, queue);
+            queue.Enqueue(new StoreStackField());
+        }
     }
 }
