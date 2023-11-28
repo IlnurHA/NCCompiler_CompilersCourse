@@ -1,7 +1,10 @@
-﻿namespace NCCompiler_CompilersCourse.Semantics;
+﻿using NCCompiler_CompilersCourse.CodeGeneration;
+
+namespace NCCompiler_CompilersCourse.Semantics;
 
 public abstract class SymbolicNode
 {
+    public abstract void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands);
 }
 
 public class TypedSymbolicNode : SymbolicNode
@@ -15,6 +18,11 @@ public class TypedSymbolicNode : SymbolicNode
     public TypedSymbolicNode(TypeNode typeNode)
     {
         Type = typeNode;
+    }
+
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        throw new Exception($"Unreachable state: {GetType()}");
     }
 }
 
@@ -71,6 +79,11 @@ public class TypeNode : SymbolicNode
         if (this is not UserDefinedTypeNode userDefinedTypeNode) return this;
         return userDefinedTypeNode.GetFinalTypeNode();
     }
+
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ArrayTypeNode : TypeNode
@@ -98,6 +111,11 @@ public class ArrayTypeNode : TypeNode
                  (Size.Value is null && tempObj.Size.Value is null || 
                   (Size.Value is not null && Size.Value.Equals(tempObj.Size.Value)))));
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class StructTypeNode : TypeNode
@@ -120,6 +138,10 @@ public class StructTypeNode : TypeNode
         }
 
         return true;
+    }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -150,6 +172,11 @@ public class UserDefinedTypeNode : TypeNode
 
         throw new Exception("Got null type node");
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ValueNode : SymbolicNode
@@ -168,12 +195,22 @@ public class ValueNode : SymbolicNode
         Value = null;
         Type = new TypeNode(MyType.Undefined);
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ConstNode : ValueNode
 {
     public ConstNode(TypeNode typeNode, object value) : base(typeNode, value)
     {
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -198,6 +235,11 @@ public class VarNode : ValueNode
     public VarNode()
     {
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class PrimitiveVarNode : VarNode
@@ -208,6 +250,11 @@ public class PrimitiveVarNode : VarNode
     {
         Name = name;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class StatementNode : TypedSymbolicNode
@@ -216,6 +263,10 @@ public class StatementNode : TypedSymbolicNode
 
 public class BreakNode : StatementNode
 {
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class AssertNode : StatementNode
@@ -229,7 +280,10 @@ public class AssertNode : StatementNode
         rightExpression = right;
     }
     
-    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ReturnNode : StatementNode
@@ -264,6 +318,7 @@ public class DeclarationNode : StatementNode
 
         throw new Exception($"Got unexpected type node {type.GetType()}");
     }
+    
 }
 
 public class FullVariableDeclaration : DeclarationNode
@@ -271,6 +326,11 @@ public class FullVariableDeclaration : DeclarationNode
     public FullVariableDeclaration(PrimitiveVarNode primitiveVarNode, TypeNode type, ValueNode value)
     {
         Variable = GetAppropriateVarNode(primitiveVarNode, type, value);
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -280,6 +340,10 @@ public class TypeVariableDeclaration : DeclarationNode
     {
         Variable = GetAppropriateVarNode(primitiveVarNode, type, null);
     }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ValueVariableDeclaration : DeclarationNode
@@ -287,6 +351,10 @@ public class ValueVariableDeclaration : DeclarationNode
     public ValueVariableDeclaration(PrimitiveVarNode primitiveVarNode, ValueNode value)
     {
         Variable = GetAppropriateVarNode(primitiveVarNode, value.Type, value);
+    }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -298,6 +366,10 @@ public class TypeDeclarationNode : StatementNode
     {
         DeclaredType = new UserDefinedTypeNode {Name = varNode.Name, Type = type};
     }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class AssignmentNode : StatementNode
@@ -308,6 +380,10 @@ public class AssignmentNode : StatementNode
     {
         Variable = varNode;
         Variable.Value = value;
+    }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -331,6 +407,11 @@ public class BodyNode : TypedSymbolicNode
     {
         Statements.Add(statement);
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class OperationNode : ValueNode
@@ -348,6 +429,11 @@ public class OperationNode : ValueNode
     {
         OperationType = operationType;
         Operands = operands;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -382,6 +468,11 @@ public class ArrayVarNode : VarNode
         Type = elementTypeNode;
         base.Type = Type;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class GetByIndexNode : ValueNode
@@ -393,6 +484,11 @@ public class GetByIndexNode : ValueNode
     {
         ArrayVarNode = varNode;
         Index = index;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -457,6 +553,11 @@ public class StructVarNode : VarNode
     //
     //     return new StructVarNode(newDict, structTypeNode);
     // }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class GetFieldNode : VarNode
@@ -479,6 +580,11 @@ public class GetFieldNode : VarNode
         FieldNode = fieldNode;
         Type = structVarNode.GetField(fieldNode.Name).Type;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ArrayFunctions : ValueNode
@@ -489,12 +595,22 @@ public class ArrayFunctions : ValueNode
     {
         Array = arrayVarNode;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class SortedArrayNode : ArrayFunctions
 {
     public SortedArrayNode(ValueNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -503,12 +619,22 @@ public class ArraySizeNode : ArrayFunctions
     public ArraySizeNode(ValueNode arrayVarNode) : base(arrayVarNode, new TypeNode(MyType.Integer))
     {
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ReversedArrayNode : ArrayFunctions
 {
     public ReversedArrayNode(ValueNode arrayVarNode) : base(arrayVarNode, arrayVarNode.Type)
     {
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -519,6 +645,11 @@ public class ParameterNode : TypedSymbolicNode
     public ParameterNode(VarNode variable, TypeNode typeNode) : base(typeNode)
     {
         Variable = variable;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -534,6 +665,11 @@ public class ParametersNode : SymbolicNode
     public void AddParameter(ParameterNode parameterNode)
     {
         Parameters.Add(parameterNode);
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -552,6 +688,11 @@ public class RoutineDeclarationNode : VarNode
         Parameters = parameters;
         ReturnType = returnType;
         Name = FunctionName.Name;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -573,6 +714,11 @@ public class ExpressionsNode : TypedSymbolicNode
     {
         Expressions.Add(expressionNode);
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class RoutineCallNode : ValueNode
@@ -585,6 +731,11 @@ public class RoutineCallNode : ValueNode
     {
         Routine = routine;
         Expressions = expressions;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -601,6 +752,11 @@ public class RangeNode : SymbolicNode
         RightBound = rightBound;
         Reversed = true;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ForLoopNode : StatementNode
@@ -614,6 +770,11 @@ public class ForLoopNode : StatementNode
         IdName = idName;
         Range = range;
         Body = body;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -629,6 +790,11 @@ public class ForEachLoopNode : StatementNode
         Array = array;
         Body = body;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class WhileLoopNode : StatementNode
@@ -640,6 +806,11 @@ public class WhileLoopNode : StatementNode
     {
         Condition = condition;
         Body = body;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -653,6 +824,10 @@ public class IfStatement : StatementNode
         Condition = condition;
         Body = body;
     }
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class IfElseStatement : IfStatement
@@ -663,6 +838,11 @@ public class IfElseStatement : IfStatement
     {
         BodyElse = bodyElse;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class ArrayConst : ValueNode
@@ -672,6 +852,11 @@ public class ArrayConst : ValueNode
     public ArrayConst(ExpressionsNode expressions) : base(expressions.Type)
     {
         Expressions = expressions;
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -687,6 +872,11 @@ public class ProgramNode : SymbolicNode
     public void AddDeclaration(SymbolicNode node)
     {
         Declarations.Add(node);
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -708,6 +898,11 @@ public class VariableDeclarations : SymbolicNode
 
         Declarations[varNode.Name!] = varNode;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class EmptyReturnNode : ReturnNode
@@ -715,6 +910,11 @@ public class EmptyReturnNode : ReturnNode
     public EmptyReturnNode()
     {
         Type = new TypeNode(MyType.Undefined);
+    }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
     }
 }
 
@@ -727,9 +927,19 @@ public class ValueReturnNode : ReturnNode
         Value = value;
         Type = value.Type;
     }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
 
 public class CastNode : ValueNode
 {
     public CastNode(TypeNode type, ValueNode value) : base(type, value) { }
+    
+    public override void Accept(IVisitorCodeGen visitor, Queue<BaseCommand> commands)
+    {
+        
+    }
 }
