@@ -2,45 +2,47 @@
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
 
-public interface IVisitor
+public interface IVisitorCodeGen
 {
     // public void VisitTypeNode(TypeNode typeNode, Queue<string> commands);
-    public void VisitProgramNode(ProgramNode programNode, Queue<string> commands);
-    public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<string> commands);
-    public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<string> commands);
-    public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<string> commands);
-    public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<string> commands);
-    public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<string> commands);
-    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration, Queue<string> commands);
+    public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands);
+    public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands);
+    public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands);
+    public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands);
+    public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands);
+    public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<BaseCommand> commands);
+    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration, Queue<BaseCommand> commands);
 
     public void VisitValueVariableDeclaration(ValueVariableDeclaration valueVariableDeclaration,
-        Queue<string> commands);
+        Queue<BaseCommand> commands);
 
-    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration, Queue<string> commands);
-    public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<string> commands);
-    public void VisitBreakNode(BreakNode breakNode, Queue<string> commands);
-    public void VisitAssertNode(AssertNode assertNode, Queue<string> commands);
-    public void VisitValueReturnNode(ValueReturnNode valueReturnNode, Queue<string> commands);
-    public void VisitRangeNode(RangeNode rangeNode, Queue<string> commands);
-    public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<string> commands);
-    public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<string> commands);
-    public void VisitWhileLoopNode(WhileLoopNode whileLoopNode, Queue<string> commands);
-    public void VisitIfStatement(IfStatement ifStatement, Queue<string> commands);
-    public void VisitIfElseStatement(IfElseStatement ifElseStatement, Queue<string> commands);
-    public void VisitBodyNode(BodyNode bodyNode, Queue<string> commands);
-    public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<string> commands);
-    public void VisitArrayTypeNode(ArrayTypeNode arrayTypeNode, Queue<string> commands);
-    public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<string> commands);
-    public void VisitCastNode(CastNode castNode, Queue<string> commands);
+    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration, Queue<BaseCommand> commands);
+    public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<BaseCommand> commands);
+    public void VisitBreakNode(BreakNode breakNode, Queue<BaseCommand> commands);
+    public void VisitAssertNode(AssertNode assertNode, Queue<BaseCommand> commands);
+    public void VisitValueReturnNode(ValueReturnNode valueReturnNode, Queue<BaseCommand> commands);
+    public void VisitRangeNode(RangeNode rangeNode, Queue<BaseCommand> commands);
+    public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<BaseCommand> commands);
+    public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<BaseCommand> commands);
+    public void VisitWhileLoopNode(WhileLoopNode whileLoopNode, Queue<BaseCommand> commands);
+    public void VisitIfStatement(IfStatement ifStatement, Queue<BaseCommand> commands);
+    public void VisitIfElseStatement(IfElseStatement ifElseStatement, Queue<BaseCommand> commands);
+    public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands);
+    public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands);
 
-    public void VisitRoutineDeclarationNode(RoutineDeclarationNode routineDeclarationNode, Queue<string> commands);
+    public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands);
+    public void VisitArrayTypeNode(ArrayTypeNode arrayTypeNode, Queue<BaseCommand> commands);
+    public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands);
+    public void VisitCastNode(CastNode castNode, Queue<BaseCommand> commands);
+
+    public void VisitRoutineDeclarationNode(RoutineDeclarationNode routineDeclarationNode, Queue<BaseCommand> commands);
 
     // TODO - be aware of falling on ParameterNode
-    public void VisitParametersNode(ParametersNode parametersNode, Queue<string> commands);
-    public void VisitRoutineCallNode(RoutineCallNode routineCallNode, Queue<string> commands);
-    public void VisitExpressionsNode(ExpressionsNode expressionsNode, Queue<string> commands);
-    public void VisitConstNode(ConstNode constNode, Queue<string> commands);
-    public void VisitOperationNode(OperationNode operationNode, Queue<string> commands);
-    public void VisitArrayConst(ArrayConst arrayConst, Queue<string> commands);
-    public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<string> commands);
+    public void VisitParametersNode(ParametersNode parametersNode, Queue<BaseCommand> commands);
+    public void VisitRoutineCallNode(RoutineCallNode routineCallNode, Queue<BaseCommand> commands);
+    public void VisitExpressionsNode(ExpressionsNode expressionsNode, Queue<BaseCommand> commands);
+    public void VisitConstNode(ConstNode constNode, Queue<BaseCommand> commands);
+    public void VisitOperationNode(OperationNode operationNode, Queue<BaseCommand> commands);
+    public void VisitArrayConst(ArrayConst arrayConst, Queue<BaseCommand> commands);
+    public void VisitPrimitiveVarNode(PrimitiveVarNode primitiveVarNode, Queue<BaseCommand> commands);
 }
