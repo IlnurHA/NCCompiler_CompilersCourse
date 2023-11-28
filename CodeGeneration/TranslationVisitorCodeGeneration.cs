@@ -202,13 +202,48 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands)
     {
         // ... -> ...
-        
-        
-        // ... -> ..., address
-        assignmentNode.Variable.Accept(this, commands);
 
-        // ..., address -> ...
-        // commands.Enqueue();
+        // Not array
+        // ..., address -> ..., address, value
+        var value = ((ValueNode)assignmentNode.Variable.Value!);
+
+        switch (assignmentNode.Variable)
+        {
+            case GetFieldNode getFieldNode:
+                getFieldNode.Accept(this, commands);
+                value.Accept(this, commands);
+                commands.Enqueue(new SetFieldCommand(value.Type, getFieldNode.StructVarNode.Name!, getFieldNode.FieldName));
+                break;
+            case GetByIndexNode getByIndexNode:
+                getByIndexNode.Accept(this, commands);
+            
+                // Loaded index to stack
+                getByIndexNode.Index.Accept(this, commands);
+            
+                // loaded value to assign to stack
+                value.Accept(this, commands);
+            
+                // Setting element by index
+                commands.Enqueue(new SetElementByIndex());
+                break;
+            case VarNode varNode:
+                value.Accept(this, commands);
+                var name = varNode.Name!;
+                var isArgument = false;
+                var codeGenVar = ScopeStack.GetVariable(name);
+                if (codeGenVar is null)
+                {
+                    codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+                    isArgument = true;
+                }
+
+                if (codeGenVar is null) throw new Exception("Cannot assign to undeclared variable");
+                if (isArgument) commands.Enqueue(new SetArgumentByNameCommand(codeGenVar.GetName()));
+                else commands.Enqueue(new SetLocalCommand(codeGenVar.Id));
+                break;
+            default:
+                throw new Exception($"Unhandled node type: {assignmentNode.Variable}");
+        }
     }
 
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
@@ -352,7 +387,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             throw new Exception($"Cannot find variable of this name {arrayVarNode.Name}");
         }
 
-        if (codeGenVariable.IsArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVariable.Id));
+        if (ScopeStack.HasVariableInLastScope(codeGenVariable.GetName())) queue.Enqueue(new LoadArgumentFromFunction(codeGenVariable.Id));
         else queue.Enqueue(new LoadLocalCommand(codeGenVariable.Id));
     }
 

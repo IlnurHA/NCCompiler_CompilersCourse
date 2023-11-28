@@ -125,7 +125,18 @@ public class SetFieldCommand : BaseCommand
         StructName = structName;
         FieldName = fieldName;
     }
+    
+    public SetFieldCommand(TypeNode type, string structName, string fieldName)
+    {
+        Type = fromTypeNode(type);
+        StructName = structName;
+        FieldName = fieldName;
+    }
 
+    private string fromTypeNode(TypeNode typeNode)
+    {
+        throw new NotImplementedException();
+    }
     public override string Translate()
     {
         return $"stfld\t{Type} {StructName}::{FieldName}";
@@ -367,5 +378,35 @@ public class PrimitiveCastCommand : BaseCommand
     public override string Translate()
     {
         return $"conv.{Type}";
+    }
+}
+
+// public class SetArgumentByIndexCommand : BaseCommand
+// {
+//     public int Index { get; }
+//
+//     public SetArgumentCommand(int index)
+//     {
+//         Index = index;
+//     }
+//
+//     public override string Translate()
+//     {
+//         return $"stelem"
+//     }
+// }
+
+public class SetArgumentByNameCommand : BaseCommand
+{
+    public string Name { get; }
+
+    public SetArgumentByNameCommand(string name)
+    {
+        Name = name;
+    }
+
+    public override string Translate()
+    {
+        return $"starg.s\t{Name}";
     }
 }

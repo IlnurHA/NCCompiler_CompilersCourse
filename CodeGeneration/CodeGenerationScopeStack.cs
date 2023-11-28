@@ -52,4 +52,9 @@ public class CodeGenerationScopeStack
         }
         return null;
     }
+
+    public CodeGenerationVariable? GetArgumentInLastScope(string name)
+    {
+        return Scopes[^1].GetArgument(name);
+    }
 }
