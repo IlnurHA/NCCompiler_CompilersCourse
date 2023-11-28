@@ -224,7 +224,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        foreach (var statement in bodyNode.Statements)
+        {
+            statement.Accept(this, commands);
+        }
     }
 
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands)
@@ -405,26 +408,40 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> queue)
     {
-        // If visited as var node in expression -> make send address of arrayVarNode to top of the stack
-        // TODO: check if argument of function or localVariable
-
-        // as value in expression
-        var codeGenVariable = ScopeStack.GetVariable(arrayVarNode.Name!);
-        if (codeGenVariable is null)
+        // Assuming that VarNode is declared variable
+        var name = arrayVarNode.Name!;
+        var isArgument = false;
+        
+        var codeGenVar = ScopeStack.GetVariable(name);
+        if (codeGenVar is null)
         {
-            throw new Exception($"Cannot find variable of this name {arrayVarNode.Name}");
+            codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+            isArgument = true;
         }
-
-        if (ScopeStack.HasVariableInLastScope(codeGenVariable.GetName())) queue.Enqueue(new LoadArgumentFromFunction(codeGenVariable.Id));
-        else queue.Enqueue(new LoadLocalCommand(codeGenVariable.Id));
+        if (codeGenVar is null) throw new Exception("Variable is not declared");
+        
+        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
     public void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> queue)
     {
-        throw new NotImplementedException();
+        // Assuming that VarNode is declared variable
+        var name = structVarNode.Name!;
+        var isArgument = false;
+        
+        var codeGenVar = ScopeStack.GetVariable(name);
+        if (codeGenVar is null)
+        {
+            codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+            isArgument = true;
+        }
+        if (codeGenVar is null) throw new Exception("Variable is not declared");
+        
+        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
-    // Redundant Visit
     public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue)
     {
         throw new NotImplementedException();
@@ -437,7 +454,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitVarNode(VarNode varNode, Queue<BaseCommand> queue)
     {
-        throw new NotImplementedException();
+        // Assuming that VarNode is declared variable
+        var name = varNode.Name!;
+        var isArgument = false;
+        
+        var codeGenVar = ScopeStack.GetVariable(name);
+        if (codeGenVar is null)
+        {
+            codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+            isArgument = true;
+        }
+        if (codeGenVar is null) throw new Exception("Variable is not declared");
+        
+        if (isArgument) queue.Enqueue(new LoadArgumentFromFunction(codeGenVar.Id));
+        else queue.Enqueue(new LoadLocalCommand(codeGenVar.Id));
     }
 
     public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> queue)
