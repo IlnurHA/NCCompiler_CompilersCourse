@@ -5,7 +5,10 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 {
     private CodeGenerationScopeStack ScopeStack { get; } = new ();
+
+    private List<string> _structDeclarations = new();
     private List<string> _routinesCode = new();
+    public string ResultingProgram = "";
     
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
@@ -285,7 +288,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var jumpAfterAddress = commands.Count;
         jumperAfter.SetAddress(jumpAfterAddress);
         commands.Enqueue(new NopCommand(commands.Count));
-        throw new NotImplementedException();
     }
 
     public void VisitWhileLoopNode(WhileLoopNode whileLoopNode, Queue<BaseCommand> commands)
@@ -412,7 +414,21 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        if (ScopeStack.GetByStructType(structTypeNode) is not null) return;
+        
+        var structDeclaration = $".class nested sealed sequential ansi beforefieldinit {"STRUCT_VAR_" + ScopeStack.GetStructCounter()} extends [System.Runtime]System.ValueType";
+        
+        // fields
+        structDeclaration += "{\n";
+
+        foreach (var (name, type) in structTypeNode.StructFields)
+        {
+            structDeclaration += $".field {_getTypeFromTypeNode(type)} {name}\n";
+        }
+
+        structDeclaration += "}\n";
+        
+        _structDeclarations.Add(structDeclaration);
     }
 
     public void VisitCastNode(CastNode castNode, Queue<BaseCommand> commands)
@@ -693,7 +709,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> commands)
     {
-        if (varNode.Name == null) throw new Exception("Not found name of variable during struct initialization");
+        if (varNode.Name == null) throw new Exception("Not found field name of variable during struct initialization");
         ScopeStack.AddVariableInLastScope(varNode.Name, varNode.Type);
         if (varNode.Value != null)
         {

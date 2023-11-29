@@ -13,6 +13,14 @@ public class CodeGenerationScopeStack
         return Scopes[^1];
     }
     private List<CodeGenerationScope> Scopes { get; set; } = new (){new CodeGenerationScope("global")};
+    
+    private int _structCounter = -1;
+
+    public int GetStructCounter()
+    {
+        _structCounter += 1;
+        return _structCounter;
+    }
 
     public CodeGenerationVariable? GetByStructType(StructTypeNode structTypeNode)
     {
