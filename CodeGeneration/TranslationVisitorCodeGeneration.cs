@@ -12,7 +12,56 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        var programString = "";
+        var mainClassName = "MainClass";
+
+        programString +=
+            $".class private auto ansi beforefieldinit {mainClassName} extends [System.Runtime]System.Object";
+
+        foreach (var declaration in programNode.Declarations)
+        {
+            declaration.Accept(this, commands);
+        }
+
+        // Structs
+        programString += "{\n";
+
+        foreach (var structStr in _structDeclarations)
+        {
+            programString += structStr;
+        }
+        
+        // Global variables
+        foreach (var (_, globalVar) in ScopeStack.GetLastScope().LocalVariables)
+        {
+            programString += $".field public {_getTypeFromTypeNode(globalVar.Type)} {globalVar.GetName()}\n";
+        }
+        
+        // Functions
+        foreach (var routineCode in _routinesCode)
+        {
+            programString += routineCode;
+        }
+        
+        // Constructor
+        int maxStack = 50;
+        
+        programString += ".method public hidebysig specialname rtspecialname instance void .ctor() cil managed";
+        programString += "{\n";
+        programString += $".maxstack {maxStack}";
+
+        foreach (var command in commands)
+        {
+            programString += command.Translate() + '\n';
+        }
+
+        programString += new ReturnCommand(commands.Count).Translate();
+        
+        programString += "}\n";
+        
+        // End of main class
+        programString += "}";
+        ResultingProgram = programString;
     }
 
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
@@ -540,7 +589,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             routineCode += command.Translate() + '\n';
         }
 
+        routineCode += new ReturnCommand(commands.Count).Translate();
+        
         routineCode += "}\n";
+        
+        ScopeStack.DeleteLastScope();
         
         _routinesCode.Add(routineCode);
     }
