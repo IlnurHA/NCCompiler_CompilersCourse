@@ -415,8 +415,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands)
     {
         if (ScopeStack.GetByStructType(structTypeNode) is not null) return;
+        var structName = "STRUCT_TYPE_" + ScopeStack.GetStructCounter();
         
-        var structDeclaration = $".class nested sealed sequential ansi beforefieldinit {"STRUCT_VAR_" + ScopeStack.GetStructCounter()} extends [System.Runtime]System.ValueType";
+        ScopeStack.GetGlobalScope().AddVariable(structName, structTypeNode);
+        
+        var structDeclaration = $".class nested sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
         
         // fields
         structDeclaration += "{\n";

@@ -22,6 +22,11 @@ public class CodeGenerationScopeStack
         return _structCounter;
     }
 
+    public CodeGenerationScope GetGlobalScope()
+    {
+        return Scopes[0];
+    }
+
     public CodeGenerationVariable? GetByStructType(StructTypeNode structTypeNode)
     {
         for (int i = Scopes.Count - 1; i >= 0; i++)
