@@ -115,7 +115,7 @@ public class ArrayTypeNode : TypeNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
-        
+        visitor.VisitArrayTypeNode(this, commands);
     }
 }
 
@@ -142,7 +142,7 @@ public class StructTypeNode : TypeNode
     }
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
-        
+        visitor.VisitStructTypeNode(this, commands);
     }
 }
 
@@ -176,7 +176,7 @@ public class UserDefinedTypeNode : TypeNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
-        
+        throw new UnreachableException();
     }
 }
 
@@ -211,7 +211,7 @@ public class ConstNode : ValueNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
-        
+        visitor.VisitConstNode(this, commands);
     }
 }
 
@@ -271,7 +271,7 @@ public class BreakNode : StatementNode
 {
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
-        
+        visitor.VisitBreakNode(this, commands);
     }
 }
 

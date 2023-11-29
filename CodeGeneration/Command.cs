@@ -443,3 +443,18 @@ public class LoadByIndexCommand : BaseCommand
         return FormattedIndex() + $"ldelema\t{Type}";
     }
 }
+
+public class LoadStringCommand : BaseCommand
+{
+    public string String { get; }
+
+    public LoadStringCommand(string @string, int index) : base(index)
+    {
+        String = @string;
+    }
+
+    public override string Translate()
+    {
+        return FormattedIndex() + $"ldstr\t\"{String}\"";
+    }
+}

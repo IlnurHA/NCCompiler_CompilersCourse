@@ -13,10 +13,16 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
         var programString = "";
+        
+        // dependencies
+        programString += ".assembly extern System.Runtime\n{\n\t.ver 7:0:0:0\n}\n";
+        programString += ".assembly compiledProgram{}\n";
+        programString += ".module compiledProgram.dll\n";
+        
         var mainClassName = "Program";
 
         programString +=
-            $".class private auto ansi beforefieldinit {mainClassName} extends [System.Runtime]System.Object";
+            $".class private auto {mainClassName}";
 
         foreach (var declaration in programNode.Declarations)
         {
@@ -25,6 +31,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 declaration.Accept(this, new Queue<BaseCommand>());
                 continue;
             }
+            if (declaration is null) continue;
             declaration.Accept(this, commands);
         }
 
@@ -233,6 +240,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         assertNode.LeftExpression.Accept(this, commands);
         assertNode.RightExpression.Accept(this, commands);
         commands.Enqueue(new OperationCommand(OperationType.Eq, commands.Count));
+        commands.Enqueue(new LoadStringCommand("Assertion error", commands.Count));
         commands.Enqueue(new CallCommand("void [System.Runtime]System.Diagnostics.Debug::Assert(bool, string)", commands.Count));
     }
 
@@ -569,27 +577,31 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         routineCode += $".maxstack {maxStack}\n";
         
         // locals
-        routineCode += ".locals init (";
-
-        var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count);
-
-        for (int i = 0; i < lastScope.LocalVariables.Count; i++) {
-            foreach (var codeGenerationVariable in lastScope.LocalVariables.Values)
-            {
-                if (i == codeGenerationVariable.Id) sortedLocals.Add(codeGenerationVariable);
-            }
-        }
-
-        len = lastScope.LocalVariables.Count;
-
-        for (int i = 0; i < len; i++)
+        if (lastScope.LocalVariables.Count != 0)
         {
-            var local = sortedLocals[i];
-            routineCode += $"[{local.Id}] {_getTypeFromTypeNode(local.Type)} '{local.GetName()}'";
-            if (i < len - 1) routineCode += ", ";
-        }
+            routineCode += ".locals init (";
 
-        routineCode += ")\n";
+            var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count);
+
+            for (int i = 0; i < lastScope.LocalVariables.Count; i++)
+            {
+                foreach (var codeGenerationVariable in lastScope.LocalVariables.Values)
+                {
+                    if (i == codeGenerationVariable.Id) sortedLocals.Add(codeGenerationVariable);
+                }
+            }
+
+            len = lastScope.LocalVariables.Count;
+
+            for (int i = 0; i < len; i++)
+            {
+                var local = sortedLocals[i];
+                routineCode += $"[{local.Id}] {_getTypeFromTypeNode(local.Type)} '{local.GetName()}'";
+                if (i < len - 1) routineCode += ", ";
+            }
+
+            routineCode += ")\n";
+        }
         
         // Consume body
         foreach (var command in commands)
@@ -681,7 +693,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count, commands.Count));
-        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Expressions.Type), commands.Count));
+        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Expressions.Expressions[0].Type), commands.Count));
         commands.Enqueue(new SetLocalCommand(specialVariable.GetName(), commands.Count));
 
         var counter = 0;
