@@ -154,18 +154,7 @@ public class SetFieldCommand : BaseCommand
         StructName = structName;
         FieldName = fieldName;
     }
-    
-    public SetFieldCommand(TypeNode type, string structName, string fieldName, int index) : base(index)
-    {
-        Type = fromTypeNode(type);
-        StructName = structName;
-        FieldName = fieldName;
-    }
 
-    private string fromTypeNode(TypeNode typeNode)
-    {
-        throw new NotImplementedException();
-    }
     public override string Translate()
     {
         return FormattedIndex() + $"stfld\t{Type} {StructName}::{FieldName}";
@@ -323,14 +312,9 @@ public class NewArrayCommand : BaseCommand
 {
     public string Type { get; }
 
-    public string FromTypeNode(TypeNode typeNode)
+    public NewArrayCommand(string type, int index) : base(index)
     {
-        throw new NotImplementedException();
-    }
-
-    public NewArrayCommand(TypeNode typeNode, int index) : base(index)
-    {
-        Type = FromTypeNode(typeNode);
+        Type = type;
     }
 
     public override string Translate()
@@ -352,14 +336,9 @@ public class CastClassCommand : BaseCommand
 {
     public string Type { get; }
 
-    public string fromTypeNode(TypeNode typeNode)
+    public CastClassCommand(string type, int index) : base(index)
     {
-        throw new NotImplementedException();
-    }
-
-    public CastClassCommand(TypeNode typeNode, int index) : base(index)
-    {
-        Type = fromTypeNode(typeNode);
+        Type = type;
     }
 
     public override string Translate()
@@ -437,14 +416,9 @@ public class LoadFieldCommand : BaseCommand
     public string Struct { get; }
     public string Field { get; }
 
-    public string fromTypeNode(TypeNode typeNode)
+    public LoadFieldCommand(string type, string @struct, string field, int index) : base(index)
     {
-        throw new NotImplementedException();
-    }
-
-    public LoadFieldCommand(TypeNode typeNode, string @struct, string field, int index) : base(index)
-    {
-        Type = fromTypeNode(typeNode);
+        Type = type;
         Struct = @struct;
         Field = field;
     }
@@ -460,14 +434,9 @@ public class LoadByIndexCommand : BaseCommand
     // ..., arr, index -> ..., value
     public string Type { get; }
     
-    public LoadByIndexCommand(TypeNode typeNode, int index) : base(index) 
+    public LoadByIndexCommand(string type, int index) : base(index) 
     {
-        Type = fromTypeNode(typeNode);
-    }
-
-    public string fromTypeNode(TypeNode typeNode)
-    {
-        throw new NotImplementedException();
+        Type = type;
     }
     public override string Translate()
     {

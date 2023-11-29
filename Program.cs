@@ -1,4 +1,5 @@
-﻿using NCCompiler_CompilersCourse.Lexer;
+﻿using NCCompiler_CompilersCourse.CodeGeneration;
+using NCCompiler_CompilersCourse.Lexer;
 using NCCompiler_CompilersCourse.Semantics;
 
 namespace NCCompiler_CompilersCourse;
@@ -34,6 +35,11 @@ class Program
                 EvalVisitor visitor = new EvalVisitor();
                 var rootSymbolic = rootNode.Accept(visitor);
                 Console.WriteLine(res);
+
+                var codeGenVisit = new TranslationVisitorCodeGeneration();
+                rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
+                var programStr = codeGenVisit.ResultingProgram;
+                File.WriteAllText("compiledProgram.il", programStr);
             }
         }
     }

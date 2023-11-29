@@ -20,6 +20,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         foreach (var declaration in programNode.Declarations)
         {
+            if (declaration is RoutineDeclarationNode)
+            {
+                declaration.Accept(this, new Queue<BaseCommand>());
+                continue;
+            }
             declaration.Accept(this, commands);
         }
 
@@ -67,7 +72,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
     {
         getFieldNode.StructVarNode.Accept(this, commands);
-        commands.Enqueue(new LoadFieldCommand(getFieldNode.Type, getFieldNode.StructVarNode.Name!,
+        commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type), getFieldNode.StructVarNode.Name!,
             getFieldNode.FieldName, commands.Count));
     }
 
@@ -75,7 +80,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         getByIndexNode.ArrayVarNode.Accept(this, commands);
         getByIndexNode.Index.Accept(this, commands);
-        commands.Enqueue(new LoadByIndexCommand(getByIndexNode.Type, commands.Count));
+        commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
 
     private (string, TypeNode) _createNewVar(VarNode varNode, TypeNode typeNode)
@@ -171,7 +176,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new CallVirtualCommand("instance object [System.Runtime]System.Array::Clone()", commands.Count));
 
         // Cast
-        commands.Enqueue(new CastClassCommand(arrayFunctions.Type, commands.Count));
+        commands.Enqueue(new CastClassCommand(_getTypeFromTypeNode(arrayFunctions.Type), commands.Count));
 
         // Set to special variable
         commands.Enqueue(new SetLocalCommand(specialVar.Id, commands.Count));
@@ -316,7 +321,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(jumperAfter);
         commands.Enqueue(new LoadLocalCommand(arrayId, commands.Count));
         commands.Enqueue(new LoadLocalCommand(counterId, commands.Count));
-        commands.Enqueue(new LoadByIndexCommand(type, commands.Count));
+        commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(type), commands.Count));
         commands.Enqueue(new SetLocalCommand(identifierId, commands.Count));
         var beforeBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
@@ -421,7 +426,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             case GetFieldNode getFieldNode:
                 getFieldNode.Accept(this, commands);
                 value.Accept(this, commands);
-                commands.Enqueue(new SetFieldCommand(value.Type, getFieldNode.StructVarNode.Name!,
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), getFieldNode.StructVarNode.Name!,
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
@@ -503,7 +508,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             {
                 MyType.Integer => "int32",
                 MyType.Boolean => "bool",
-                MyType.Real => "r4",
+                MyType.Real => "float32",
                 MyType.Undefined => "void",
                 _ => throw new Exception($"Cannot convert type node: {node}")
             },
@@ -565,13 +570,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // locals
         routineCode += ".locals init (";
 
-        var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count); 
-        
-        foreach (var codeGenerationVariable in lastScope.LocalVariables.Values)
-        {
-            sortedLocals[codeGenerationVariable.Id] = codeGenerationVariable;
+        var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count);
+
+        for (int i = 0; i < lastScope.LocalVariables.Count; i++) {
+            foreach (var codeGenerationVariable in lastScope.LocalVariables.Values)
+            {
+                if (i == codeGenerationVariable.Id) sortedLocals.Add(codeGenerationVariable);
+            }
         }
-        
+
         len = lastScope.LocalVariables.Count;
 
         for (int i = 0; i < len; i++)
@@ -673,7 +680,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count, commands.Count));
-        commands.Enqueue(new NewArrayCommand(arrayConst.Expressions.Type, commands.Count));
+        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Expressions.Type), commands.Count));
         commands.Enqueue(new SetLocalCommand(specialVariable.Id, commands.Count));
 
         var counter = 0;
