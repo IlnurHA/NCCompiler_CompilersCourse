@@ -25,10 +25,44 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new LoadByIndexCommand(getByIndexNode.Type));
     }
 
+    private (string, TypeNode) _createNewVar(VarNode varNode, TypeNode typeNode)
+    {
+        var name = varNode.Name!;
+        ScopeStack.AddVariableInLastScope(name, typeNode);
+        return (name, typeNode);
+    }
+
+    private void _handleDeclaration(DeclarationNode declarationNode, Queue<BaseCommand> commands)
+    {
+        var (name, _) = _createNewVar(declarationNode.Variable, declarationNode.Type);
+        
+        if (declarationNode is TypeVariableDeclaration) return;
+
+        var codeGenVar = ScopeStack.GetVariable(name)!;
+        
+        // getting value on top of the stack
+        ((ValueNode) declarationNode.Variable.Value!).Accept(this, commands);
+        
+        // setting value to variable
+        commands.Enqueue(new SetLocalCommand(codeGenVar.Id));
+    }
+
     public void VisitValueVariableDeclaration(ValueVariableDeclaration valueVariableDeclaration,
         Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        _handleDeclaration(valueVariableDeclaration, commands);
+    }
+
+    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration,
+        Queue<BaseCommand> commands)
+    {
+        _handleDeclaration(typeVariableDeclaration, commands);
+    }
+
+    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration,
+        Queue<BaseCommand> commands)
+    {
+        _handleDeclaration(fullVariableDeclaration, commands);
     }
 
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands)
@@ -123,18 +157,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             reversedArrayNode, commands);
         // Load for return
         commands.Enqueue(new LoadLocalCommand(specialVar.Id));
-    }
-
-    public void VisitTypeVariableDeclaration(TypeVariableDeclaration typeVariableDeclaration,
-        Queue<BaseCommand> commands)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void VisitFullVariableDeclaration(FullVariableDeclaration fullVariableDeclaration,
-        Queue<BaseCommand> commands)
-    {
-        throw new NotImplementedException();
     }
 
     public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<BaseCommand> commands)
