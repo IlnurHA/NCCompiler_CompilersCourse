@@ -13,9 +13,14 @@ public abstract class BaseCommand
 
     protected string FormattedIndex()
     {
-        var intermediateString = CommandIndex.ToString("X");
+        return FormattedAddress(CommandIndex) + ": ";
+    }
+
+    protected string FormattedAddress(int index)
+    {
+        var intermediateString = index.ToString("X");
         while (intermediateString.Length < 4) intermediateString = '0' + intermediateString;
-        return $"IL_{intermediateString}: ";
+        return $"IL_{intermediateString}";
     }
     public abstract string Translate();
 }
@@ -37,7 +42,7 @@ public class CallCommand : BaseCommand
 
 public class JumpCommand : BaseCommand
 {
-    public int? Address { get; set; }
+    public int Address { get; set; } = -1;
     
     public JumpCommand(int index) : base(index) {}
 
@@ -49,7 +54,7 @@ public class JumpCommand : BaseCommand
     public override string Translate()
     {
         // TODO Write format command that will translate address to correct label
-        return FormattedIndex()+ "br.s" + '\t' + Address;
+        return FormattedIndex()+ "br.s" + '\t' + FormattedAddress(Address);
     }
 }
 
@@ -63,7 +68,7 @@ public class JumpIfTrue : JumpCommand
     public JumpIfTrue(int index) : base(index) {}
     public override string Translate()
     {
-        return FormattedIndex() + "brtrue.s" + '\t' + Address;
+        return FormattedIndex() + "brtrue.s" + '\t' + FormattedAddress(Address);
     }
 }
 
@@ -72,23 +77,25 @@ public class JumpIfFalse : JumpCommand
     public JumpIfFalse(int index) : base(index) {}
     public override string Translate()
     {
-        return FormattedIndex() + "brfalse.s" + "\t" + Address;
+        return FormattedIndex() + "brfalse.s" + "\t" + FormattedAddress(Address);
     }
 }
 
 public abstract class LocalVarCommand : BaseCommand
 {
     public string Name { get; set; }
+    public int Index { get; }
 
-    public LocalVarCommand(string name, int commandIndex) : base(commandIndex)
+    public LocalVarCommand(int index, string name, int commandIndex) : base(commandIndex)
     {
         Name = name;
+        Index = index;
     }
 }
 
 public class LoadLocalCommand : LocalVarCommand
 {
-    public LoadLocalCommand(string name, int commandIndex) : base(name, commandIndex)
+    public LoadLocalCommand(int index, string name, int commandIndex) : base(index, name, commandIndex)
     {
     }
 
@@ -100,7 +107,7 @@ public class LoadLocalCommand : LocalVarCommand
 
 public class SetLocalCommand : LocalVarCommand
 {
-    public SetLocalCommand(string name, int commandIndex) : base(name, commandIndex)
+    public SetLocalCommand(int index, string name, int commandIndex) : base(index, name, commandIndex)
     {
     }
 
@@ -138,7 +145,7 @@ public class LoadLocalAddressToStackCommand : BaseCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + "ldloca.s" + '\t' + $"'{VarName}'";
+        return FormattedIndex() + "ldloc.s" + '\t' + $"'{VarName}'";
     }
 }
 public class SetFieldCommand : BaseCommand
@@ -201,7 +208,7 @@ public class LoadConstantCommand : BaseCommand
     {
         var type = "i4";
 
-        if (Value is float) type = "r4";
+        if (Value is float or double) type = "r4";
         
         return FormattedIndex() + $"ldc.{type}\t{Value}";
     }

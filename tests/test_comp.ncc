@@ -1,0 +1,11 @@
+routine main() is
+   var a is [1, 2, 3]
+   
+   var sum is 0
+   
+   foreach i from a loop
+        sum := sum + i
+   end
+   
+   assert sum, 6
+end

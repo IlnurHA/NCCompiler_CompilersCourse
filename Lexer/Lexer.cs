@@ -362,7 +362,7 @@ class Scanner : AbstractScanner<Node, LexLocation>
                     yylval = new LeafNode<Double>(NodeTag.RealLiteral, Convert.ToDouble(token.Value!));
                     break;
                 case TokenType.True or TokenType.False:
-                    yylval = new LeafNode<Boolean>(NodeTag.BooleanLiteral, Convert.ToBoolean(token.Value!));
+                    yylval = new LeafNode<Boolean>(NodeTag.BooleanLiteral, token.Type == TokenType.True);
                     break;
                 case TokenType.Integer or TokenType.Real or TokenType.Boolean:
                     yylval = new LeafNode<string>(NodeTag.PrimitiveType, token.Lexeme);

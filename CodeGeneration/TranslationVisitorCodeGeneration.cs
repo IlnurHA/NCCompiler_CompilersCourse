@@ -109,7 +109,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         ((ValueNode) declarationNode.Variable.Value!).Accept(this, commands);
         
         // setting value to variable
-        commands.Enqueue(new SetLocalCommand(codeGenVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitValueVariableDeclaration(ValueVariableDeclaration valueVariableDeclaration,
@@ -139,7 +139,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             $"void [System.Runtime]System.Array::Sort<{type}>(!!0/*{type}*/[])",
             sortedArrayNode, commands);
         // Load for return
-        commands.Enqueue(new LoadLocalCommand(specialVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
     }
 
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands)
@@ -186,10 +186,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new CastClassCommand(_getTypeFromTypeNode(arrayFunctions.Type), commands.Count));
 
         // Set to special variable
-        commands.Enqueue(new SetLocalCommand(specialVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
 
         // Load for call
-        commands.Enqueue(new LoadLocalCommand(specialVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
 
         // Reverse func
         commands.Enqueue(new CallCommand(function, commands.Count));
@@ -219,7 +219,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             $"void [System.Runtime]System.Array::Reverse<{type}>(!!0/*{type}*/[])",
             reversedArrayNode, commands);
         // Load for return
-        commands.Enqueue(new LoadLocalCommand(specialVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
     }
 
     public void VisitVariableDeclarations(VariableDeclarations variableDeclarations, Queue<BaseCommand> commands)
@@ -270,9 +270,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         if (range.Reversed) (from, to) = (to, from);
         var fromVar = ScopeStack.GetVariable(from)!;
         ScopeStack.AddVariableInLastScope(from, new TypeNode(myType: MyType.Integer));
-        commands.Enqueue(new SetLocalCommand(fromVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
         var toVar = ScopeStack.GetVariable(to)!;
-        commands.Enqueue(new SetLocalCommand(toVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
         int startBodyAddress = commands.Count;
@@ -283,16 +283,16 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var commandsList = commands.ToArray();
         for (int i = startBodyAddress; i < endBodyAddress - 3; ++i)
         {
-            if (commandsList[i] is JumpForBreakCommand { Address: null } jumpForBreakCommand)
+            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
                 jumpForBreakCommand.SetAddress(endBodyAddress);
         }
 
-        commands.Enqueue(new LoadLocalCommand(fromVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
         commands.Enqueue(range.Reversed
             ? new OperationCommand(OperationType.Minus, commands.Count)
             : new OperationCommand(OperationType.Plus, commands.Count));
-        commands.Enqueue(new LoadLocalCommand(toVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
         commands.Enqueue(range.Reversed
             ? new OperationCommand(OperationType.Gt, commands.Count)
             : new OperationCommand(OperationType.Lt, commands.Count));
@@ -305,32 +305,32 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         string identifier = forEachLoopNode.IdName.Name!;
         var type = forEachLoopNode.Array.Type.ElementTypeNode;
-        var counter = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(myType: MyType.Integer));
+        var counter = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
         var counterVar = ScopeStack.GetVariable(counter)!;
         commands.Enqueue(new LoadConstantCommand(0, commands.Count));
-        commands.Enqueue(new SetLocalCommand(counterVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         var size = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(myType: MyType.Integer));
         var sizeVar = ScopeStack.GetVariable(size)!;
         forEachLoopNode.Array.Type.Size!.Accept(this, commands);
-        commands.Enqueue(new SetLocalCommand(sizeVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(sizeVar.Id, sizeVar.GetName(), commands.Count));
         ScopeStack.AddVariableInLastScope(identifier, type);
         
         var identifierVar = ScopeStack.GetVariable(identifier)!;
         string array = ScopeStack.AddSpecialVariableInLastScope(forEachLoopNode.Array.Type);
         var arrayVar = ScopeStack.GetVariable(array)!;
         forEachLoopNode.Array.Accept(this, commands);
-        commands.Enqueue(new SetLocalCommand(arrayVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(arrayVar.Id, arrayVar.GetName(), commands.Count));
         int jumpBeforeAddress = commands.Count;
         
-        commands.Enqueue(new LoadLocalCommand(arrayVar.GetName(), commands.Count));
-        commands.Enqueue(new LoadLocalCommand(sizeVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(sizeVar.Id, sizeVar.GetName(), commands.Count));
         commands.Enqueue(new OperationCommand(OperationType.Lt, commands.Count));
         var jumperAfter = new JumpIfFalse(commands.Count);
         commands.Enqueue(jumperAfter);
-        commands.Enqueue(new LoadLocalCommand(arrayVar.GetName(), commands.Count));
-        commands.Enqueue(new LoadLocalCommand(counterVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(arrayVar.Id, arrayVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(type), commands.Count));
-        commands.Enqueue(new SetLocalCommand(identifierVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         var beforeBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
         forEachLoopNode.Body.Accept(this, commands);
@@ -338,13 +338,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var commandsList = commands.ToArray();
         for (int i = beforeBodyAddress; i < afterBodyAddress; ++i)
         {
-            if (commandsList[i] is JumpForBreakCommand { Address: null } jumpForBreakCommand)
+            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
                 jumpForBreakCommand.SetAddress(afterBodyAddress);
         }
-        commands.Enqueue(new LoadLocalCommand(counterVar.GetName(), commands.Count));
+        commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
         commands.Enqueue(new OperationCommand(OperationType.Plus, commands.Count));
-        commands.Enqueue(new SetLocalCommand(counterVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         
         commands.Enqueue(new JumpCommand (commands.Count) { Address = jumpBeforeAddress });
         var jumpAfterAddress = commands.Count;
@@ -364,7 +364,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var commandsList = commands.ToArray();
         for (int i = startBodyAddress; i < endBodyAddress; ++i)
         {
-            if (commandsList[i] is JumpForBreakCommand { Address: null } jumpForBreakCommand)
+            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
                 jumpForBreakCommand.SetAddress(endBodyAddress);
         }
 
@@ -462,7 +462,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
                 if (codeGenVar is null) throw new Exception("Cannot assign to undeclared variable");
                 if (isArgument) commands.Enqueue(new SetArgumentByNameCommand(codeGenVar.GetName(), commands.Count));
-                else commands.Enqueue(new SetLocalCommand(codeGenVar.GetName(), commands.Count));
+                else commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
                 break;
             default:
                 throw new Exception($"Unhandled node type: {assignmentNode.Variable}");
@@ -660,8 +660,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitConstNode(ConstNode constNode, Queue<BaseCommand> commands)
     {
         // Adds value to stack
-
-        commands.Enqueue(new LoadConstantCommand(constNode.Value!, commands.Count));
+        var value = constNode.Value!;
+        if (value is bool boolValue) commands.Enqueue(new LoadConstantCommand(boolValue ? 1 : 0, commands.Count));
+        else commands.Enqueue(new LoadConstantCommand(value, commands.Count));
     }
 
     public void VisitOperationNode(OperationNode operationNode, Queue<BaseCommand> commands)
@@ -694,7 +695,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count, commands.Count));
         commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Expressions.Expressions[0].Type), commands.Count));
-        commands.Enqueue(new SetLocalCommand(specialVariable.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
 
         var counter = 0;
         foreach (var elements in arrayConst.Expressions.Expressions)
@@ -732,7 +733,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
         if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
-        else commands.Enqueue(new LoadLocalCommand(codeGenVar.GetName(), commands.Count));
+        else commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> commands)
@@ -751,7 +752,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
         if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
-        else commands.Enqueue(new LoadLocalCommand(codeGenVar.GetName(), commands.Count));
+        else commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> commands)
@@ -780,7 +781,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
         if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
-        else commands.Enqueue(new LoadLocalCommand(codeGenVar.GetName(), commands.Count));
+        else commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> commands)
