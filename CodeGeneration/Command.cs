@@ -4,6 +4,19 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public abstract class BaseCommand
 {
+    public int CommandIndex { get; set; }
+
+    public BaseCommand(int index)
+    {
+        CommandIndex = index;
+    }
+
+    protected string FormattedIndex()
+    {
+        var intermediateString = CommandIndex.ToString("X");
+        while (intermediateString.Length < 4) intermediateString = '0' + intermediateString;
+        return $"IL_{intermediateString}: ";
+    }
     public abstract string Translate();
 }
 
@@ -11,20 +24,22 @@ public class CallCommand : BaseCommand
 {
     public string FunctionName { get; set; }
 
-    public CallCommand(string functionName)
+    public CallCommand(string functionName, int index) : base(index)
     {
         FunctionName = functionName;
     }
 
     public override string Translate()
     {
-        return "call" + '\t' + FunctionName;
+        return FormattedIndex() + "call" + '\t' + FunctionName;
     }
 }
 
 public class JumpCommand : BaseCommand
 {
     public int? Address { get; set; }
+    
+    public JumpCommand(int index) : base(index) {}
 
     public void SetAddress(int address)
     {
@@ -34,27 +49,30 @@ public class JumpCommand : BaseCommand
     public override string Translate()
     {
         // TODO Write format command that will translate address to correct label
-        return "br.s" + '\t' + Address;
+        return FormattedIndex()+ "br.s" + '\t' + Address;
     }
 }
 
 public class JumpForBreakCommand : JumpCommand
 {
+    public JumpForBreakCommand(int index) : base(index) {}
 }
 
 public class JumpIfTrue : JumpCommand
 {
+    public JumpIfTrue(int index) : base(index) {}
     public override string Translate()
     {
-        return "brtrue.s" + '\t' + Address;
+        return FormattedIndex() + "brtrue.s" + '\t' + Address;
     }
 }
 
 public class JumpIfFalse : JumpCommand
 {
+    public JumpIfFalse(int index) : base(index) {}
     public override string Translate()
     {
-        return "brfalse.s" + "\t" + Address;
+        return FormattedIndex() + "brfalse.s" + "\t" + Address;
     }
 }
 
@@ -62,7 +80,7 @@ public abstract class LocalVarCommand : BaseCommand
 {
     public int Index { get; set; }
 
-    public LocalVarCommand(int index)
+    public LocalVarCommand(int index, int commandIndex) : base(commandIndex)
     {
         Index = index;
     }
@@ -70,55 +88,57 @@ public abstract class LocalVarCommand : BaseCommand
 
 public class LoadLocalCommand : LocalVarCommand
 {
-    public LoadLocalCommand(int index) : base(index)
+    public LoadLocalCommand(int index, int commandIndex) : base(index, commandIndex)
     {
     }
 
     public override string Translate()
     {
-        return $"ldloc.{Index}";
+        return FormattedIndex() + $"ldloc.{Index}";
     }
 }
 
 public class SetLocalCommand : LocalVarCommand
 {
-    public SetLocalCommand(int index) : base(index)
+    public SetLocalCommand(int index, int commandIndex) : base(index, commandIndex)
     {
     }
 
     public override string Translate()
     {
-        return $"stloc.{Index}";
+        return FormattedIndex() + $"stloc.{Index}";
     }
 }
 
 public class ReturnCommand : BaseCommand
 {
+    public ReturnCommand(int index) : base(index) {}
     public override string Translate()
     {
-        return "ret";
+        return FormattedIndex() + "ret";
     }
 }
 
 public class DuplicateCommand : BaseCommand
 {
+    public DuplicateCommand(int index) : base(index) {}
     public override string Translate()
     {
-        return "dup";
+        return FormattedIndex() + "dup";
     }
 }
 public class LoadLocalAddressToStackCommand : BaseCommand
 {
     public string VarName { get; }
 
-    public LoadLocalAddressToStackCommand(string varName)
+    public LoadLocalAddressToStackCommand(string varName, int index) : base(index)
     {
         VarName = varName;
     }
 
     public override string Translate()
     {
-        return "ldloca.s" + '\t' + VarName;
+        return FormattedIndex() + "ldloca.s" + '\t' + VarName;
     }
 }
 public class SetFieldCommand : BaseCommand
@@ -128,14 +148,14 @@ public class SetFieldCommand : BaseCommand
     public string StructName { get; }
     public string FieldName { get; }
 
-    public SetFieldCommand(string type, string structName, string fieldName)
+    public SetFieldCommand(string type, string structName, string fieldName, int index) : base(index)
     {
         Type = type;
         StructName = structName;
         FieldName = fieldName;
     }
     
-    public SetFieldCommand(TypeNode type, string structName, string fieldName)
+    public SetFieldCommand(TypeNode type, string structName, string fieldName, int index) : base(index)
     {
         Type = fromTypeNode(type);
         StructName = structName;
@@ -148,7 +168,7 @@ public class SetFieldCommand : BaseCommand
     }
     public override string Translate()
     {
-        return $"stfld\t{Type} {StructName}::{FieldName}";
+        return FormattedIndex() + $"stfld\t{Type} {StructName}::{FieldName}";
     }
 }
 
@@ -159,22 +179,23 @@ public class InitObjectCommand : BaseCommand
     // Together with necessary namespaces
     public string ObjectName { get; }
 
-    public InitObjectCommand(string objectName)
+    public InitObjectCommand(string objectName, int index) : base(index)
     {
         ObjectName = objectName;
     }
 
     public override string Translate()
     {
-        return $"initobj\t{ObjectName}";
+        return FormattedIndex() + $"initobj\t{ObjectName}";
     }
 }
 
 public class NopCommand : BaseCommand
 {
+    public NopCommand(int index) : base(index) {}
     public override string Translate()
     {
-        return "nop";
+        return FormattedIndex() + "nop";
     }
 }
 
@@ -182,7 +203,7 @@ public class LoadConstantCommand : BaseCommand
 {
     public object Value;
 
-    public LoadConstantCommand(object value)
+    public LoadConstantCommand(object value, int index) : base(index)
     {
         Value = value;
     }
@@ -193,7 +214,7 @@ public class LoadConstantCommand : BaseCommand
 
         if (Value is float) type = "r4";
         
-        return $"ldc.{type}\t{Value}";
+        return FormattedIndex() + $"ldc.{type}\t{Value}";
     }
 }
 
@@ -227,7 +248,7 @@ public class OperationCommand : BaseCommand
         };
     }
 
-    public OperationCommand(OperationType operationType)
+    public OperationCommand(OperationType operationType, int index) : base(index)
     {
         Operation = FromOperationType(operationType);
         opType = operationType;
@@ -238,21 +259,21 @@ public class OperationCommand : BaseCommand
         return opType switch
         {
             OperationType.Not => new List<BaseCommand>
-                {new LoadConstantCommand(0), new OperationCommand(OperationType.Eq)},
+                {new LoadConstantCommand(0, CommandIndex), new OperationCommand(OperationType.Eq, CommandIndex + 1)},
             OperationType.Ge => new List<BaseCommand>
             {
-                new OperationCommand(OperationType.Lt), new LoadConstantCommand(0),
-                new OperationCommand(OperationType.Eq)
+                new OperationCommand(OperationType.Lt, CommandIndex), new LoadConstantCommand(0, CommandIndex + 1),
+                new OperationCommand(OperationType.Eq, CommandIndex + 2)
             },
             OperationType.Le => new List<BaseCommand>
             {
-                new OperationCommand(OperationType.Gt), new LoadConstantCommand(0),
-                new OperationCommand(OperationType.Eq)
+                new OperationCommand(OperationType.Gt, CommandIndex), new LoadConstantCommand(0, CommandIndex + 1),
+                new OperationCommand(OperationType.Eq, CommandIndex + 2)
             },
             OperationType.Ne => new List<BaseCommand>
             {
-                new OperationCommand(OperationType.Eq), new LoadConstantCommand(0),
-                new OperationCommand(OperationType.Eq)
+                new OperationCommand(OperationType.Eq, CommandIndex), new LoadConstantCommand(0, CommandIndex + 1),
+                new OperationCommand(OperationType.Eq, CommandIndex + 2)
             },
             _ => new List<BaseCommand> {this},
         };
@@ -260,15 +281,16 @@ public class OperationCommand : BaseCommand
     }
     public override string Translate()
     {
-        return Operation;
+        return FormattedIndex() + Operation;
     }
 }
 
 public class SetElementByIndex : BaseCommand
 {
+    public SetElementByIndex(int index) : base(index) {}
     public override string Translate()
     {
-        return "stelem.i4";
+        return FormattedIndex() + "stelem.i4";
     }
 }
 
@@ -276,23 +298,24 @@ public class LoadFunctionArgument : BaseCommand
 {
     public int Index = 1;
 
-    public LoadFunctionArgument(int index)
+    public LoadFunctionArgument(int index, int commandIndex) : base(commandIndex)
     {
         Index = index;
     }
     public override string Translate()
     {
         if (Index < 0) throw new Exception("Index for argument from function should be non-negative");
-        if (Index < 10) return $"ldarg.{Index}";
-        return $"ldarg.s\t{Index}";
+        if (Index < 10) return FormattedIndex() + $"ldarg.{Index}";
+        return FormattedIndex() + $"ldarg.s\t{Index}";
     }
 }
 
 public class StoreStructField : BaseCommand
 {
+    public StoreStructField(int index) : base(index) {}
     public override string Translate()
     {
-        return "stfld";
+        return FormattedIndex() + "stfld";
     }
 }
 
@@ -305,23 +328,23 @@ public class NewArrayCommand : BaseCommand
         throw new NotImplementedException();
     }
 
-    public NewArrayCommand(TypeNode typeNode)
+    public NewArrayCommand(TypeNode typeNode, int index) : base(index)
     {
         Type = FromTypeNode(typeNode);
     }
 
     public override string Translate()
     {
-        return $"newarr\t{Type}";
+        return FormattedIndex() + $"newarr\t{Type}";
     }
 }
 
 public class CallVirtualCommand : CallCommand
 {
-    public CallVirtualCommand(string function) : base(function) {}
+    public CallVirtualCommand(string function, int index) : base(function, index) {}
     public override string Translate()
     {
-        return $"callvirt\t{FunctionName}";
+        return FormattedIndex() + $"callvirt\t{FunctionName}";
     }
 }
 
@@ -334,23 +357,25 @@ public class CastClassCommand : BaseCommand
         throw new NotImplementedException();
     }
 
-    public CastClassCommand(TypeNode typeNode)
+    public CastClassCommand(TypeNode typeNode, int index) : base(index)
     {
         Type = fromTypeNode(typeNode);
     }
 
     public override string Translate()
     {
-        return $"castclass\t{Type}";
+        return FormattedIndex() + $"castclass\t{Type}";
     }
 }
 
 public class ArrayLength : BaseCommand
 {
     // ..., arr -> ..., length
+ 
+    public ArrayLength(int index) : base(index) {}
     public override string Translate()
     {
-        return "ldlen";
+        return FormattedIndex() + "ldlen";
     }
 }
 
@@ -365,14 +390,14 @@ public class PrimitiveCastCommand : BaseCommand
         throw new Exception($"Unsupported type: {typeNode.MyType}-{typeNode.GetType()}");
     }
 
-    public PrimitiveCastCommand(TypeNode typeNode)
+    public PrimitiveCastCommand(TypeNode typeNode, int index) : base(index)
     {
         Type = fromTypeNode(typeNode);
     }
 
     public override string Translate()
     {
-        return $"conv.{Type}";
+        return FormattedIndex() + $"conv.{Type}";
     }
 }
 
@@ -395,14 +420,14 @@ public class SetArgumentByNameCommand : BaseCommand
 {
     public string Name { get; }
 
-    public SetArgumentByNameCommand(string name)
+    public SetArgumentByNameCommand(string name, int index) : base(index)
     {
         Name = name;
     }
 
     public override string Translate()
     {
-        return $"starg.s\t{Name}";
+        return FormattedIndex() + $"starg.s\t{Name}";
     }
 }
 
@@ -417,7 +442,7 @@ public class LoadFieldCommand : BaseCommand
         throw new NotImplementedException();
     }
 
-    public LoadFieldCommand(TypeNode typeNode, string @struct, string field)
+    public LoadFieldCommand(TypeNode typeNode, string @struct, string field, int index) : base(index)
     {
         Type = fromTypeNode(typeNode);
         Struct = @struct;
@@ -426,7 +451,7 @@ public class LoadFieldCommand : BaseCommand
 
     public override string Translate()
     {
-        return $"ldfld\t{Type} {Struct}::{Field}";
+        return FormattedIndex() + $"ldfld\t{Type} {Struct}::{Field}";
     }
 }
 
@@ -435,7 +460,7 @@ public class LoadByIndexCommand : BaseCommand
     // ..., arr, index -> ..., value
     public string Type { get; }
     
-    public LoadByIndexCommand(TypeNode typeNode)
+    public LoadByIndexCommand(TypeNode typeNode, int index) : base(index) 
     {
         Type = fromTypeNode(typeNode);
     }
@@ -446,6 +471,6 @@ public class LoadByIndexCommand : BaseCommand
     }
     public override string Translate()
     {
-        return $"ldelema\t{Type}";
+        return FormattedIndex() + $"ldelema\t{Type}";
     }
 }
