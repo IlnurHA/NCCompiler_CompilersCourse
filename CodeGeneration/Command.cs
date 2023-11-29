@@ -78,35 +78,35 @@ public class JumpIfFalse : JumpCommand
 
 public abstract class LocalVarCommand : BaseCommand
 {
-    public int Index { get; set; }
+    public string Name { get; set; }
 
-    public LocalVarCommand(int index, int commandIndex) : base(commandIndex)
+    public LocalVarCommand(string name, int commandIndex) : base(commandIndex)
     {
-        Index = index;
+        Name = name;
     }
 }
 
 public class LoadLocalCommand : LocalVarCommand
 {
-    public LoadLocalCommand(int index, int commandIndex) : base(index, commandIndex)
+    public LoadLocalCommand(string name, int commandIndex) : base(name, commandIndex)
     {
     }
 
     public override string Translate()
     {
-        return FormattedIndex() + $"ldloc.{Index}";
+        return FormattedIndex() + $"ldloc.s\t'{Name}'";
     }
 }
 
 public class SetLocalCommand : LocalVarCommand
 {
-    public SetLocalCommand(int index, int commandIndex) : base(index, commandIndex)
+    public SetLocalCommand(string name, int commandIndex) : base(name, commandIndex)
     {
     }
 
     public override string Translate()
     {
-        return FormattedIndex() + $"stloc.{Index}";
+        return FormattedIndex() + $"stloc.s\t'{Name}'";
     }
 }
 
@@ -138,7 +138,7 @@ public class LoadLocalAddressToStackCommand : BaseCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + "ldloca.s" + '\t' + VarName;
+        return FormattedIndex() + "ldloca.s" + '\t' + $"'{VarName}'";
     }
 }
 public class SetFieldCommand : BaseCommand

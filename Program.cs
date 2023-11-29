@@ -40,6 +40,7 @@ class Program
                 rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
                 var programStr = codeGenVisit.ResultingProgram;
                 File.WriteAllText("compiledProgram.il", programStr);
+                Console.WriteLine("Code generated");
             }
         }
     }
