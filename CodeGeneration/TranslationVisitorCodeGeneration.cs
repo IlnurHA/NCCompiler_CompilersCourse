@@ -4,9 +4,9 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 {
-    private CodeGenerationScopeStack ScopeStack { get; } = new();
+    private CodeGenerationScopeStack ScopeStack { get; } = new ();
     private List<string> _routinesCode = new();
-
+    
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
         throw new NotImplementedException();
@@ -425,9 +425,105 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new PrimitiveCastCommand(castNode.Type, commands.Count));
     }
 
+    private string _getTypeFromTypeNode(TypeNode typeNode)
+    {
+        return typeNode switch
+        {
+            StructTypeNode structTypeNode => ScopeStack.GetByStructType(structTypeNode)!.GetName(),
+            ArrayTypeNode arrayTypeNode => _getTypeFromTypeNode(arrayTypeNode.ElementTypeNode) + "[]",
+            { } node => node.MyType switch
+            {
+                MyType.Integer => "int32",
+                MyType.Boolean => "bool",
+                MyType.Real => "r4",
+                MyType.Undefined => "void",
+                _ => throw new Exception($"Cannot convert type node: {node}")
+            },
+            null => "void"
+        };
+    }
+
+    private string _getTypeWithInstance(TypeNode? typeNode)
+    {
+        var typeStr = _getTypeFromTypeNode(typeNode ?? new TypeNode());
+        if (typeStr != "void") typeStr = "instance " + typeStr;
+        return typeStr;
+    }
     public void VisitRoutineDeclarationNode(RoutineDeclarationNode routineDeclarationNode, Queue<BaseCommand> commands)
     {
+        var typeStr = _getTypeWithInstance(routineDeclarationNode.ReturnType);
+        var routineName = routineDeclarationNode.FunctionName.Name;
+        var isMain = routineName == "main";
         
+        string routineCode = "";
+        routineCode += $".method public hidebysig {typeStr} {routineName}";
+        
+        ScopeStack.CreateNewScope(SemanticsScope.ScopeContext.Routine);
+        
+        if (routineDeclarationNode.Parameters != null)
+            routineDeclarationNode.Parameters.Accept(this, commands);
+
+
+        var lastScope = ScopeStack.GetLastScope();
+        
+        // Format function arguments
+        routineCode += '(';
+        var counter = 0;
+        var len = lastScope.Arguments.Count;
+        foreach (var (name, codeGenerationVariable) in lastScope.Arguments)
+        {
+            routineCode += _getTypeFromTypeNode(codeGenerationVariable.Type) + ' ' + name;
+            if (counter < len - 1) routineCode += ", ";
+            counter++;
+        }
+        routineCode += ')';
+        
+        // Cil managed
+        routineCode += " cil managed";
+        
+        routineDeclarationNode.Body.Accept(this, commands);
+        
+        // function data
+        routineCode += "{";
+        
+        // entry point
+        if (isMain) routineCode += ".entrypoint\n";
+        
+        // MaxStack
+        int maxStack = 50;
+        
+        routineCode += $".maxstack {maxStack}\n";
+        
+        // locals
+        routineCode += ".locals init (";
+
+        var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count); 
+        
+        foreach (var codeGenerationVariable in lastScope.LocalVariables.Values)
+        {
+            sortedLocals[codeGenerationVariable.Id] = codeGenerationVariable;
+        }
+        
+        len = lastScope.LocalVariables.Count;
+
+        for (int i = 0; i < len; i++)
+        {
+            var local = sortedLocals[i];
+            routineCode += $"[{local.Id}] {_getTypeWithInstance(local.Type)} '{local.GetName()}'";
+            if (i < len - 1) routineCode += ", ";
+        }
+
+        routineCode += ")\n";
+        
+        // Consume body
+        foreach (var command in commands)
+        {
+            routineCode += command.Translate() + '\n';
+        }
+
+        routineCode += "}\n";
+        
+        _routinesCode.Add(routineCode);
     }
 
     public void VisitParametersNode(ParametersNode parametersNode, Queue<BaseCommand> commands)

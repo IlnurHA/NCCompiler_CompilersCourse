@@ -7,8 +7,32 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 public class CodeGenerationScopeStack
 {
     private readonly string _hash;
-    private List<CodeGenerationScope> Scopes { get; set; } = new ();
+    
+    public CodeGenerationScope GetLastScope()
+    {
+        return Scopes[^1];
+    }
+    private List<CodeGenerationScope> Scopes { get; set; } = new (){new CodeGenerationScope("global")};
 
+    public CodeGenerationVariable? GetByStructType(StructTypeNode structTypeNode)
+    {
+        for (int i = Scopes.Count - 1; i >= 0; i++)
+        {
+            var scope = Scopes[i];
+            foreach (var (_, codeGenerationVariable) in scope.Arguments)
+            {
+                if (codeGenerationVariable.Type.IsTheSame(structTypeNode)) return codeGenerationVariable;
+            }
+            
+            foreach (var (_, codeGenerationVariable) in scope.LocalVariables)
+            {
+                if (codeGenerationVariable.Type.IsTheSame(structTypeNode)) return codeGenerationVariable;
+            }
+        }
+
+        return null;
+    }
+    
     public CodeGenerationScopeStack()
     {
         _hash = Guid.NewGuid().ToString()[..8];

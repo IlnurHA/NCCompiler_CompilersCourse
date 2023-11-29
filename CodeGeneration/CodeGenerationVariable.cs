@@ -6,14 +6,14 @@ public class CodeGenerationVariable
 {
     private readonly string _name;
     public int Id { get; }
-    private string _type;
+    public TypeNode Type { get; }
     public bool IsArgument { get; }
 
     public CodeGenerationVariable(string name, TypeNode typeNode, int id)
     {
         _name = name;
         Id = id;
-        _type = NodeToType(typeNode);
+        Type = typeNode;
     }
     
     private static string MyTypeToType(MyType myType)

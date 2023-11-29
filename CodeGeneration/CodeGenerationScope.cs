@@ -4,8 +4,8 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class CodeGenerationScope
 {
-    private Dictionary<string, CodeGenerationVariable> Arguments { get; set; } = new();
-    private Dictionary<string, CodeGenerationVariable> LocalVariables { get; } = new();
+    public Dictionary<string, CodeGenerationVariable> Arguments { get; set; } = new();
+    public Dictionary<string, CodeGenerationVariable> LocalVariables { get; } = new();
     private readonly string _hash;
 
     private int _lastLocalId;
