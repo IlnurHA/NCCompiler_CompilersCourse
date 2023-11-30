@@ -461,30 +461,38 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // Not array
         // ..., address -> ..., address, value
-        var value = ((ValueNode)assignmentNode.Variable.Value!);
 
         switch (assignmentNode.Variable)
         {
             case GetFieldNode getFieldNode:
+                // Getting object from field of struct
                 getFieldNode.Accept(this, commands);
-                value.Accept(this, commands);
-                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), getFieldNode.StructVarNode.Name!,
+                
+                // Pushing value to top of stack
+                var valueField = (ValueNode) getFieldNode.Value!;
+                valueField.Accept(this, commands);
+                
+                // Setting to field command
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(valueField.Type), getFieldNode.StructVarNode.Name!,
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
+                // Loading value (from array) to top of the stack
                 getByIndexNode.Accept(this, commands);
-
-                // Loaded index to stack
-                getByIndexNode.Index.Accept(this, commands);
-
-                // loaded value to assign to stack
-                value.Accept(this, commands);
+                
+                // Value to assign to top of stack
+                var valueIndex = (ValueNode) getByIndexNode.Value!;
+                valueIndex.Accept(this, commands);
 
                 // Setting element by index
                 commands.Enqueue(new SetElementByIndex(commands.Count));
                 break;
             case VarNode varNode:
+                // Pushing to value to stack
+                var value = (ValueNode) varNode.Value!;
                 value.Accept(this, commands);
+                
+                // Getting name to set value
                 var name = varNode.Name!;
                 var isArgument = false;
                 var codeGenVar = ScopeStack.GetVariable(name);
@@ -495,6 +503,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 }
 
                 if (codeGenVar is null) throw new Exception("Cannot assign to undeclared variable");
+                
+                // Setting value to variable
                 if (isArgument) commands.Enqueue(new SetArgumentByNameCommand(codeGenVar.GetName(), commands.Count));
                 else commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
                 break;
