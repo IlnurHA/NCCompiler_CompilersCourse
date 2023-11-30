@@ -303,52 +303,76 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<BaseCommand> commands)
     {
+        // new identifier for element from array
         string identifier = forEachLoopNode.IdName.Name!;
+        
+        // type of identifier
         var type = forEachLoopNode.Array.Type.ElementTypeNode;
+        
+        ScopeStack.AddVariableInLastScope(identifier, type);
+        var identifierVar = ScopeStack.GetVariable(identifier)!;
+        
+        // counter for array
         var counter = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
         var counterVar = ScopeStack.GetVariable(counter)!;
+        
         commands.Enqueue(new LoadConstantCommand(0, commands.Count));
         commands.Enqueue(new SetLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
-        var size = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(myType: MyType.Integer));
-        var sizeVar = ScopeStack.GetVariable(size)!;
-        forEachLoopNode.Array.Type.Size!.Accept(this, commands);
-        commands.Enqueue(new SetLocalCommand(sizeVar.Id, sizeVar.GetName(), commands.Count));
-        ScopeStack.AddVariableInLastScope(identifier, type);
-        
-        var identifierVar = ScopeStack.GetVariable(identifier)!;
+
         string array = ScopeStack.AddSpecialVariableInLastScope(forEachLoopNode.Array.Type);
         var arrayVar = ScopeStack.GetVariable(array)!;
         forEachLoopNode.Array.Accept(this, commands);
         commands.Enqueue(new SetLocalCommand(arrayVar.Id, arrayVar.GetName(), commands.Count));
-        int jumpBeforeAddress = commands.Count;
+
+        // Size of array
+        var size = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
+        var sizeVar = ScopeStack.GetVariable(size)!;
+
+        // Loading array from local command, Getting length of array, Setting size to identifier
+        commands.Enqueue(new LoadLocalCommand(arrayVar.Id, arrayVar.GetName(), commands.Count));
+        commands.Enqueue(new ArrayLength(commands.Count));
+        commands.Enqueue(new SetLocalCommand(sizeVar.Id, sizeVar.GetName(), commands.Count));
+
         
+        var comparisonAddress = commands.Count;
+        // Comparison to exit from loop
         commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadLocalCommand(sizeVar.Id, sizeVar.GetName(), commands.Count));
         commands.Enqueue(new OperationCommand(OperationType.Lt, commands.Count));
-        var jumperAfter = new JumpIfFalse(commands.Count);
+        
+        // Jump to exit loop
+        var jumperAfter = new JumpIfFalse(-1);
         commands.Enqueue(jumperAfter);
+
+        // Loading element from array and setting it to identifier
         commands.Enqueue(new LoadLocalCommand(arrayVar.Id, arrayVar.GetName(), commands.Count));
         commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(type), commands.Count));
         commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
-        var beforeBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
+        
+        // body commands
         forEachLoopNode.Body.Accept(this, commands);
+        
         var afterBodyAddress = commands.Count;
+        
+        // setting addresses for breaks inside for-loop
         var commandsList = commands.ToArray();
-        for (int i = beforeBodyAddress; i < afterBodyAddress; ++i)
+        for (int i = comparisonAddress; i < afterBodyAddress; ++i)
         {
             if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
                 jumpForBreakCommand.SetAddress(afterBodyAddress);
         }
+        
+        // Increment counter by 1
         commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
         commands.Enqueue(new OperationCommand(OperationType.Plus, commands.Count));
         commands.Enqueue(new SetLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         
-        commands.Enqueue(new JumpCommand (commands.Count) { Address = jumpBeforeAddress });
-        var jumpAfterAddress = commands.Count;
-        jumperAfter.SetAddress(jumpAfterAddress);
+        // Jump to comparison
+        commands.Enqueue(new JumpCommand (commands.Count) { Address = comparisonAddress });
+        jumperAfter.SetAddress(commands.Count);
         commands.Enqueue(new NopCommand(commands.Count));
     }
 
