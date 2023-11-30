@@ -85,8 +85,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
     {
+        // ... -> ..., array
+        // pushing array to stack
         getByIndexNode.ArrayVarNode.Accept(this, commands);
+        
+        // ..., array -> ..., array, index
         getByIndexNode.Index.Accept(this, commands);
+        
+        // ..., array, index -> ..., value
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
 
@@ -715,7 +721,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // loads address to the top of the stack
 
         var nameOfTemp = ScopeStack.AddSpecialVariableInLastScope(arrayConst.Type);
-
         var specialVariable = ScopeStack.GetVariable(nameOfTemp)!;
 
         // create new array
