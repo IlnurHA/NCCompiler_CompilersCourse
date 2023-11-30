@@ -90,9 +90,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         getByIndexNode.ArrayVarNode.Accept(this, commands);
         
         // ..., array -> ..., array, index
+        // pushing index to stack
         getByIndexNode.Index.Accept(this, commands);
         
         // ..., array, index -> ..., value
+        // Getting from array and index then push value to stack 
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
 
