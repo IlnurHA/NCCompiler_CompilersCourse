@@ -303,6 +303,7 @@ public class ReturnNode : StatementNode
 public class DeclarationNode : StatementNode
 {
     public VarNode Variable { get; set; }
+    public ValueNode DeclarationValue { get; set; }
 
     public static VarNode GetAppropriateVarNode(PrimitiveVarNode primitiveVarNode, TypeNode type, ValueNode? value)
     {
@@ -340,6 +341,7 @@ public class FullVariableDeclaration : DeclarationNode
     public FullVariableDeclaration(PrimitiveVarNode primitiveVarNode, TypeNode type, ValueNode value)
     {
         Variable = GetAppropriateVarNode(primitiveVarNode, type, value);
+        DeclarationValue = value;
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
@@ -366,6 +368,7 @@ public class ValueVariableDeclaration : DeclarationNode
     public ValueVariableDeclaration(PrimitiveVarNode primitiveVarNode, ValueNode value)
     {
         Variable = GetAppropriateVarNode(primitiveVarNode, value.Type, value);
+        DeclarationValue = value;
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
@@ -387,11 +390,13 @@ public class TypeDeclarationNode : StatementNode
 public class AssignmentNode : StatementNode
 {
     public ValueNode Variable { get; set; }
+    public ValueNode AssignmentValue { get; }
 
     public AssignmentNode(ValueNode varNode, ValueNode value)
     {
         Variable = varNode;
         Variable.Value = value;
+        AssignmentValue = value;
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
@@ -763,7 +768,7 @@ public class RangeNode : SymbolicNode
     {
         LeftBound = leftBound;
         RightBound = rightBound;
-        Reversed = true;
+        Reversed = reversed;
     }
 
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
