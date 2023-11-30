@@ -114,7 +114,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var codeGenVar = ScopeStack.GetVariable(name)!;
         
         // getting value on top of the stack
-        ((ValueNode) declarationNode.Variable.Value!).Accept(this, commands);
+        declarationNode.DeclarationValue.Accept(this, commands);
         
         // setting value to variable
         commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
@@ -271,42 +271,89 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitForLoopNode(ForLoopNode forLoopNode, Queue<BaseCommand> commands)
     {
+        // Pushing Range boundaries to top of the stack 
+        // ... -> ..., rightBoundary, leftBoundary
         RangeNode range = forLoopNode.Range;
         range.Accept(this, commands);
-        string from = forLoopNode.IdName.Name!;
-        string to = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(myType: MyType.Integer));
+        
+        // Loading range boundaries to variables
+        string from = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
+        string to = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
+        
         if (range.Reversed) (from, to) = (to, from);
         var fromVar = ScopeStack.GetVariable(from)!;
-        ScopeStack.AddVariableInLastScope(from, new TypeNode(myType: MyType.Integer));
-        commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
         var toVar = ScopeStack.GetVariable(to)!;
+        
+        // Adding identifier to local scope
+        var identifier = forLoopNode.IdName.Name!; 
+        ScopeStack.AddVariableInLastScope(identifier, new TypeNode( MyType.Integer));
+        var identifierVar = ScopeStack.GetVariable(identifier)!;
+        
+        // Setting left and right boundaries
+        commands.Enqueue(new SetLocalCommand(fromVar.Id, toVar.GetName(), commands.Count));
         commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
+
+
+        // Adjusting values of boundaries to be intervals [from, to) or (if reverse) [to - 1, from - 1)
+
+        if (range.Reversed)
+        {
+            foreach (var toAdjust in new[] {fromVar, toVar})
+            {
+                commands.Enqueue(new LoadLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
+                commands.Enqueue(new LoadConstantCommand(1, commands.Count));
+                commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
+                commands.Enqueue(new SetLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
+            }
+        }
+        // Jump to condition
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
+        
+        // initializing identifier
+        commands.Enqueue(new LoadLocalCommand(fromVar.Id, toVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
+        
         int startBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
+        
+        // Body commands
         forLoopNode.Body.Accept(this, commands);
-        int endBodyAddress = commands.Count() + 3;
+        
+        // Address to jump depending on condition
+        int endBodyAddress = commands.Count;
+        commands.Enqueue(new NopCommand(commands.Count));
         conditionJumper.SetAddress(endBodyAddress);
-        var commandsList = commands.ToArray();
-        for (int i = startBodyAddress; i < endBodyAddress - 3; ++i)
-        {
-            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
-                jumpForBreakCommand.SetAddress(endBodyAddress);
-        }
 
-        commands.Enqueue(new LoadLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
+        // Updating identifier
+        commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
         commands.Enqueue(range.Reversed
             ? new OperationCommand(OperationType.Minus, commands.Count)
             : new OperationCommand(OperationType.Plus, commands.Count));
+        commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
+        
+        // Checking condition
+        commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         commands.Enqueue(new LoadLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
         commands.Enqueue(range.Reversed
             ? new OperationCommand(OperationType.Gt, commands.Count)
             : new OperationCommand(OperationType.Lt, commands.Count));
+
+        // Jump if true
         var beginJumper = new JumpIfTrue(commands.Count);
         beginJumper.SetAddress(startBodyAddress);
         commands.Enqueue(beginJumper);
+
+        // Updating jump addresses for breaks
+        var toExitLoopIndex = commands.Count;
+        var commandsList = commands.ToArray();
+        for (int i = startBodyAddress; i < endBodyAddress - 3; ++i)
+        {
+            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
+                jumpForBreakCommand.SetAddress(toExitLoopIndex);
+        }
+        commands.Enqueue(new NopCommand(commands.Count));
     }
 
     public void VisitForEachLoopNode(ForEachLoopNode forEachLoopNode, Queue<BaseCommand> commands)
@@ -349,7 +396,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new OperationCommand(OperationType.Lt, commands.Count));
         
         // Jump to exit loop
-        var jumperAfter = new JumpIfFalse(-1);
+        var jumperAfter = new JumpIfFalse(commands.Count);
         commands.Enqueue(jumperAfter);
 
         // Loading element from array and setting it to identifier
@@ -363,15 +410,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         forEachLoopNode.Body.Accept(this, commands);
         
         var afterBodyAddress = commands.Count;
-        
-        // setting addresses for breaks inside for-loop
-        var commandsList = commands.ToArray();
-        for (int i = comparisonAddress; i < afterBodyAddress; ++i)
-        {
-            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
-                jumpForBreakCommand.SetAddress(afterBodyAddress);
-        }
-        
+
         // Increment counter by 1
         commands.Enqueue(new LoadLocalCommand(counterVar.Id, counterVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
@@ -383,6 +422,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         
         // Jump to the end of for loop
         jumperAfter.SetAddress(commands.Count);
+        
+        // setting addresses for breaks inside for-loop
+        var commandsList = commands.ToArray();
+        for (int i = comparisonAddress; i < afterBodyAddress; ++i)
+        {
+            if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
+                jumpForBreakCommand.SetAddress(jumperAfter.Address);
+        }
+        
         commands.Enqueue(new NopCommand(commands.Count));
     }
 
@@ -462,6 +510,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Not array
         // ..., address -> ..., address, value
 
+        var value = assignmentNode.AssignmentValue;
+
         switch (assignmentNode.Variable)
         {
             case GetFieldNode getFieldNode:
@@ -469,11 +519,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 getFieldNode.Accept(this, commands);
                 
                 // Pushing value to top of stack
-                var valueField = (ValueNode) getFieldNode.Value!;
-                valueField.Accept(this, commands);
+                value.Accept(this, commands);
                 
                 // Setting to field command
-                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(valueField.Type), getFieldNode.StructVarNode.Name!,
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), getFieldNode.StructVarNode.Name!,
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
@@ -481,15 +530,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 getByIndexNode.Accept(this, commands);
                 
                 // Value to assign to top of stack
-                var valueIndex = (ValueNode) getByIndexNode.Value!;
-                valueIndex.Accept(this, commands);
+                value.Accept(this, commands);
 
                 // Setting element by index
                 commands.Enqueue(new SetElementByIndex(commands.Count));
                 break;
             case VarNode varNode:
                 // Pushing to value to stack
-                var value = (ValueNode) varNode.Value!;
                 value.Accept(this, commands);
                 
                 // Getting name to set value

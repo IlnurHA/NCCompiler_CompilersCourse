@@ -447,7 +447,7 @@ public class LoadByIndexCommand : BaseCommand
     }
     public override string Translate()
     {
-        return FormattedIndex() + $"ldelema\t{Type}";
+        return FormattedIndex() + "ldelem.i4";
     }
 }
 
