@@ -372,6 +372,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         
         // Jump to comparison
         commands.Enqueue(new JumpCommand (commands.Count) { Address = comparisonAddress });
+        
+        // Jump to the end of for loop
         jumperAfter.SetAddress(commands.Count);
         commands.Enqueue(new NopCommand(commands.Count));
     }
