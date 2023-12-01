@@ -1,4 +1,5 @@
-﻿using NCCompiler_CompilersCourse.Semantics;
+﻿using System.Globalization;
+using NCCompiler_CompilersCourse.Semantics;
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
 
@@ -208,9 +209,15 @@ public class LoadConstantCommand : BaseCommand
     {
         var type = "i4";
 
-        if (Value is float or double) type = "r4";
+        var valueToShow = Value;
+
+        if (Value is float or double)
+        {
+            type = "r4";
+            valueToShow = ((double) valueToShow).ToString(new CultureInfo("en-US").NumberFormat);
+        }
         
-        return FormattedIndex() + $"ldc.{type}\t{Value}";
+        return FormattedIndex() + $"ldc.{type}\t{valueToShow}";
     }
 }
 
