@@ -444,24 +444,39 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitWhileLoopNode(WhileLoopNode whileLoopNode, Queue<BaseCommand> commands)
     {
+        // Jump to condition
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
+        
+        // Start body address
         int startBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
+        
+        // Body commands
         whileLoopNode.Body.Accept(this, commands);
+        
+        // End body address
         int endBodyAddress = commands.Count;
         conditionJumper.SetAddress(endBodyAddress);
+
+        // Condition commands
+        whileLoopNode.Condition.Accept(this, commands);
+        
+        // Jump to body
+        var beginJumper = new JumpIfTrue(commands.Count);
+        beginJumper.SetAddress(startBodyAddress);
+        commands.Enqueue(beginJumper);
+        
+        // Jump after body
+        var exitAddress = commands.Count;
+        commands.Enqueue(new NopCommand(exitAddress));
+
         var commandsList = commands.ToArray();
         for (int i = startBodyAddress; i < endBodyAddress; ++i)
         {
             if (commandsList[i] is JumpForBreakCommand { Address: -1 } jumpForBreakCommand)
-                jumpForBreakCommand.SetAddress(endBodyAddress);
+                jumpForBreakCommand.SetAddress(exitAddress);
         }
-
-        whileLoopNode.Condition.Accept(this, commands);
-        var beginJumper = new JumpIfTrue(commands.Count);
-        beginJumper.SetAddress(startBodyAddress);
-        commands.Enqueue(beginJumper);
     }
 
     public void VisitIfStatement(IfStatement ifStatement, Queue<BaseCommand> commands)
