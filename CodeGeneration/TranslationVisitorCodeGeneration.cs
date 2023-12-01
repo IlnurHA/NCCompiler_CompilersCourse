@@ -490,8 +490,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var jump = new JumpIfFalse(commands.Count);
         commands.Enqueue(jump);
         ifStatement.Body.Accept(this, commands);
-        commands.Enqueue(new NopCommand(commands.Count));
+        
         jump.SetAddress(commands.Count);
+        commands.Enqueue(new NopCommand(commands.Count));
     }
 
     public void VisitIfElseStatement(IfElseStatement ifElseStatement, Queue<BaseCommand> commands)
@@ -510,12 +511,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         jumpToEnd.CommandIndex = commands.Count;
         commands.Enqueue(jumpToEnd);
-        commands.Enqueue(new NopCommand(commands.Count));
+        
         jumpToElse.SetAddress(commands.Count);
+        commands.Enqueue(new NopCommand(commands.Count));
 
         ifElseStatement.BodyElse.Accept(this, commands);
-        commands.Enqueue(new NopCommand(commands.Count));
         jumpToEnd.SetAddress(commands.Count);
+        commands.Enqueue(new NopCommand(commands.Count));
     }
 
     public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands)
