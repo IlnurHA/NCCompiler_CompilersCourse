@@ -92,6 +92,10 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // ..., array -> ..., array, index
         // pushing index to stack
         getByIndexNode.Index.Accept(this, commands);
+        // But we need to decrease it by one (because in our language indexes are starting from 1)
+        commands.Enqueue(new LoadConstantCommand(1, commands.Count));
+        commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
+
         
         // ..., array, index -> ..., value
         // Getting from array and index then push value to stack 
@@ -294,18 +298,19 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
 
 
-        // Adjusting values of boundaries to be intervals [from, to) or (if reverse) [to - 1, from - 1)
-
-        if (range.Reversed)
-        {
-            foreach (var toAdjust in new[] {fromVar, toVar})
-            {
-                commands.Enqueue(new LoadLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
-                commands.Enqueue(new LoadConstantCommand(1, commands.Count));
-                commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
-                commands.Enqueue(new SetLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
-            }
-        }
+        // // Adjusting values of boundaries to be intervals [from, to] or (if reverse) [to, from]
+        //
+        // if (range.Reversed)
+        // {
+        //     foreach (var toAdjust in new[] {fromVar, toVar})
+        //     {
+        //         commands.Enqueue(new LoadLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
+        //         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
+        //         commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
+        //         commands.Enqueue(new SetLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
+        //     }
+        // }
+        
         // Jump to condition
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
@@ -336,10 +341,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Checking condition
         commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         commands.Enqueue(new LoadLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
-        commands.Enqueue(range.Reversed
-            ? new OperationCommand(OperationType.Gt, commands.Count)
-            : new OperationCommand(OperationType.Lt, commands.Count));
-
+        foreach (var command in range.Reversed
+                     ? new OperationCommand(OperationType.Ge, commands.Count).GetOperations()
+                     : new OperationCommand(OperationType.Le, commands.Count).GetOperations())
+        {
+            commands.Enqueue(command);
+        }
+        
         // Jump if true
         var beginJumper = new JumpIfTrue(commands.Count);
         beginJumper.SetAddress(startBodyAddress);
