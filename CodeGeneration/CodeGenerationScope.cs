@@ -9,7 +9,7 @@ public class CodeGenerationScope
     private readonly string _hash;
 
     private int _lastLocalId;
-    private int _lastArgumentId = 1;
+    private int _lastArgumentId;
     private int _specialCounter;
 
     public CodeGenerationScope(string hash)

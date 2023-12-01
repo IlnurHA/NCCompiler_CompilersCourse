@@ -299,7 +299,7 @@ public class SetElementByIndex : BaseCommand
 
 public class LoadFunctionArgument : BaseCommand
 {
-    public int Index = 1;
+    public int Index;
 
     public LoadFunctionArgument(int index, int commandIndex) : base(commandIndex)
     {
