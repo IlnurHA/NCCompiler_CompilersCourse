@@ -914,7 +914,11 @@ class EvalVisitor : IVisitor
 
                 return new OperationNode(operationType, new List<ValueNode> {operand}, resultType);
             case NodeTag.ArrayConst:
-                var expressions = (ExpressionsNode) node.Children[0]!.Accept(this);
+                var expressionsBuffer = node.Children[0]!.Accept(this);
+
+                var expressions = expressionsBuffer is ExpressionsNode buffer
+                    ? buffer
+                    : new ExpressionsNode(new List<ValueNode> {(ValueNode) expressionsBuffer});
 
                 var typeExpr = expressions.Expressions.Count == 0 ? new TypeNode() : expressions.Expressions[0].Type;
                 var realType = new TypeNode(MyType.Real);
