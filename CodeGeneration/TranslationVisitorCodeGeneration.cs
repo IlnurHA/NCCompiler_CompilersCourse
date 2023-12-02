@@ -1,4 +1,5 @@
-﻿using NCCompiler_CompilersCourse.Semantics;
+﻿using System.Diagnostics;
+using NCCompiler_CompilersCourse.Semantics;
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
 
@@ -112,6 +113,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     private void _handleDeclaration(DeclarationNode declarationNode, Queue<BaseCommand> commands)
     {
+        if (declarationNode.Variable.Type is StructTypeNode) declarationNode.Variable.Type.Accept(this, commands);
         var (name, _) = _createNewVar(declarationNode.Variable, declarationNode.Variable.Type);
 
         if (declarationNode is TypeVariableDeclaration) return;
@@ -288,6 +290,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         string to = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
 
         if (range.Reversed) (from, to) = (to, from);
+
         var fromVar = ScopeStack.GetVariable(from)!;
         var toVar = ScopeStack.GetVariable(to)!;
 
@@ -297,31 +300,17 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var identifierVar = ScopeStack.GetVariable(identifier)!;
 
         // Setting left and right boundaries
-        commands.Enqueue(new SetLocalCommand(fromVar.Id, toVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
         commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
 
-
-        // // Adjusting values of boundaries to be intervals [from, to] or (if reverse) [to, from]
-        //
-        // if (range.Reversed)
-        // {
-        //     foreach (var toAdjust in new[] {fromVar, toVar})
-        //     {
-        //         commands.Enqueue(new LoadLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
-        //         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
-        //         commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
-        //         commands.Enqueue(new SetLocalCommand(toAdjust.Id, toAdjust.GetName(), commands.Count));
-        //     }
-        // }
+        // initializing identifier
+        commands.Enqueue(new LoadLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
+        commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
 
         // Jump to condition
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
-
-        // initializing identifier
-        commands.Enqueue(new LoadLocalCommand(fromVar.Id, toVar.GetName(), commands.Count));
-        commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
-
+        
         int startBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
 
@@ -330,9 +319,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // Address to jump depending on condition
         int endBodyAddress = commands.Count;
-        commands.Enqueue(new NopCommand(commands.Count));
-        conditionJumper.SetAddress(endBodyAddress);
-
+        commands.Enqueue(new NopCommand(commands.Count)); // End of body
+        
         // Updating identifier
         commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
@@ -340,6 +328,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             ? new OperationCommand(OperationType.Minus, commands.Count)
             : new OperationCommand(OperationType.Plus, commands.Count));
         commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
+
+        conditionJumper.SetAddress(commands.Count);
+        commands.Enqueue(new NopCommand(commands.Count));
 
         // Checking condition
         commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
@@ -597,19 +588,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands)
     {
         if (ScopeStack.GetByStructType(structTypeNode) is not null) return;
-        var structName = "STRUCT_TYPE_" + ScopeStack.GetStructCounter();
+        var structCounter = ScopeStack.GetStructCounter();
+        var structName = "STRUCT_TYPE_" + structCounter;
 
-        ScopeStack.GetGlobalScope().AddVariable(structName, structTypeNode);
+        ScopeStack.GetGlobalScope().AddStruct(structName, structTypeNode, structCounter);
 
         var structDeclaration =
-            $".class nested sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
+            $".class nested public sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
 
         // fields
         structDeclaration += "{\n";
 
         foreach (var (name, type) in structTypeNode.StructFields)
         {
-            structDeclaration += $".field {_getTypeFromTypeNode(type)} {name}\n";
+            structDeclaration += $"\t.field {_getTypeFromTypeNode(type)} {name}\n";
         }
 
         structDeclaration += "}\n";
@@ -631,7 +623,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         return typeNode switch
         {
-            StructTypeNode structTypeNode => ScopeStack.GetByStructType(structTypeNode)!.GetName(),
+            StructTypeNode structTypeNode => $"valuetype Program/{ScopeStack.GetByStructType(structTypeNode)!.GetName()}",
             ArrayTypeNode arrayTypeNode => _getTypeFromTypeNode(arrayTypeNode.ElementTypeNode) + "[]",
             { } node => node.MyType switch
             {
@@ -719,6 +711,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             for (int i = 0; i < len; i++)
             {
                 var local = sortedLocals[i];
+
                 routineCode += $"[{local.Id}] {_getTypeFromTypeNode(local.Type)} '{local.GetName()}'";
                 if (i < len - 1) routineCode += ",\n";
             }
@@ -731,8 +724,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         {
             routineCode += command.Translate() + '\n';
         }
-
-        if (commands.Last() is not ReturnCommand)
+        if (commands.Count == 0 || commands.Last() is not ReturnCommand)
             routineCode += new ReturnCommand(commands.Count).Translate() + '\n';
 
         routineCode += "}\n";

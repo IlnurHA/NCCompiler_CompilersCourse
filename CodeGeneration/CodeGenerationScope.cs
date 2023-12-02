@@ -4,6 +4,7 @@ namespace NCCompiler_CompilersCourse.CodeGeneration;
 
 public class CodeGenerationScope
 {
+    public Dictionary<string, CodeGenerationVariable> Structs { get; } = new();
     public Dictionary<string, CodeGenerationVariable> Arguments { get; set; } = new();
     public Dictionary<string, CodeGenerationVariable> LocalVariables { get; } = new();
     private readonly string _hash;
@@ -32,6 +33,11 @@ public class CodeGenerationScope
     {
         AddAny(Arguments, name, type, _lastArgumentId);
         _lastArgumentId += 1;
+    }
+
+    public void AddStruct(string name, TypeNode type, int structCounter)
+    {
+        AddAny(Structs, name, type, structCounter);
     }
 
     public void AddVariable(string name, TypeNode type)
