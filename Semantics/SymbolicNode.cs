@@ -83,7 +83,7 @@ public class TypeNode : SymbolicNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
-        throw new UnreachableException();
+        visitor.VisitTypeNode(this, queue);
     }
 }
 

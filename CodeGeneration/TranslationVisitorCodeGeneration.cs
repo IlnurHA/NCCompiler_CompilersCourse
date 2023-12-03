@@ -584,7 +584,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitArrayTypeNode(ArrayTypeNode arrayTypeNode, Queue<BaseCommand> commands)
     {
-        throw new NotImplementedException();
+        arrayTypeNode.ElementTypeNode.Accept(this, commands);
+    }
+
+    public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
+    {
+        
     }
 
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands)

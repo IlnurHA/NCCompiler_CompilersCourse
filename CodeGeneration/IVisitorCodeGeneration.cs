@@ -35,6 +35,8 @@ public interface IVisitorCodeGeneration
     public void VisitBodyNode(BodyNode bodyNode, Queue<BaseCommand> commands);
     public void VisitAssignmentNode(AssignmentNode assignmentNode, Queue<BaseCommand> commands);
     public void VisitArrayTypeNode(ArrayTypeNode arrayTypeNode, Queue<BaseCommand> commands);
+
+    public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands);
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands);
     public void VisitCastNode(CastNode castNode, Queue<BaseCommand> commands);
 
