@@ -452,7 +452,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // End body address
         int endBodyAddress = commands.Count;
+        
         conditionJumper.SetAddress(endBodyAddress);
+        commands.Enqueue(new NopCommand(commands.Count));
 
         // Condition commands
         whileLoopNode.Condition.Accept(this, commands);
