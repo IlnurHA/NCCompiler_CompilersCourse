@@ -7,7 +7,6 @@ public class CodeGenerationVariable
     private readonly string _name;
     public int Id { get; }
     public TypeNode Type { get; }
-    public bool IsArgument { get; }
 
     public CodeGenerationVariable(string name, TypeNode typeNode, int id)
     {

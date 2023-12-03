@@ -116,14 +116,42 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         if (declarationNode.Variable.Type is StructTypeNode) declarationNode.Variable.Type.Accept(this, commands);
         var (name, _) = _createNewVar(declarationNode.Variable, declarationNode.Variable.Type);
-
-        if (declarationNode is TypeVariableDeclaration) return;
-
         var codeGenVar = ScopeStack.GetVariable(name)!;
 
-        // getting value on top of the stack
-        declarationNode.DeclarationValue.Accept(this, commands);
+        if (declarationNode is TypeVariableDeclaration)
+        {
+            if (declarationNode.Variable.Type is StructTypeNode structType)
+            {
+                var structVar = ScopeStack.GetByStructType(structType)!;
+                
+                // Check if call constructor or initobj
+                var withDefaultValue = false;
 
+                foreach (var (_, varNode) in structType.DefaultValues)
+                {
+                    withDefaultValue = varNode.Value is not null;
+                    break;
+                }
+                
+                commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+                if (withDefaultValue)
+                    commands.Enqueue(new CallCommand($"instance void Program/{structVar.GetName()}::.ctor()", commands.Count));
+                else
+                    commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
+                
+                return;
+            }
+            if (declarationNode.Variable.Type is ArrayTypeNode arrayTypeNode)
+            {
+                arrayTypeNode.Size!.Accept(this, commands);
+                commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayTypeNode), commands.Count));
+            }
+        }
+        else
+        {
+            // getting value on top of the stack
+            declarationNode.DeclarationValue.Accept(this, commands);
+        }
         // setting value to variable
         commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using NCCompiler_CompilersCourse.Semantics;
 
 namespace NCCompiler_CompilersCourse.CodeGeneration;
@@ -102,7 +103,7 @@ public class LoadLocalCommand : LocalVarCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + $"ldloc.s\t'{Name}'";
+        return FormattedIndex() + $"ldloca.s\t'{Name}'";
     }
 }
 
@@ -199,6 +200,16 @@ public class NewObjectCommand : BaseCommand
         ObjectName = objectName;
     }
 
+    public override string Translate()
+    {
+        throw new UnreachableException();
+    }
+}
+
+public class NewStructCommand : NewObjectCommand
+{
+    public NewStructCommand(string objectName, int index) : base(objectName, index) { }
+    
     public override string Translate()
     {
         return FormattedIndex() + $"newobj\tinstance void Program/{ObjectName}::.ctor()";
