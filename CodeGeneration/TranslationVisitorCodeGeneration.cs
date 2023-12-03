@@ -615,10 +615,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Default values
         var commandCounter = 0;
         var constructorString = "";
+        
         foreach (var (key, varNode) in structTypeNode.DefaultValues)
         {
             varNode.Type.Accept(this, commands);
-
+            if (varNode.Value is null) continue;
             constructorString += "\t\t" + new LoadFunctionArgument(0, commandCounter).Translate() + "\n";
             commandCounter++;
             if (varNode.Type is StructTypeNode structType)
@@ -641,12 +642,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             constructorString += "\t\t" + new SetFieldCommand(_getTypeFromTypeNode(varNode.Type), structName, key, commandCounter).Translate() + "\n";
             commandCounter++;
         }
-        if (structDeclaration != "")
-            structDeclaration += "\t .method public hidebysig specialname rtspecialname instance void" +
-                                 " \n\t\t.ctor() cil managed \n\t{{" +
+        if (constructorString != "")
+            structDeclaration += "\n\t.method public hidebysig specialname rtspecialname instance void" +
+                                 " \n\t\t.ctor() cil managed \n\t{\n" +
                                  "\t\t.maxstack 50" +
                                  $"{constructorString}" +
-                                 "\n\t}}";
+                                 "\n\t}";
         structDeclaration += "}\n";
 
         _structDeclarations.Add(structDeclaration);
