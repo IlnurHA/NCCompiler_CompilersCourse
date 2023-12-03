@@ -9,7 +9,8 @@ public class SemanticsScope : IDisposable
         Global,
         Loop,
         Routine,
-        IfStatement
+        IfStatement,
+        RecordDeclaration
     }
 
     private Dictionary<string, (VarNode, int)> Variables { get; set; } = new();
@@ -26,6 +27,18 @@ public class SemanticsScope : IDisposable
     public bool IsFree(string name)
     {
         return !(Variables.TryGetValue(name, out _) || DefinedTypes.TryGetValue(name, out _));
+    }
+
+    public Dictionary<string, VarNode> GetVariables()
+    {
+        var newDict = new Dictionary<string, VarNode>();
+
+        foreach (var (key, (varNode, _)) in Variables)
+        {
+            newDict[key] = varNode;
+        }
+
+        return newDict;
     }
     
     public SymbolicNode? FindVariable(string name)

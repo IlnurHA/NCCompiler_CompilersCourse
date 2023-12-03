@@ -404,8 +404,12 @@ class EvalVisitor : IVisitor
                 return new ArrayTypeNode(typeWithoutSize);
 
             case NodeTag.RecordType:
+                SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.RecordDeclaration);
                 var declarations =
                     (VariableDeclarations) node.Children[0]!.Accept(this);
+                var variableScope = SemanticsScopeStack.GetLastScope();
+                SemanticsScopeStack.DeleteScope();
+
                 var fields = new Dictionary<string, TypeNode>();
 
                 foreach (var (name, varNode) in declarations.Declarations)
@@ -413,7 +417,10 @@ class EvalVisitor : IVisitor
                     fields[name] = varNode.Type;
                 }
 
-                return new StructTypeNode(fields);
+                return new StructTypeNode(fields)
+                {
+                    DefaultValues = variableScope.GetVariables()
+                };
 
             case NodeTag.Cast:
                 var typeCastBuffer = node.Children[0]!.Accept(this);

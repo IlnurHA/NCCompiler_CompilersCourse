@@ -122,6 +122,7 @@ public class ArrayTypeNode : TypeNode
 public class StructTypeNode : TypeNode
 {
     public Dictionary<string, TypeNode> StructFields { get; set; }
+    public Dictionary<string, VarNode> DefaultValues { get; set; } = new Dictionary<string, VarNode>();
 
     public StructTypeNode(Dictionary<string, TypeNode> structFields) : base(MyType.CompoundType)
     {
