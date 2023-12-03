@@ -187,6 +187,24 @@ public class InitObjectCommand : BaseCommand
     }
 }
 
+public class NewObjectCommand : BaseCommand
+{
+    // Gets arguments and calls constructor for new object
+    // Pops object address to stack
+    
+    public string ObjectName { get; }
+
+    public NewObjectCommand(string objectName, int index) : base(index)
+    {
+        ObjectName = objectName;
+    }
+
+    public override string Translate()
+    {
+        return FormattedIndex() + $"newobj\tinstance void Program/{ObjectName}::.ctor()";
+    }
+}
+
 public class NopCommand : BaseCommand
 {
     public NopCommand(int index) : base(index) {}

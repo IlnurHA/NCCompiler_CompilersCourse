@@ -603,9 +603,45 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         foreach (var (name, type) in structTypeNode.StructFields)
         {
+            type.Accept(this, commands);
             structDeclaration += $"\t.field {_getTypeFromTypeNode(type)} {name}\n";
         }
+        
+        // Default values
+        var commandCounter = 0;
+        var constructorString = "";
+        foreach (var (key, varNode) in structTypeNode.DefaultValues)
+        {
+            varNode.Type.Accept(this, commands);
 
+            constructorString += "\t\t" + new LoadFunctionArgument(0, commandCounter).Translate() + "\n";
+            commandCounter++;
+            if (varNode.Type is StructTypeNode structType)
+            {
+                var subStructVar = ScopeStack.GetByStructType(structType)!;
+                constructorString += "\t\t" + new NewObjectCommand(subStructVar.GetName(), commandCounter).Translate() + "\n";
+                commandCounter++;
+            } else
+            {
+                var tempCommand = new Queue<BaseCommand>();
+                ((ValueNode) varNode.Value!).Accept(this, tempCommand);
+                foreach (var command in tempCommand)
+                {
+                    command.CommandIndex = commandCounter;
+                    constructorString += "\t\t" + command.Translate() + "\n";
+                    commandCounter++;
+                }
+            }
+
+            constructorString += "\t\t" + new SetFieldCommand(_getTypeFromTypeNode(varNode.Type), structName, key, commandCounter).Translate() + "\n";
+            commandCounter++;
+        }
+        if (structDeclaration != "")
+            structDeclaration += "\t .method public hidebysig specialname rtspecialname instance void" +
+                                 " \n\t\t.ctor() cil managed \n\t{{" +
+                                 "\t\t.maxstack 50" +
+                                 $"{constructorString}" +
+                                 "\n\t}}";
         structDeclaration += "}\n";
 
         _structDeclarations.Add(structDeclaration);
