@@ -903,6 +903,7 @@ public class ProgramNode : SymbolicNode
 public class VariableDeclarations : SymbolicNode
 {
     public Dictionary<string, VarNode> Declarations { get; }
+    public List<DeclarationNode> DeclarationNodes { get; set; } = new List<DeclarationNode>();
 
     public VariableDeclarations(Dictionary<string, VarNode> declarations)
     {

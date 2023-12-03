@@ -166,6 +166,7 @@ class EvalVisitor : IVisitor
                     : new VariableDeclarations(new Dictionary<string, VarNode>());
                 var decl = (DeclarationNode) node.Children[1]!.Accept(this);
                 declarationsDecl.AddDeclaration(decl.Variable);
+                declarationsDecl.DeclarationNodes.Add(decl);
                 return declarationsDecl;
             case NodeTag.TypeDeclaration:
                 var typeIdentifierBuffer = node.Children[0]!.Accept(this);
@@ -411,6 +412,21 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
 
                 var fields = new Dictionary<string, TypeNode>();
+
+                // Check for default values
+                var withDefaultValues =
+                    declarations.DeclarationNodes[0] is FullVariableDeclaration or ValueVariableDeclaration;
+                foreach (var declaration in declarations.DeclarationNodes)
+                {
+                    switch (declaration)
+                    {
+                        case FullVariableDeclaration or ValueVariableDeclaration when withDefaultValues:
+                        case TypeVariableDeclaration when !withDefaultValues:
+                            continue;
+                        default:
+                            throw new Exception("All record field should be either with default value or without it");
+                    }
+                }
 
                 foreach (var (name, varNode) in declarations.Declarations)
                 {
