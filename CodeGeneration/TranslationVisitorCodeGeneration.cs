@@ -660,7 +660,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             if (varNode.Type is StructTypeNode structType)
             {
                 var subStructVar = ScopeStack.GetByStructType(structType)!;
-                constructorString += "\t\t" + new NewObjectCommand(subStructVar.GetName(), commandCounter).Translate() + "\n";
+                constructorString += "\t\t" + new NewObjectCommand($"Program/{subStructVar.GetName()}", commandCounter).Translate() + "\n";
                 commandCounter++;
             } else
             {
@@ -674,15 +674,16 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 }
             }
 
-            constructorString += "\t\t" + new SetFieldCommand(_getTypeFromTypeNode(varNode.Type), structName, key, commandCounter).Translate() + "\n";
+            constructorString += "\t\t" + new SetFieldCommand(_getTypeFromTypeNode(varNode.Type), $"Program/{structName}", key, commandCounter).Translate() + "\n";
             commandCounter++;
         }
         if (constructorString != "")
             structDeclaration += "\n\t.method public hidebysig specialname rtspecialname instance void" +
                                  " \n\t\t.ctor() cil managed \n\t{\n" +
-                                 "\t\t.maxstack 50" +
+                                 "\t\t.maxstack 50\n" +
                                  $"{constructorString}" +
-                                 "\n\t}";
+                                 $"\t\t{new ReturnCommand(commandCounter).Translate()}\n" +
+                                 "\n\t}\n";
         structDeclaration += "\t}\n";
 
         _structDeclarations.Add(structDeclaration);

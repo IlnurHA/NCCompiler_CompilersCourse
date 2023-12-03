@@ -138,6 +138,12 @@ public class StructTypeNode : TypeNode
             if (!tempObj.StructFields.ContainsKey(field.Key)) return false;
             if (!field.Value.IsTheSame(tempObj.StructFields[field.Key])) return false;
         }
+        
+        foreach (var (key, varNode) in DefaultValues)
+        {
+            if (!tempObj.DefaultValues.ContainsKey(key)) return false;
+            if (varNode.Value != tempObj.DefaultValues[key].Value) return false;
+        }
 
         return true;
     }
@@ -202,6 +208,11 @@ public class ValueNode : SymbolicNode
     {
         throw new Exception($"Trying to visit {GetType().Name} node with no accept implemented!");
     }
+
+    public virtual bool IsTheSameValue(object anotherObject)
+    {
+        throw new UnreachableException();
+    }
 }
 
 public class ConstNode : ValueNode
@@ -213,6 +224,12 @@ public class ConstNode : ValueNode
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> commands)
     {
         visitor.VisitConstNode(this, commands);
+    }
+
+    public override bool IsTheSameValue(object anotherObject)
+    {
+        if (anotherObject is not ConstNode constNode) return false;
+        return constNode.Value == Value;
     }
 }
 
