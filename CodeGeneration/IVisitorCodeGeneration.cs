@@ -8,6 +8,8 @@ public interface IVisitorCodeGeneration
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands);
     
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands);
+
+    public void VisitSetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands);
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands);
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands);
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands);

@@ -604,6 +604,11 @@ public class GetFieldNode : VarNode
     {
         visitor.VisitGetFieldNode(this, queue);
     }
+
+    public void AcceptSetField(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitSetFieldNode(this, queue);
+    }
 }
 
 public class ArrayFunctions : ValueNode

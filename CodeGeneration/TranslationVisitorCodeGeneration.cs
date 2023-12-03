@@ -86,6 +86,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             getFieldNode.FieldName, commands.Count));
     }
 
+    public void VisitSetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
+    {
+        getFieldNode.StructVarNode.Accept(this, commands);
+    }
+
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
     {
         // ... -> ..., array
@@ -567,14 +572,14 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         {
             case GetFieldNode getFieldNode:
                 // Getting object from field of struct
-                getFieldNode.Accept(this, commands);
+                getFieldNode.AcceptSetField(this, commands);
 
                 // Pushing value to top of stack
                 value.Accept(this, commands);
 
                 // Setting to field command
                 var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
-                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), "Program/" + structName.GetName(),
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), $"Program/{structName.GetName()}",
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
