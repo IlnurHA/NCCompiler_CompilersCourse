@@ -852,7 +852,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count, commands.Count));
-        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Expressions.Expressions[0].Type),
+        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Type),
             commands.Count));
         commands.Enqueue(new SetLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
 
