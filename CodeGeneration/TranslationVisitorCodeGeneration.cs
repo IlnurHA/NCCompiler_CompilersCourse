@@ -60,18 +60,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Constructor
         int maxStack = 50;
 
-        programString += ".method public hidebysig specialname rtspecialname instance void .ctor() cil managed";
-        programString += "{\n";
-        programString += $".maxstack {maxStack}\n";
+        programString += "\t.method public hidebysig specialname rtspecialname instance void .ctor() cil managed";
+        programString += " {\n";
+        programString += $"\t\t.maxstack {maxStack}\n";
 
         foreach (var command in commands)
         {
-            programString += command.Translate() + '\n';
+            programString += "\t\t" + command.Translate() + '\n';
         }
 
-        programString += new ReturnCommand(commands.Count).Translate();
+        programString += "\t\t" + new ReturnCommand(commands.Count).Translate() + "\n";
 
-        programString += "}\n";
+        programString += "\t}\n";
 
         // End of main class
         programString += "}\n";
@@ -81,7 +81,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
     {
         getFieldNode.StructVarNode.Accept(this, commands);
-        commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type), getFieldNode.StructVarNode.Name!,
+        var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
+        commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type), $"Program/{structName.GetName()}",
             getFieldNode.FieldName, commands.Count));
     }
 
@@ -544,7 +545,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 value.Accept(this, commands);
 
                 // Setting to field command
-                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), getFieldNode.StructVarNode.Name!,
+                var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), "Program/" + structName.GetName(),
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
@@ -601,7 +603,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         ScopeStack.GetGlobalScope().AddStruct(structName, structTypeNode, structCounter);
 
         var structDeclaration =
-            $".class nested public sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
+            $"\t.class nested public sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
 
         // fields
         structDeclaration += "{\n";
@@ -609,7 +611,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         foreach (var (name, type) in structTypeNode.StructFields)
         {
             type.Accept(this, commands);
-            structDeclaration += $"\t.field {_getTypeFromTypeNode(type)} {name}\n";
+            structDeclaration += $"\t\t.field {_getTypeFromTypeNode(type)} {name}\n";
         }
         
         // Default values
@@ -648,7 +650,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                                  "\t\t.maxstack 50" +
                                  $"{constructorString}" +
                                  "\n\t}";
-        structDeclaration += "}\n";
+        structDeclaration += "\t}\n";
 
         _structDeclarations.Add(structDeclaration);
     }
@@ -695,8 +697,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var isMain = routineName == "main";
 
         string routineCode = "";
-        if (isMain) routineCode += $".method public static hidebysig {typeStr} {routineName}";
-        else routineCode += $".method public static hidebysig {typeStr} {routineName}";
+        if (isMain) routineCode += $"\t.method public static hidebysig {typeStr} {routineName}";
+        else routineCode += $"\t.method public static hidebysig {typeStr} {routineName}";
 
         ScopeStack.CreateNewScope(SemanticsScope.ScopeContext.Routine);
 
@@ -707,20 +709,21 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var lastScope = ScopeStack.GetLastScope();
 
         // Format function arguments
-        routineCode += '(';
+        routineCode += "(";
         var counter = 0;
         var len = lastScope.Arguments.Count;
         foreach (var (name, codeGenerationVariable) in lastScope.Arguments)
         {
-            routineCode += _getTypeFromTypeNode(codeGenerationVariable.Type) + ' ' + name;
+            routineCode += "\n\t\t" + _getTypeFromTypeNode(codeGenerationVariable.Type) + ' ' + $"'{name}'";
             if (counter < len - 1) routineCode += ", ";
+            else routineCode += "\n\t\t";
             counter++;
         }
 
-        routineCode += ')';
+        routineCode += ")";
 
         // Cil managed
-        routineCode += " cil managed";
+        routineCode += " cil managed ";
 
         routineDeclarationNode.Body.Accept(this, commands);
 
@@ -728,17 +731,17 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         routineCode += "{\n";
 
         // entry point
-        if (isMain) routineCode += ".entrypoint\n";
+        if (isMain) routineCode += "\t\t.entrypoint\n";
 
         // MaxStack
         int maxStack = 50;
 
-        routineCode += $".maxstack {maxStack}\n";
+        routineCode += $"\t\t.maxstack {maxStack}\n";
 
         // locals
         if (lastScope.LocalVariables.Count != 0)
         {
-            routineCode += ".locals init (\n";
+            routineCode += "\t\t.locals init (\n";
 
             var sortedLocals = new List<CodeGenerationVariable>(lastScope.LocalVariables.Count);
 
@@ -756,8 +759,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             {
                 var local = sortedLocals[i];
 
-                routineCode += $"[{local.Id}] {_getTypeFromTypeNode(local.Type)} '{local.GetName()}'";
+                routineCode += $"\t\t\t[{local.Id}] {_getTypeFromTypeNode(local.Type)} '{local.GetName()}'";
                 if (i < len - 1) routineCode += ",\n";
+                else routineCode += "\n\t\t";
             }
 
             routineCode += ")\n";
@@ -766,12 +770,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Consume body
         foreach (var command in commands)
         {
-            routineCode += command.Translate() + '\n';
+            routineCode += "\t\t" + command.Translate() + '\n';
         }
         if (commands.Count == 0 || commands.Last() is not ReturnCommand)
-            routineCode += new ReturnCommand(commands.Count).Translate() + '\n';
+            routineCode += "\t\t" + new ReturnCommand(commands.Count).Translate() + '\n';
 
-        routineCode += "}\n";
+        routineCode += "\t}\n";
 
         ScopeStack.DeleteLastScope();
 
