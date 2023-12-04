@@ -18,17 +18,18 @@ class Program
             // Console.WriteLine(contents);
             Lexer.Lexer lexer = new Lexer.Lexer(contents);
         
-            foreach (var token in lexer.GetTokens())
-            {
-                Console.WriteLine(
-                    $"Token: {token.Type}, Lexeme: {token.Lexeme}, Value: {token.Value}, Span: {token.Span}"
-                );
-            }
+            // foreach (var token in lexer.GetTokens())
+            // {
+            //     Console.WriteLine(
+            //         $"Token: {token.Type}, Lexeme: {token.Lexeme}, Value: {token.Value}, Span: {token.Span}"
+            //     );
+            // }
 
-            // Lexer.Scanner scanner = new Lexer.Scanner(lexer);
-            // Parser.Parser parser = new Parser.Parser(scanner);
-            // var res = parser.Parse();
-            // Console.WriteLine($"Syntax analysis: {res}");
+            Lexer.Scanner scanner = new Lexer.Scanner(lexer);
+            Parser.Parser parser = new Parser.Parser(scanner);
+            var res = parser.Parse();
+            Console.WriteLine($"Syntax analysis: {res}");
+            
             // if (res)
             // {
             //     var rootNode = parser.RootNode;

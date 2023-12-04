@@ -4,7 +4,7 @@ namespace NCCompiler_CompilersCourse.Exceptions;
 
 public class TokenException : LexerException
 {
-    public TokenException(string? message, Span? span) : base(message, span)
+    public TokenException(string? message = null, Span? span = null) : base(message, span)
     {
     }
 }

@@ -153,9 +153,8 @@ class Lexer
             TokenType.Undefined => Tokens.UNDEFINED,
             TokenType.Reversed => Tokens.REVERSED,
             TokenType.Sorted => Tokens.SORTED,
-            // TODO - 
-            // TokenType.Print => Tokens.PRINT,
-            _ => throw new Exception($"Unknown type {tokenType}")
+            TokenType.Print => Tokens.PRINT,
+            _ => throw new LexerException($"Unknown type {tokenType}")
         };
     }
 

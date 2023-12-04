@@ -9,10 +9,12 @@ public class LexerException : Exception
     /// </summary>
     public Span? Span { get; }
 
-    public LexerException(string? message, Span? span) : base(message)
+    public LexerException(string? message = null, Span? span = null) : base(message)
     {
         Span = span;
     }
+    
+    
 
 
     public override string ToString()

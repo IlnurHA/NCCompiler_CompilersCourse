@@ -66,6 +66,7 @@ public enum NodeTag
     ArrayGetSize,
     ArrayGetReversed,
     ArrayGetSorted,
+    Print,
 }
 
 public abstract class Node
@@ -152,6 +153,9 @@ public class ComplexNode : Node
             case NodeTag.SignToDouble:
             case NodeTag.ArrayConst or NodeTag.EmptyArrayConst:
                 return visitor.ExpressionVisit(this);
+            case NodeTag.Print:
+                // TODO - implement print visitor
+                throw new Exception("Not implemented");
             default:
                 throw new Exception($"Unexpected NodeTag {Tag} in the visit function");
         }

@@ -50,7 +50,7 @@
 // Brackets
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_SQUARED_BRACKET RIGHT_SQUARED_BRACKET
  
-%token SORTED REVERSED
+%token SORTED REVERSED PRINT
  
 %%
 Root : Program { RootNode = $1; } ;
@@ -123,6 +123,7 @@ Body :  /* empty */
         ;
 
 Statement   : Assignment    { $$ = $1; }
+            | Print         { $$ = $1; }
             | RoutineCall   { $$ = $1; }
             | WhileLoop     { $$ = $1; }
             | ForLoop       { $$ = $1; }
@@ -139,6 +140,9 @@ Assignment  : ModifiablePrimary ASSIGNMENT_OPERATOR Expression   { $$ = Node.Mak
 
 RoutineCall     : IDENTIFIER LEFT_BRACKET Expressions RIGHT_BRACKET     { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1, $3); }
                 | IDENTIFIER LEFT_BRACKET RIGHT_BRACKET                 { $$ = Node.MakeComplexNode(NodeTag.RoutineCall, $1); }
+                ;
+                
+Print           : PRINT LEFT_BRACKET Expressions RIGHT_BRACKET          { $$ = Node.MakeComplexNode(NodeTag.Print, $3); }
                 ;
 
 Expressions     : Expression                    { $$ = $1; }
