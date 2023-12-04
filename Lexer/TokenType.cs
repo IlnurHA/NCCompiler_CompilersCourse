@@ -10,7 +10,7 @@ public enum TokenType
     Integer, Boolean, Real, Undefined,
     
     // User-defined types
-    Array, Size, Reversed, Sorted, Record, Dot,
+    Array, Size, Reversed, Sorted, Record, Dot, Print,
     
     // Routines
     Routine, Return,

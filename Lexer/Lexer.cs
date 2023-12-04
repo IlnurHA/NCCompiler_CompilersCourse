@@ -77,6 +77,7 @@ class Lexer
             "undefined" => TokenType.Undefined,
             "reversed" => TokenType.Reversed,
             "sorted" => TokenType.Sorted,
+            "print" => TokenType.Print,
 
             var someVal when new Regex(@"^[a-zA-Z][\w\d_]*$").IsMatch(someVal) =>
                 TokenType.Identifier,
@@ -151,6 +152,8 @@ class Lexer
             TokenType.Undefined => Tokens.UNDEFINED,
             TokenType.Reversed => Tokens.REVERSED,
             TokenType.Sorted => Tokens.SORTED,
+            // TODO - 
+            // TokenType.Print => Tokens.PRINT,
             _ => throw new Exception($"Unknown type {tokenType}")
         };
     }
