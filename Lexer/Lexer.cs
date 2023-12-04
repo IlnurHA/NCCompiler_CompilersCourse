@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using NCCompiler_CompilersCourse.Exceptions;
 using NCCompiler_CompilersCourse.Parser;
 using QUT.Gppg;
 
@@ -16,7 +17,7 @@ class Lexer
         _input = input;
     }
 
-    private static TokenType GetTokenType(string token)
+    private static TokenType GetTokenType(string token, Span span)
     {
         return token switch
         {
@@ -85,7 +86,7 @@ class Lexer
                 TokenType.IntegralLiteral,
             var someVal when new Regex(@"^-?\d+\.?\d+$").IsMatch(someVal) =>
                 TokenType.RealLiteral,
-            _ => throw new NotImplementedException($"The {token} is not implemented")
+            _ => throw new TokenException($"Invalid literal \"{token}\".", span)
         };
     }
 
@@ -300,19 +301,21 @@ class Lexer
                 }
             }
 
+            var currentSpan = new Span(
+                lineNum: _lineCounter,
+                posBegin: _currentPosition - _lastEolIndex,
+                posEnd: _currentPosition + lexemeLength - _lastEolIndex
+            );
+
             if (!tokenType.HasValue)
             {
-                tokenType = GetTokenType(substring);
+                tokenType = GetTokenType(substring, currentSpan);
             }
 
             var newToken = new Token(
                 type: tokenType.GetValueOrDefault(),
                 lexeme: substring,
-                span: new Span(
-                    lineNum: _lineCounter,
-                    posBegin: _currentPosition - _lastEolIndex,
-                    posEnd: _currentPosition + lexemeLength - _lastEolIndex
-                ),
+                span: currentSpan,
                 value: tokenType is TokenType.IntegralLiteral or TokenType.RealLiteral
                     ? double.Parse(substring, new CultureInfo("en-US").NumberFormat)
                     : null

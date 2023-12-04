@@ -5,7 +5,7 @@
     print(n)
     // real printing
     var m: real
-    m := 3.5
+    m := 3;5
     print(m)
     // boolean printing
     var b: boolean
