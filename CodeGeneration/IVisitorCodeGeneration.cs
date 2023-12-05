@@ -11,6 +11,8 @@ public interface IVisitorCodeGeneration
 
     public void VisitSetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands);
     public void VisitGetByIndexNode(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands);
+
+    public void VisitSetByIndex(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands);
     public void VisitSortedArrayNode(SortedArrayNode sortedArrayNode, Queue<BaseCommand> commands);
     public void VisitArraySizeNode(ArraySizeNode arraySizeNode, Queue<BaseCommand> commands);
     public void VisitReversedArrayNode(ReversedArrayNode reversedArrayNode, Queue<BaseCommand> commands);

@@ -29,7 +29,7 @@ public class TypedSymbolicNode : SymbolicNode
 
 public class TypeNode : SymbolicNode
 {
-    public new MyType MyType { get; set; }
+    public virtual MyType MyType { get; set; }
 
     public TypeNode(MyType myType)
     {
@@ -139,11 +139,11 @@ public class StructTypeNode : TypeNode
             if (!field.Value.IsTheSame(tempObj.StructFields[field.Key])) return false;
         }
         
-        foreach (var (key, varNode) in DefaultValues)
-        {
-            if (!tempObj.DefaultValues.ContainsKey(key)) return false;
-            if (varNode.Value != tempObj.DefaultValues[key].Value) return false;
-        }
+        // foreach (var (key, varNode) in DefaultValues)
+        // {
+        //     if (!tempObj.DefaultValues.ContainsKey(key)) return false;
+        //     if (varNode.Value != tempObj.DefaultValues[key].Value) return false;
+        // }
 
         return true;
     }
@@ -157,7 +157,7 @@ public class UserDefinedTypeNode : TypeNode
 {
     public TypeNode Type { get; set; }
     public string Name { get; set; }
-    public new MyType MyType { get; set; } = MyType.DeclaredType;
+    public override MyType MyType { get; set; } = MyType.DeclaredType;
 
     public override bool IsTheSame(TypeNode anotherObject)
     {
@@ -526,6 +526,11 @@ public class GetByIndexNode : ValueNode
     {
         visitor.VisitGetByIndexNode(this, queue);
     }
+
+    public void AcceptSetByIndex(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitSetByIndex(this, queue);
+    }
 }
 
 public class StructVarNode : VarNode
@@ -570,30 +575,6 @@ public class StructVarNode : VarNode
     {
         visitor.VisitStructVarNode(this, queue);
     }
-    
-    // public static StructVarNode FromType(StructTypeNode structTypeNode, string StructName)
-    // {
-    //     var newDict = new Dictionary<string, VarNode>();
-    //
-    //     foreach (var (key, value) in structTypeNode.StructFields)
-    //     {
-    //         newDict[key] = value switch
-    //         {
-    //             ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode)
-    //             {
-    //                 Name = $"{StructName}::{key}"
-    //             },
-    //             StructTypeNode structTypeNode2 => FromType(structTypeNode2, ),
-    //             { } node => new VarNode
-    //             {
-    //                 IsInitialized = false,
-    //                 Type = node,
-    //             }
-    //         };
-    //     }
-    //
-    //     return new StructVarNode(newDict, structTypeNode);
-    // }
 }
 
 public class GetFieldNode : VarNode

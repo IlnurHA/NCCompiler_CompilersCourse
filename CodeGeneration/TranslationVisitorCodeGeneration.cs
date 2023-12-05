@@ -82,7 +82,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         getFieldNode.StructVarNode.Accept(this, commands);
         var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
-        commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type), $"Program/{structName.GetName()}",
+        commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type),
+            $"Program/{structName.GetName()}",
             getFieldNode.FieldName, commands.Count));
     }
 
@@ -109,6 +110,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Getting from array and index then push value to stack 
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
+    
+    public void VisitSetByIndex(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
+    {
+        // ... -> ..., array
+        // pushing array to stack
+        getByIndexNode.ArrayVarNode.Accept(this, commands);
+
+        // ..., array -> ..., array, index
+        // pushing index to stack
+        getByIndexNode.Index.Accept(this, commands);
+        // But we need to decrease it by one (because in our language indexes are starting from 1)
+        commands.Enqueue(new LoadConstantCommand(1, commands.Count));
+        commands.Enqueue(new OperationCommand(OperationType.Minus, commands.Count));
+    }
 
     private (string, TypeNode) _createNewVar(VarNode varNode, TypeNode typeNode)
     {
@@ -128,28 +143,35 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             if (declarationNode.Variable.Type is StructTypeNode structType)
             {
                 var structVar = ScopeStack.GetByStructType(structType)!;
-                
-                // Check if call constructor or initobj
-                var withDefaultValue = false;
 
+
+                commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+                commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
+
+                // Putting default values if any
                 foreach (var (_, varNode) in structType.DefaultValues)
                 {
-                    withDefaultValue = varNode.Value is not null;
-                    break;
+                    if (varNode.Value is not ValueNode valueNode) break;
+                    commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+                    valueNode.Accept(this, commands);
+                    commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(valueNode.Type),
+                        $"Program/{structVar.GetName()}", varNode.Name!, commands.Count));
                 }
-                
-                commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
-                if (withDefaultValue)
-                    commands.Enqueue(new CallCommand($"instance void Program/{structVar.GetName()}::.ctor()", commands.Count));
-                else
-                    commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
-                
+
+                // commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+                // if (withDefaultValue)
+                //     commands.Enqueue(new CallCommand($"instance void Program/{structVar.GetName()}::.ctor()",
+                //         commands.Count));
+                // else
+                //     commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
+
                 return;
             }
+
             if (declarationNode.Variable.Type is ArrayTypeNode arrayTypeNode)
             {
                 arrayTypeNode.Size!.Accept(this, commands);
-                commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayTypeNode), commands.Count));
+                commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayTypeNode.ElementTypeNode), commands.Count));
             }
         }
         else
@@ -157,6 +179,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             // getting value on top of the stack
             declarationNode.DeclarationValue.Accept(this, commands);
         }
+
         // setting value to variable
         commands.Enqueue(new SetLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
@@ -344,7 +367,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Jump to condition
         var conditionJumper = new JumpCommand(commands.Count);
         commands.Enqueue(conditionJumper);
-        
+
         int startBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count));
 
@@ -354,7 +377,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Address to jump depending on condition
         int endBodyAddress = commands.Count;
         commands.Enqueue(new NopCommand(commands.Count)); // End of body
-        
+
         // Updating identifier
         commands.Enqueue(new LoadLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
         commands.Enqueue(new LoadConstantCommand(1, commands.Count));
@@ -486,7 +509,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // End body address
         int endBodyAddress = commands.Count;
-        
+
         conditionJumper.SetAddress(endBodyAddress);
         commands.Enqueue(new NopCommand(commands.Count));
 
@@ -579,12 +602,13 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
                 // Setting to field command
                 var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
-                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type), $"Program/{structName.GetName()}",
+                commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(value.Type),
+                    $"Program/{structName.GetName()}",
                     getFieldNode.FieldName, commands.Count));
                 break;
             case GetByIndexNode getByIndexNode:
                 // Loading value (from array) to top of the stack
-                getByIndexNode.Accept(this, commands);
+                getByIndexNode.AcceptSetByIndex(this, commands);
 
                 // Value to assign to top of stack
                 value.Accept(this, commands);
@@ -624,7 +648,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitTypeNode(TypeNode typeNode, Queue<BaseCommand> commands)
     {
-        
     }
 
     public void VisitStructTypeNode(StructTypeNode structTypeNode, Queue<BaseCommand> commands)
@@ -646,7 +669,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             type.Accept(this, commands);
             structDeclaration += $"\t\t.field {_getTypeFromTypeNode(type)} {name}\n";
         }
-        
+
+        /*
         // Default values
         var commandCounter = 0;
         var constructorString = "";
@@ -684,6 +708,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                                  $"{constructorString}" +
                                  $"\t\t{new ReturnCommand(commandCounter).Translate()}\n" +
                                  "\n\t}\n";
+        */
         structDeclaration += "\t}\n";
 
         _structDeclarations.Add(structDeclaration);
@@ -701,9 +726,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     private string _getTypeFromTypeNode(TypeNode typeNode)
     {
+        if (typeNode is StructTypeNode structTypeCheck) structTypeCheck.Accept(this, new Queue<BaseCommand>());
         return typeNode switch
         {
-            StructTypeNode structTypeNode => $"valuetype Program/{ScopeStack.GetByStructType(structTypeNode)!.GetName()}",
+            UserDefinedTypeNode userDefinedTypeNode => _getTypeFromTypeNode(userDefinedTypeNode.Type),
+            StructTypeNode structTypeNode =>
+                $"valuetype Program/{ScopeStack.GetByStructType(structTypeNode)!.GetName()}",
             ArrayTypeNode arrayTypeNode => _getTypeFromTypeNode(arrayTypeNode.ElementTypeNode) + "[]",
             { } node => node.MyType switch
             {
@@ -806,6 +834,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         {
             routineCode += "\t\t" + command.Translate() + '\n';
         }
+
         if (commands.Count == 0 || commands.Last() is not ReturnCommand)
             routineCode += "\t\t" + new ReturnCommand(commands.Count).Translate() + '\n';
 
