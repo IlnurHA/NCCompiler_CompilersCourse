@@ -1,8 +1,8 @@
 ﻿routine main() is 
     // integer printing
     var n: integer
-    n := 10
-    print(n)
+    n := 10 534gh
+    print((n)
     // real printing
     var m: real
     m := 3.5

@@ -242,6 +242,7 @@ class Lexer
                             break;
                         }
                     }
+
                     lexemeLength++;
                 }
             }
@@ -289,7 +290,8 @@ class Lexer
                 {
                     switch (prevToken.Type)
                     {
-                        case TokenType.Identifier or TokenType.IntegralLiteral or TokenType.RealLiteral or TokenType.RightBracket
+                        case TokenType.Identifier or TokenType.IntegralLiteral or TokenType.RealLiteral
+                            or TokenType.RightBracket
                             or TokenType.RightSquaredBracket or TokenType.Size:
                             tokenType = substring == "+" ? TokenType.Plus : TokenType.Minus;
                             break;
@@ -338,7 +340,7 @@ class Scanner : AbstractScanner<Node, LexLocation>
         _lexer = lexer;
         yylloc = new LexLocation();
     }
-    
+
     public override int yylex()
     {
         try
@@ -347,10 +349,10 @@ class Scanner : AbstractScanner<Node, LexLocation>
 
             if (token == null)
             {
-                return (int) Tokens.EOF;
+                return (int)Tokens.EOF;
             }
 
-            yylloc = new LexLocation((int) token.Span.LineNum, token.Span.PosBegin, (int) token.Span.LineNum,
+            yylloc = new LexLocation((int)token.Span.LineNum, token.Span.PosBegin, (int)token.Span.LineNum,
                 token.Span.PosEnd);
             switch (token.Type)
             {
@@ -374,21 +376,23 @@ class Scanner : AbstractScanner<Node, LexLocation>
                     break;
             }
 
-            return (int) _lexer.GppgTokensType(token.Type);
+            return (int)_lexer.GppgTokensType(token.Type);
         }
         catch (Exception exception)
         {
             yyerror(exception.ToString());
-            return (int) Tokens.error;
+            return (int)Tokens.error;
         }
     }
+
     public sealed override LexLocation yylloc { get; set; }
-    
+
     public override void yyerror(string format, params object[] args)
     {
-        Console.Error.WriteLine(format, args);
-        Console.Error.WriteLine(
-            $"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
+        // Console.Error.WriteLine(format, args);
+        // Console.Error.WriteLine(
+        // $"Line: {yylloc.StartLine}:{yylloc.EndLine}, Range: {yylloc.StartColumn}:{yylloc.EndColumn}");
         base.yyerror(format, args);
+        throw new ParserException(format, lexLocation: yylloc);
     }
 }
