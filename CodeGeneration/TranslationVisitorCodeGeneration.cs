@@ -402,7 +402,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         string from = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
         string to = ScopeStack.AddSpecialVariableInLastScope(new TypeNode(MyType.Integer));
 
-        if (range.Reversed) (from, to) = (to, from);
+        // if (range.Reversed) (from, to) = (to, from);
 
         var fromVar = ScopeStack.GetVariable(from)!;
         var toVar = ScopeStack.GetVariable(to)!;
@@ -413,9 +413,17 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var identifierVar = ScopeStack.GetVariable(identifier)!;
 
         // Setting left and right boundaries
-        commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
-        commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
-
+        if (!range.Reversed)
+        {
+            commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
+            commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
+        }
+        else
+        {
+            commands.Enqueue(new SetLocalCommand(toVar.Id, toVar.GetName(), commands.Count));
+            commands.Enqueue(new SetLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
+        }
+        
         // initializing identifier
         commands.Enqueue(new LoadLocalCommand(fromVar.Id, fromVar.GetName(), commands.Count));
         commands.Enqueue(new SetLocalCommand(identifierVar.Id, identifierVar.GetName(), commands.Count));
