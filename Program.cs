@@ -32,7 +32,7 @@ class Program
             if (res)
             {
                 var rootNode = parser.RootNode;
-                EvalVisitor visitor = new EvalVisitor();
+                EvalVisitor visitor = new EvalVisitor(true);
                 var rootSymbolic = rootNode.Accept(visitor);
                 Console.WriteLine(res);
 

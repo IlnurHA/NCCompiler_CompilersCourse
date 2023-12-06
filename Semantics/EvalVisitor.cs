@@ -10,6 +10,12 @@ namespace NCCompiler_CompilersCourse.Semantics;
 class EvalVisitor : IVisitor
 {
     public SemanticsScopeStack SemanticsScopeStack { get; set; } = new();
+    private bool OptimizationFlag;
+
+    public EvalVisitor(bool optimizationFlag)
+    {
+        OptimizationFlag = optimizationFlag;
+    }
 
     public SymbolicNode ProgramVisit(ComplexNode node)
     {
@@ -248,7 +254,9 @@ class EvalVisitor : IVisitor
                 var bodyForLoop = node.Children[2] is null ? new BodyNode() : (BodyNode)node.Children[2]!.Accept(this);
 
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                bodyForLoop.Filter(unusedVariables);
+                
+                if (OptimizationFlag)
+                    bodyForLoop.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
                 return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop)
@@ -272,7 +280,9 @@ class EvalVisitor : IVisitor
 
                 var bodyForEach = node.Children[2] is null ? new BodyNode() : (BodyNode)node.Children[2]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                bodyForEach.Filter(unusedVariables);
+                
+                if (OptimizationFlag)
+                    bodyForEach.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
                 return new ForEachLoopNode(idForEach, fromForEach, bodyForEach)
@@ -290,7 +300,9 @@ class EvalVisitor : IVisitor
 
                 var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                bodyWhile.Filter(unusedVariables);
+                
+                if (OptimizationFlag)
+                    bodyWhile.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
                 return new WhileLoopNode(condExprWhile, bodyWhile)
@@ -309,7 +321,9 @@ class EvalVisitor : IVisitor
 
                 var bodyIf = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                bodyIf.Filter(unusedVariables);
+                
+                if (OptimizationFlag)
+                    bodyIf.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
                 return new IfStatement(condIf, bodyIf)
@@ -347,8 +361,12 @@ class EvalVisitor : IVisitor
                 }
 
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                bodyIfElse.Filter(unusedVariables);
-                bodyElse.Filter(unusedVariables);
+                
+                if (OptimizationFlag)
+                {
+                    bodyIfElse.Filter(unusedVariables);
+                    bodyElse.Filter(unusedVariables);
+                }
                 SemanticsScopeStack.DeleteScope();
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
@@ -534,8 +552,9 @@ class EvalVisitor : IVisitor
 
                 // Removing unused variables and arguments
                 var unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                if (parametersRoutineDecl != null) parametersRoutineDecl.Filter(unusedVariables);
-                bodyRoutineDeclFull.Filter(unusedVariables);
+
+                if (OptimizationFlag)
+                    bodyRoutineDeclFull.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
                 var funcDecl = new RoutineDeclarationNode(funcNameRoutineDecl, parametersRoutineDecl,
