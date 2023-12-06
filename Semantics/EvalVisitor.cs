@@ -22,10 +22,10 @@ class EvalVisitor : IVisitor
         switch (node.Tag)
         {
             case NodeTag.ProgramRoutineDeclaration or NodeTag.ProgramSimpleDeclaration:
-                var progs = node.Children[0] == null ? new ProgramNode() : (ProgramNode)node.Children[0]!.Accept(this);
+                var progs = node.Children[0] == null ? new ProgramNode() : (ProgramNode) node.Children[0]!.Accept(this);
                 var declaration = node.Children[1]!.Accept(this);
                 if (node.Tag == NodeTag.ProgramRoutineDeclaration &&
-                    ((RoutineDeclarationNode)declaration).Name == "main") progs.SetHasMain();
+                    ((RoutineDeclarationNode) declaration).Name == "main") progs.SetHasMain();
                 progs.AddDeclaration(declaration);
                 return progs;
             default:
@@ -58,7 +58,7 @@ class EvalVisitor : IVisitor
                 return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSortedBuffer = node.Children[0]!.Accept(this);
-                var arrGetSorted = (ValueNode)_getFromScopeStackIfNeeded(arrGetSortedBuffer);
+                var arrGetSorted = (ValueNode) _getFromScopeStackIfNeeded(arrGetSortedBuffer);
 
                 if (arrGetSorted.Type is not ArrayTypeNode arrGetSortedType)
                     throw new Exception($"Cannot sort {arrGetSorted.Type.GetType()}");
@@ -71,7 +71,7 @@ class EvalVisitor : IVisitor
                 return new SortedArrayNode(arrGetSorted); // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSizeBuffer = node.Children[0]!.Accept(this);
-                var arrGetSize = (VarNode)_getFromScopeStackIfNeeded(arrGetSizeBuffer);
+                var arrGetSize = (VarNode) _getFromScopeStackIfNeeded(arrGetSizeBuffer);
 
                 if (arrGetSize.Type is not ArrayTypeNode)
                     throw new Exception($"Cannot sort {arrGetSize.Type.GetType()}");
@@ -80,7 +80,7 @@ class EvalVisitor : IVisitor
             case NodeTag.ArrayGetReversed:
                 var arrGetReversedBuffer = node.Children[0]!.Accept(this);
                 var arrGetReversed =
-                    (ValueNode)_getFromScopeStackIfNeeded(arrGetReversedBuffer);
+                    (ValueNode) _getFromScopeStackIfNeeded(arrGetReversedBuffer);
 
                 if (arrGetReversed.Type is not ArrayTypeNode)
                     throw new Exception($"Cannot sort {arrGetReversed.Type.GetType()}");
@@ -120,11 +120,11 @@ class EvalVisitor : IVisitor
                 switch (node.Tag)
                 {
                     case NodeTag.VariableDeclarationFull:
-                        variableTypeBuffer = ((TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
+                        variableTypeBuffer = ((TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
                         valueBuffer = node.Children[2]!.Accept(this);
                         break;
                     case NodeTag.VariableDeclarationIdenType:
-                        variableTypeBuffer = ((TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
+                        variableTypeBuffer = ((TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this)));
                         break;
                     case NodeTag.VariableDeclarationIdenExpr:
                         valueBuffer = node.Children[1]!.Accept(this);
@@ -142,7 +142,7 @@ class EvalVisitor : IVisitor
                     if (valueBuffer is null)
                     {
                         var typeDeclTypeVar =
-                            (TypeNode)_getFromScopeStackIfNeeded(variableTypeBuffer!);
+                            (TypeNode) _getFromScopeStackIfNeeded(variableTypeBuffer!);
                         var typeDeclarationNode = new TypeVariableDeclaration(variableIdentifier, typeDeclTypeVar);
                         var typeDeclIdVar = typeDeclarationNode.Variable;
                         SemanticsScopeStack.AddVariable(typeDeclIdVar);
@@ -151,15 +151,15 @@ class EvalVisitor : IVisitor
 
                     if (variableTypeBuffer is null)
                     {
-                        var value = (ValueNode)_getFromScopeStackIfNeeded(valueBuffer);
+                        var value = (ValueNode) _getFromScopeStackIfNeeded(valueBuffer);
                         var valueDeclarationNode = new ValueVariableDeclaration(variableIdentifier, value);
                         var valueDeclIdVar = valueDeclarationNode.Variable;
                         SemanticsScopeStack.AddVariable(valueDeclIdVar);
                         return valueDeclarationNode;
                     }
 
-                    var fullDeclType = (TypeNode)_getFromScopeStackIfNeeded(variableTypeBuffer!);
-                    var fullDeclValue = (ValueNode)_getFromScopeStackIfNeeded(valueBuffer);
+                    var fullDeclType = (TypeNode) _getFromScopeStackIfNeeded(variableTypeBuffer!);
+                    var fullDeclValue = (ValueNode) _getFromScopeStackIfNeeded(valueBuffer);
 
                     if (!fullDeclValue.Type.IsConvertibleTo(fullDeclType))
                         throw new Exception($"Cannot convert type {fullDeclValue.Type} to {fullDeclType}");
@@ -170,9 +170,9 @@ class EvalVisitor : IVisitor
                 }
             case NodeTag.VariableDeclarations:
                 var declarationsDecl = node.Children[0] != null
-                    ? (VariableDeclarations)node.Children[0]!.Accept(this)
+                    ? (VariableDeclarations) node.Children[0]!.Accept(this)
                     : new VariableDeclarations(new Dictionary<string, VarNode>());
-                var decl = (DeclarationNode)node.Children[1]!.Accept(this);
+                var decl = (DeclarationNode) node.Children[1]!.Accept(this);
                 declarationsDecl.AddDeclaration(decl.Variable);
                 declarationsDecl.DeclarationNodes.Add(decl);
                 return declarationsDecl;
@@ -180,8 +180,8 @@ class EvalVisitor : IVisitor
                 var typeIdentifierBuffer = node.Children[0]!.Accept(this);
                 var typeSynonymBuffer = node.Children[1]!.Accept(this);
 
-                var typeIdentifier = (PrimitiveVarNode)typeIdentifierBuffer;
-                var typeSynonym = (TypeNode)_getFromScopeStackIfNeeded(typeSynonymBuffer);
+                var typeIdentifier = (PrimitiveVarNode) typeIdentifierBuffer;
+                var typeSynonym = (TypeNode) _getFromScopeStackIfNeeded(typeSynonymBuffer);
 
                 using (var scope = SemanticsScopeStack.GetLastScope())
                 {
@@ -203,8 +203,8 @@ class EvalVisitor : IVisitor
                 var leftAssertExpressionBuffer = node.Children[0]!.Accept(this);
                 var rightAssertExpressionBuffer = node.Children[1]!.Accept(this);
 
-                var leftAssertExpression = (ValueNode)_getFromScopeStackIfNeeded(leftAssertExpressionBuffer);
-                var rightAssertExpression = (ValueNode)_getFromScopeStackIfNeeded(rightAssertExpressionBuffer);
+                var leftAssertExpression = (ValueNode) _getFromScopeStackIfNeeded(leftAssertExpressionBuffer);
+                var rightAssertExpression = (ValueNode) _getFromScopeStackIfNeeded(rightAssertExpressionBuffer);
 
                 if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
                 {
@@ -215,15 +215,15 @@ class EvalVisitor : IVisitor
             case NodeTag.Return:
                 if (node.Children.Length == 0) return new EmptyReturnNode();
                 var returnValueBuffer = node.Children[0]!.Accept(this);
-                var returnValue = (ValueNode)_getFromScopeStackIfNeeded(returnValueBuffer);
+                var returnValue = (ValueNode) _getFromScopeStackIfNeeded(returnValueBuffer);
 
                 return new ValueReturnNode(returnValue);
             case NodeTag.Range or NodeTag.RangeReverse:
                 var leftBoundBuffer = node.Children[0]!.Accept(this);
                 var rightBoundBuffer = node.Children[1]!.Accept(this);
 
-                var leftBound = (ValueNode)_getFromScopeStackIfNeeded(leftBoundBuffer);
-                var rightBound = (ValueNode)_getFromScopeStackIfNeeded(rightBoundBuffer);
+                var leftBound = (ValueNode) _getFromScopeStackIfNeeded(leftBoundBuffer);
+                var rightBound = (ValueNode) _getFromScopeStackIfNeeded(rightBoundBuffer);
 
                 var integerType = new TypeNode(MyType.Integer);
                 if (!leftBound.Type.IsConvertibleTo(integerType))
@@ -242,7 +242,7 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.Loop);
                 var idForLoopBuffer = node.Children[0]!.Accept(this);
 
-                var primitiveVarNode = (PrimitiveVarNode)idForLoopBuffer;
+                var primitiveVarNode = (PrimitiveVarNode) idForLoopBuffer;
 
                 var idForLoop = new VarNode(primitiveVarNode.Name)
                 {
@@ -250,11 +250,11 @@ class EvalVisitor : IVisitor
                 };
                 SemanticsScopeStack.AddVariable(idForLoop);
 
-                var rangeForLoop = (RangeNode)node.Children[1]!.Accept(this);
-                var bodyForLoop = node.Children[2] is null ? new BodyNode() : (BodyNode)node.Children[2]!.Accept(this);
+                var rangeForLoop = (RangeNode) node.Children[1]!.Accept(this);
+                var bodyForLoop = node.Children[2] is null ? new BodyNode() : (BodyNode) node.Children[2]!.Accept(this);
 
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                
+
                 if (OptimizationFlag)
                     bodyForLoop.Filter(unusedVariables);
 
@@ -268,19 +268,19 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.Loop);
                 var idForEachBuffer = node.Children[0]!.Accept(this);
                 var idForEachPrimitiveVarNode =
-                    (PrimitiveVarNode)idForEachBuffer;
+                    (PrimitiveVarNode) idForEachBuffer;
 
                 var fromForEachBuffer = node.Children[1]!.Accept(this);
-                var fromForEach = (ArrayVarNode)_getFromScopeStackIfNeeded(fromForEachBuffer);
+                var fromForEach = (ArrayVarNode) _getFromScopeStackIfNeeded(fromForEachBuffer);
 
                 var idForEach = DeclarationNode.GetAppropriateVarNode(idForEachPrimitiveVarNode,
                     fromForEach.Type.ElementTypeNode, null);
 
                 SemanticsScopeStack.AddVariable(idForEach);
 
-                var bodyForEach = node.Children[2] is null ? new BodyNode() : (BodyNode)node.Children[2]!.Accept(this);
+                var bodyForEach = node.Children[2] is null ? new BodyNode() : (BodyNode) node.Children[2]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                
+
                 if (OptimizationFlag)
                     bodyForEach.Filter(unusedVariables);
 
@@ -291,16 +291,16 @@ class EvalVisitor : IVisitor
                 };
             case NodeTag.WhileLoop:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.Loop);
-                var condExprWhile = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                var condExprWhile = (ValueNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
                 }
 
-                var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
+                var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                
+
                 if (OptimizationFlag)
                     bodyWhile.Filter(unusedVariables);
 
@@ -312,16 +312,16 @@ class EvalVisitor : IVisitor
 
             case NodeTag.IfStatement:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.IfStatement);
-                var condIf = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                var condIf = (ValueNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condIf.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
                         $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean");
                 }
 
-                var bodyIf = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
+                var bodyIf = node.Children[1] is null ? new BodyNode() : (BodyNode) node.Children[1]!.Accept(this);
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                
+
                 if (OptimizationFlag)
                     bodyIf.Filter(unusedVariables);
 
@@ -333,7 +333,7 @@ class EvalVisitor : IVisitor
 
             case NodeTag.IfElseStatement:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.IfStatement);
-                var condIfElse = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                var condIfElse = (ValueNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condIfElse.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
                     throw new Exception(
@@ -342,10 +342,10 @@ class EvalVisitor : IVisitor
 
                 var bodyIfElse = node.Children[1] is null
                     ? new BodyNode(new List<StatementNode>(), new TypeNode())
-                    : (BodyNode)node.Children[1]!.Accept(this);
+                    : (BodyNode) node.Children[1]!.Accept(this);
                 var bodyElse = node.Children[2] is null
                     ? new BodyNode(new List<StatementNode>(), new TypeNode())
-                    : (BodyNode)node.Children[2]!.Accept(this);
+                    : (BodyNode) node.Children[2]!.Accept(this);
 
                 var newType = bodyIfElse.Type;
                 var undefinedTypeIf = new TypeNode();
@@ -361,12 +361,13 @@ class EvalVisitor : IVisitor
                 }
 
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                
+
                 if (OptimizationFlag)
                 {
                     bodyIfElse.Filter(unusedVariables);
                     bodyElse.Filter(unusedVariables);
                 }
+
                 SemanticsScopeStack.DeleteScope();
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
@@ -377,11 +378,13 @@ class EvalVisitor : IVisitor
                 var undefinedType = new TypeNode(MyType.Undefined);
 
                 var bodyCont = node.Children[0] != null
-                    ? (BodyNode)node.Children[0]!.Accept(this)
+                    ? (BodyNode) node.Children[0]!.Accept(this)
                     : new BodyNode(new List<StatementNode>(), new TypeNode(MyType.Undefined));
 
-                var bodyStatement =
-                    (StatementNode)node.Children[1]!.Accept(this);
+                var bodyStatementBuffer = node.Children[1]!.Accept(this);
+                var bodyStatement = bodyStatementBuffer is RoutineCallNode routineCallNode
+                    ? new RoutineCallStatementNode(routineCallNode)
+                    : (StatementNode) bodyStatementBuffer;
 
                 if (!bodyStatement.Type.IsTheSame(undefinedType) && bodyCont.Type.IsTheSame(undefinedType))
                 {
@@ -400,8 +403,8 @@ class EvalVisitor : IVisitor
                 return bodyCont;
 
             case NodeTag.Assignment:
-                var idAssignment = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
-                var exprAssignment = (ValueNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
+                var idAssignment = (ValueNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                var exprAssignment = (ValueNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
 
                 switch (idAssignment)
                 {
@@ -411,7 +414,7 @@ class EvalVisitor : IVisitor
                     case ArrayVarNode:
                         break;
                     case PrimitiveVarNode primitiveVarNodeAssignment:
-                        idAssignment = (ValueNode)SemanticsScopeStack.FindVariable(primitiveVarNodeAssignment.Name);
+                        idAssignment = (ValueNode) SemanticsScopeStack.FindVariable(primitiveVarNodeAssignment.Name);
                         break;
                     case VarNode:
                         break;
@@ -429,19 +432,19 @@ class EvalVisitor : IVisitor
                 return new AssignmentNode(idAssignment, exprAssignment);
 
             case NodeTag.ArrayType:
-                var size = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
-                var type = (TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
+                var size = (ValueNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                var type = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
 
                 return new ArrayTypeNode(type, size);
             case NodeTag.ArrayTypeWithoutSize:
                 var typeWithoutSize =
-                    (TypeNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
+                    (TypeNode) _getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 return new ArrayTypeNode(typeWithoutSize);
 
             case NodeTag.RecordType:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.RecordDeclaration);
                 var declarations =
-                    (VariableDeclarations)node.Children[0]!.Accept(this);
+                    (VariableDeclarations) node.Children[0]!.Accept(this);
                 var variableScope = SemanticsScopeStack.GetLastScope();
                 SemanticsScopeStack.DeleteScope();
 
@@ -476,8 +479,8 @@ class EvalVisitor : IVisitor
                 var typeCastBuffer = node.Children[0]!.Accept(this);
                 var typeValueBuffer = node.Children[1]!.Accept(this);
 
-                var typeCast = (TypeNode)_getFromScopeStackIfNeeded(typeCastBuffer);
-                var typeValue = (ValueNode)_getFromScopeStackIfNeeded(typeValueBuffer);
+                var typeCast = (TypeNode) _getFromScopeStackIfNeeded(typeCastBuffer);
+                var typeValue = (ValueNode) _getFromScopeStackIfNeeded(typeValueBuffer);
 
                 if (!typeValue.Type.IsConvertibleTo(typeCast))
                     throw new Exception($"Cannot convert {typeValue.Type} to {typeCast}");
@@ -495,7 +498,7 @@ class EvalVisitor : IVisitor
         {
             case NodeTag.RoutineDeclarationWithTypeAndParams or NodeTag.RoutineDeclarationWithType
                 or NodeTag.RoutineDeclaration or NodeTag.RoutineDeclarationWithParams:
-                var funcNameRoutineDecl = (PrimitiveVarNode)node.Children[0]!.Accept(this);
+                var funcNameRoutineDecl = (PrimitiveVarNode) node.Children[0]!.Accept(this);
 
                 ParametersNode? parametersRoutineDecl = null;
                 TypeNode? returnTypeRoutineDecl = null;
@@ -507,22 +510,22 @@ class EvalVisitor : IVisitor
                     case NodeTag.RoutineDeclarationWithTypeAndParams:
                         var interNode = node.Children[1]!.Accept(this);
                         parametersRoutineDecl = interNode is not ParameterNode declTypeParam
-                            ? (ParametersNode)interNode
-                            : new ParametersNode(new List<ParameterNode> { declTypeParam });
+                            ? (ParametersNode) interNode
+                            : new ParametersNode(new List<ParameterNode> {declTypeParam});
 
-                        returnTypeRoutineDecl = (TypeNode)_getFromScopeStackIfNeeded(node.Children[2]!.Accept(this));
+                        returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[2]!.Accept(this));
                         bodyIndex = 3;
                         break;
                     case NodeTag.RoutineDeclarationWithParams:
                         var interNodeDecl = node.Children[1]!.Accept(this);
 
                         parametersRoutineDecl = interNodeDecl is not ParameterNode declParam
-                            ? (ParametersNode)interNodeDecl
-                            : new ParametersNode(new List<ParameterNode> { declParam });
+                            ? (ParametersNode) interNodeDecl
+                            : new ParametersNode(new List<ParameterNode> {declParam});
                         bodyIndex = 2;
                         break;
                     case NodeTag.RoutineDeclarationWithType:
-                        returnTypeRoutineDecl = (TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
+                        returnTypeRoutineDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
                         bodyIndex = 2;
                         break;
                     case NodeTag.RoutineDeclaration:
@@ -542,7 +545,7 @@ class EvalVisitor : IVisitor
                     returnTypeRoutineDecl, new BodyNode()));
                 bodyRoutineDeclFull = node.Children[bodyIndex] is null
                     ? new BodyNode()
-                    : (BodyNode)node.Children[bodyIndex]!.Accept(this);
+                    : (BodyNode) node.Children[bodyIndex]!.Accept(this);
 
                 if (!bodyRoutineDeclFull.Type.IsConvertibleTo(returnType))
                 {
@@ -563,8 +566,8 @@ class EvalVisitor : IVisitor
                 return funcDecl;
 
             case NodeTag.ParameterDeclaration:
-                var idParDeclBuffer = (PrimitiveVarNode)node.Children[0]!.Accept(this);
-                var typeParDecl = (TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
+                var idParDeclBuffer = (PrimitiveVarNode) node.Children[0]!.Accept(this);
+                var typeParDecl = (TypeNode) _getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
 
                 var idParDecl = DeclarationNode.GetAppropriateVarNode(idParDeclBuffer, typeParDecl, null);
 
@@ -577,7 +580,7 @@ class EvalVisitor : IVisitor
                 if (node.Children.Length == 1)
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)node.Children[0]!.Accept(this) });
+                        {(ParameterNode) node.Children[0]!.Accept(this)});
                 }
 
                 var parametersDecl = node.Children[0]!.Accept(this);
@@ -586,18 +589,18 @@ class EvalVisitor : IVisitor
                 if (parametersDecl.GetType() == typeof(ParameterNode))
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)parametersDecl, (ParameterNode)parameterDecl });
+                        {(ParameterNode) parametersDecl, (ParameterNode) parameterDecl});
                 }
 
-                var returnParametersDecl = (ParametersNode)parametersDecl;
-                returnParametersDecl.AddParameter((ParameterNode)parameterDecl);
+                var returnParametersDecl = (ParametersNode) parametersDecl;
+                returnParametersDecl.AddParameter((ParameterNode) parameterDecl);
                 return returnParametersDecl;
 
             case NodeTag.RoutineCall:
-                var idRoutineCallBuffer = (PrimitiveVarNode)node.Children[0]!.Accept(this);
+                var idRoutineCallBuffer = (PrimitiveVarNode) node.Children[0]!.Accept(this);
 
                 var function =
-                    (RoutineDeclarationNode)_getFromScopeStackIfNeeded(
+                    (RoutineDeclarationNode) _getFromScopeStackIfNeeded(
                         SemanticsScopeStack.FindVariable(idRoutineCallBuffer.Name));
                 if (function.Parameters is null)
                 {
@@ -617,7 +620,7 @@ class EvalVisitor : IVisitor
                 var exprsRoutineCall = exprsRoutineCallBuffer is ExpressionsNode expressionsNode
                     ? expressionsNode
                     : new ExpressionsNode(new List<ValueNode>
-                        { (ValueNode)_getFromScopeStackIfNeeded(exprsRoutineCallBuffer) });
+                        {(ValueNode) _getFromScopeStackIfNeeded(exprsRoutineCallBuffer)});
 
                 if (exprsRoutineCall.Expressions.Count != function.Parameters.Parameters.Count)
                 {
@@ -645,7 +648,7 @@ class EvalVisitor : IVisitor
                 var expressionsContNode = new ExpressionsNode();
                 if (expressionsContBuffer is ValueNode expressionsCont)
                 {
-                    expressionsContNode.AddExpression((ValueNode)_getFromScopeStackIfNeeded(expressionsCont));
+                    expressionsContNode.AddExpression((ValueNode) _getFromScopeStackIfNeeded(expressionsCont));
                 }
                 else if (expressionsContBuffer is ExpressionsNode exprNode) expressionsContNode = exprNode;
                 else
@@ -924,7 +927,7 @@ class EvalVisitor : IVisitor
         {
             TypeNode typeNode => throw new Exception(
                 $"Can't perform operation on user-defined type {typeNode.MyType}"),
-            VarNode { Type.MyType: MyType.Undefined } => throw new Exception(
+            VarNode {Type.MyType: MyType.Undefined} => throw new Exception(
                 "Can't perform operation on undefined type"),
             VarNode varNode => varNode,
             _ => identifier
@@ -949,8 +952,8 @@ class EvalVisitor : IVisitor
             case NodeTag.Mul:
             case NodeTag.Div:
             case NodeTag.Rem:
-                var operand1 = (ValueNode)node.Children[0]!.Accept(this);
-                var operand2 = (ValueNode)node.Children[1]!.Accept(this);
+                var operand1 = (ValueNode) node.Children[0]!.Accept(this);
+                var operand2 = (ValueNode) node.Children[1]!.Accept(this);
                 operand1 = _getVarForIdentifier(operand1);
                 operand2 = _getVarForIdentifier(operand2);
                 var operationType = _nodeTagToOperationType(node);
@@ -961,13 +964,13 @@ class EvalVisitor : IVisitor
                     return simplifiedConstNode;
                 }
 
-                return new OperationNode(operationType, new List<ValueNode> { operand1, operand2 }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> {operand1, operand2}, resultType);
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
             case NodeTag.SignToDouble:
                 ValueNode? operand = null;
-                if (node.Tag == NodeTag.NotExpression) operand = (ValueNode)node.Children[0]!.Accept(this);
-                else operand = (ValueNode)node.Children[1]!.Accept(this);
+                if (node.Tag == NodeTag.NotExpression) operand = (ValueNode) node.Children[0]!.Accept(this);
+                else operand = (ValueNode) node.Children[1]!.Accept(this);
                 operationType = _nodeTagToOperationType(node);
                 resultType = _isValidUnaryOperation(operand, operationType);
                 if (operand is ConstNode constNode)
@@ -975,13 +978,13 @@ class EvalVisitor : IVisitor
                     return _simplifyOperation(constNode, resultType, operationType);
                 }
 
-                return new OperationNode(operationType, new List<ValueNode> { operand }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> {operand}, resultType);
             case NodeTag.ArrayConst:
                 var expressionsBuffer = node.Children[0]!.Accept(this);
 
                 var expressions = expressionsBuffer is ExpressionsNode buffer
                     ? buffer
-                    : new ExpressionsNode(new List<ValueNode> { (ValueNode)expressionsBuffer });
+                    : new ExpressionsNode(new List<ValueNode> {(ValueNode) expressionsBuffer});
 
                 var typeExpr = expressions.Expressions.Count == 0 ? new TypeNode() : expressions.Expressions[0].Type;
                 var realType = new TypeNode(MyType.Real);
@@ -1010,7 +1013,7 @@ class EvalVisitor : IVisitor
                     }
                 };
             case NodeTag.EmptyArrayConst:
-                return new ArrayConst(new ExpressionsNode()) { Type = new ArrayTypeNode(new TypeNode()) };
+                return new ArrayConst(new ExpressionsNode()) {Type = new ArrayTypeNode(new TypeNode())};
             default:
                 throw new Exception($"Invalid operation tag: {node.Tag}");
         }
