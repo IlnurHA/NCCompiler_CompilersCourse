@@ -108,12 +108,12 @@ public class SemanticsScope : IDisposable
         variable.Value = value.Value;
     }
 
-    public List<VarNode> GetUnusedVariables()
+    public HashSet<string> GetUnusedVariables()
     {
-        List<VarNode> unusedVariables = new List<VarNode>(Variables.Count);
+        HashSet<string> unusedVariables = new HashSet<string>();
         foreach (var variable in Variables)
         {
-            if (variable.Value.Item2 == 0) unusedVariables.Add(variable.Value.Item1);
+            if (variable.Value.Item2 == 0) unusedVariables.Add(variable.Key);
         }
 
         return unusedVariables;
