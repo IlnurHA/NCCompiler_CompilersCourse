@@ -1,4 +1,5 @@
 ﻿using NCCompiler_CompilersCourse.Semantics;
+using QUT.Gppg;
 
 namespace NCCompiler_CompilersCourse.Parser;
 
@@ -71,9 +72,9 @@ public enum NodeTag
 
 public abstract class Node
 {
-    public static ComplexNode MakeComplexNode(NodeTag nodeTag, params Node[] children)
+    public static ComplexNode MakeComplexNode(NodeTag nodeTag, LexLocation lexLocation, params Node[] children)
     {
-        return new ComplexNode(nodeTag, children);
+        return new ComplexNode(nodeTag, lexLocation, children);
     }
 
     readonly NodeTag _tag;
@@ -81,9 +82,12 @@ public abstract class Node
 
     // public NodeTag Tag { get; set; }
 
-    protected Node(NodeTag tag)
+    public LexLocation LexLocation { get; }
+
+    protected Node(NodeTag tag, LexLocation lexLocation)
     {
         _tag = tag;
+        LexLocation = lexLocation;
     }
 
     public abstract SymbolicNode Accept(IVisitor visitor);
@@ -93,7 +97,7 @@ public class ComplexNode : Node
 {
     public Node?[] Children { get; }
 
-    public ComplexNode(NodeTag nodeTag, params Node?[] nodes) : base(nodeTag)
+    public ComplexNode(NodeTag nodeTag, LexLocation lexLocation, params Node?[] nodes) : base(nodeTag, lexLocation)
     {
         Children = nodes;
     }
@@ -166,7 +170,7 @@ public class LeafNode<T> : Node
 {
     public T Value { get; }
 
-    public LeafNode(NodeTag nodeTag, T value) : base(nodeTag)
+    public LeafNode(NodeTag nodeTag, LexLocation lexLocation, T value) : base(nodeTag, lexLocation)
     {
         Value = value;
     }

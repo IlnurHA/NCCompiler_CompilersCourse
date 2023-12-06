@@ -5,7 +5,7 @@ routine factors(n: integer): array[] integer is
     var i: integer is 1
     while d*d <= n loop
         if n%d = 0 then
-            ans[i] := d
+	    	ans[i] := d
             i := i+1
             n := n / d
         else

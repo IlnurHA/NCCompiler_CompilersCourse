@@ -160,6 +160,7 @@ class Lexer
 
     private int _lineCounter = 1;
     private int _lastEolIndex = 0;
+    private int _numberOfEmptySymbols;
 
     private bool IsCharToken(string tokenToCheck)
     {
@@ -195,6 +196,7 @@ class Lexer
         if (!IsCharToken("\n")) return;
         _lineCounter++;
         _lastEolIndex = _currentPosition;
+        _numberOfEmptySymbols = 0;
     }
 
     public List<Token> GetTokens()
@@ -217,10 +219,18 @@ class Lexer
             var currentChar = _input[_currentPosition];
             var lexemeLength = 1;
 
-            if (char.IsWhiteSpace(currentChar) || currentChar == '\r')
+            if (char.IsWhiteSpace(currentChar))
             {
                 UpdateLine();
                 _currentPosition++;
+                if (currentChar != ' ' && currentChar != '\t')
+                {
+                    _numberOfEmptySymbols++;
+                } else if (currentChar == '\t')
+                {
+                    // We should consider \t symbol as 4 characters
+                    _numberOfEmptySymbols -= 3;
+                }
                 continue;
             }
 
@@ -302,10 +312,11 @@ class Lexer
                 }
             }
 
+            var beginOfSpan = _currentPosition - _numberOfEmptySymbols - _lastEolIndex + 1;
             var currentSpan = new Span(
                 lineNum: _lineCounter,
-                posBegin: _currentPosition - _lastEolIndex,
-                posEnd: _currentPosition + lexemeLength - _lastEolIndex
+                posBegin: beginOfSpan,
+                posEnd: beginOfSpan + lexemeLength - 1
             );
 
             if (!tokenType.HasValue)
@@ -357,22 +368,22 @@ class Scanner : AbstractScanner<Node, LexLocation>
             switch (token.Type)
             {
                 case TokenType.Identifier:
-                    yylval = new LeafNode<string>(NodeTag.Identifier, token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.Identifier, yylloc, token.Lexeme);
                     break;
                 case TokenType.UnaryPlus or TokenType.UnaryMinus:
-                    yylval = new LeafNode<string>(NodeTag.Unary, token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.Unary, yylloc, token.Lexeme);
                     break;
                 case TokenType.IntegralLiteral:
-                    yylval = new LeafNode<Int32>(NodeTag.IntegerLiteral, Convert.ToInt32(token.Value!));
+                    yylval = new LeafNode<Int32>(NodeTag.IntegerLiteral, yylloc, Convert.ToInt32(token.Value!));
                     break;
                 case TokenType.RealLiteral:
-                    yylval = new LeafNode<Double>(NodeTag.RealLiteral, Convert.ToDouble(token.Value!));
+                    yylval = new LeafNode<Double>(NodeTag.RealLiteral, yylloc, Convert.ToDouble(token.Value!));
                     break;
                 case TokenType.True or TokenType.False:
-                    yylval = new LeafNode<Boolean>(NodeTag.BooleanLiteral, token.Type == TokenType.True);
+                    yylval = new LeafNode<Boolean>(NodeTag.BooleanLiteral, yylloc, token.Type == TokenType.True);
                     break;
                 case TokenType.Integer or TokenType.Real or TokenType.Boolean:
-                    yylval = new LeafNode<string>(NodeTag.PrimitiveType, token.Lexeme);
+                    yylval = new LeafNode<string>(NodeTag.PrimitiveType, yylloc, token.Lexeme);
                     break;
             }
 
