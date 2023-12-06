@@ -461,6 +461,7 @@ public class BodyNode : TypedSymbolicNode
             }
             else
                 usedBodyStatements.Add(statement);
+            if (statement is ReturnNode) break;
         }
 
         Statements = usedBodyStatements;
