@@ -120,8 +120,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
 
         // ..., array, index -> ..., value
-        // Getting from array and index then push value to stack 
-        commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
+        // Getting from array and index then push value to stack
+        if (getByIndexNode.Type is ArrayTypeNode) commands.Enqueue(new LoadFromArrayRefCommand(commands.Count)); 
+        else commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
 
     public void VisitSetByIndex(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
@@ -629,10 +630,19 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 // Getting object from field of struct
                 getFieldNode.AcceptSetField(this, commands);
 
-                // Pushing value to top of stack
-                if (value is ArrayVarNode arrayVarNode) arrayVarNode.AcceptByValue(this, commands);
-                else if (value is StructVarNode structVarNode) structVarNode.AcceptByValue(this, commands);
-                else value.Accept(this, commands);
+                switch (value)
+                {
+                    // Pushing value to top of stack
+                    case ArrayVarNode arrayVarNode:
+                        arrayVarNode.AcceptByValue(this, commands);
+                        break;
+                    case StructVarNode structVarNode:
+                        structVarNode.AcceptByValue(this, commands);
+                        break;
+                    default:
+                        value.Accept(this, commands);
+                        break;
+                }
 
                 // Setting to field command
                 var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
@@ -644,19 +654,38 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 // Loading value (from array) to top of the stack
                 getByIndexNode.AcceptSetByIndex(this, commands);
 
-                // Value to assign to top of stack
-                if (value is ArrayVarNode arrayVarNodeGetByIndex) arrayVarNodeGetByIndex.AcceptByValue(this, commands);
-                else if (value is StructVarNode structVarNodeGetByIndex) structVarNodeGetByIndex.AcceptByValue(this, commands);
-                else value.Accept(this, commands);
+                switch (value)
+                {
+                    // Value to assign to top of stack
+                    case ArrayVarNode arrayVarNodeGetByIndex:
+                        arrayVarNodeGetByIndex.AcceptByValue(this, commands);
+                        break;
+                    case StructVarNode structVarNodeGetByIndex:
+                        structVarNodeGetByIndex.AcceptByValue(this, commands);
+                        break;
+                    default:
+                        value.Accept(this, commands);
+                        break;
+                }
 
                 // Setting element by index
-                commands.Enqueue(new SetElementByIndex(_getTypeFromTypeNode(value.Type), commands.Count));
+                if (getByIndexNode.Type is ArrayTypeNode) commands.Enqueue(new SetElementByIndexRef(commands.Count));
+                else commands.Enqueue(new SetElementByIndex(_getTypeFromTypeNode(value.Type), commands.Count));
                 break;
             case VarNode varNode:
-                // Pushing to value to stack
-                if (value is ArrayVarNode arrayVar) arrayVar.AcceptByValue(this, commands);
-                else if (value is StructVarNode structVar) structVar.AcceptByValue(this, commands);
-                else value.Accept(this, commands);
+                switch (value)
+                {
+                    // Pushing to value to stack
+                    case ArrayVarNode arrayVar:
+                        arrayVar.AcceptByValue(this, commands);
+                        break;
+                    case StructVarNode structVar:
+                        structVar.AcceptByValue(this, commands);
+                        break;
+                    default:
+                        value.Accept(this, commands);
+                        break;
+                }
 
                 // Getting name to set value
                 var name = varNode.Name!;
@@ -958,7 +987,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // create new array
         commands.Enqueue(new LoadConstantCommand(arrayConst.Expressions.Expressions.Count, commands.Count));
-        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayConst.Type),
+        commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(((ArrayTypeNode) arrayConst.Type).ElementTypeNode),
             commands.Count));
         commands.Enqueue(new SetLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
 

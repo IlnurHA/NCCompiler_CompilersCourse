@@ -343,6 +343,16 @@ public class SetElementByIndex : BaseCommand
     }
 }
 
+public class SetElementByIndexRef : BaseCommand
+{
+
+    public SetElementByIndexRef(int index) : base(index) { }
+    public override string Translate()
+    {
+        return FormattedIndex() + "stelem.ref";
+    }
+}
+
 public class LoadFunctionArgument : BaseCommand
 {
     public int Index;
@@ -504,6 +514,16 @@ public class LoadByIndexCommand : BaseCommand
         if (Type == "int32") command = "ldelem.i4";
         if (Type == "float32") command = "ldelem.r4";
         return FormattedIndex() + command;
+    }
+}
+
+public class LoadFromArrayRefCommand : BaseCommand
+{
+    public LoadFromArrayRefCommand(int index) : base(index) {}
+
+    public override string Translate()
+    {
+        return FormattedIndex() + "ldelem.ref";
     }
 }
 
