@@ -81,7 +81,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
     {
         getFieldNode.StructVarNode.Accept(this, commands);
-        var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
+        var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type.GetFinalTypeNode())!;
         commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type),
             $"Program/{structName.GetName()}",
             getFieldNode.FieldName, commands.Count));
@@ -96,7 +96,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         // ... -> ..., array
         // pushing array to stack
-        getByIndexNode.ArrayVarNode.AcceptByValue(this, commands);
+        switch (getByIndexNode.ArrayVarNode)
+        {
+            case ArrayVarNode arrayVarNode:
+                arrayVarNode.AcceptByValue(this, commands);
+                break;
+            case GetFieldNode getFieldNode:
+                getFieldNode.Accept(this, commands);
+                break;
+            case GetByIndexNode subGetByIndexNode:
+                subGetByIndexNode.Accept(this, commands);
+                break;
+            default:
+                throw new Exception($"Unexpected type: {getByIndexNode.ArrayVarNode.GetType()}");
+        }
 
         // ..., array -> ..., array, index
         // pushing index to stack
@@ -115,8 +128,20 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         // ... -> ..., array
         // pushing array to stack
-        getByIndexNode.ArrayVarNode.AcceptByValue(this, commands);
-
+        switch (getByIndexNode.ArrayVarNode)
+        {
+            case ArrayVarNode arrayVarNode:
+                arrayVarNode.AcceptByValue(this, commands);
+                break;
+            case GetFieldNode getFieldNode:
+                getFieldNode.Accept(this, commands);
+                break;
+            case GetByIndexNode subGetByIndexNode:
+                subGetByIndexNode.Accept(this, commands);
+                break;
+            default:
+                throw new Exception($"Unexpected type: {getByIndexNode.ArrayVarNode.GetType()}");
+        }
         // ..., array -> ..., array, index
         // pushing index to stack
         getByIndexNode.Index.Accept(this, commands);
@@ -625,7 +650,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 else value.Accept(this, commands);
 
                 // Setting element by index
-                commands.Enqueue(new SetElementByIndex(commands.Count));
+                commands.Enqueue(new SetElementByIndex(_getTypeFromTypeNode(value.Type), commands.Count));
                 break;
             case VarNode varNode:
                 // Pushing to value to stack
@@ -943,7 +968,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             commands.Enqueue(new LoadLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
             commands.Enqueue(new LoadConstantCommand(counter, commands.Count));
             elements.Accept(this, commands);
-            commands.Enqueue(new SetElementByIndex(commands.Count));
+            commands.Enqueue(new SetElementByIndex(_getTypeFromTypeNode(elements.Type), commands.Count));
 
             counter++;
         }

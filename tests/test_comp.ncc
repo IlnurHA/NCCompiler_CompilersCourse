@@ -1,11 +1,31 @@
-routine main() is
-    var a is [1, 2, 3, 4, 5]
-    
-    var sum is 0
-    
-    for i in 1..a.size loop
-        sum := sum + a[i]
+
+type struct is
+    record
+        var a: integer
+        var b: array[3]integer
     end
+
+type struct2 is 
+    record
+        var sub_struct: struct
+    end
+
+routine main() is
+    var a: struct
     
-    assert sum, 15
+    var a_arr is [1, 2, 3]
+    a.b := a_arr
+    a.a := 5
+    
+    assert a.b[2], 2
+    
+    var b: struct2
+    b.sub_struct := a
+    
+    assert b.sub_struct.b[1], 1
+    
+    var struct_arr: array[1]struct
+    struct_arr[1] := a
+    
+    assert struct_arr[1].b[1], 1
 end

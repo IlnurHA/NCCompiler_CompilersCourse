@@ -37,7 +37,7 @@ class EvalVisitor : IVisitor
                     throw new Exception("Unexpected node type for field");
 
                 var modPrimField =
-                    (StructVarNode) _getFromScopeStackIfNeeded(modPrimFieldBuffer);
+                    (ValueNode) _getFromScopeStackIfNeeded(modPrimFieldBuffer);
                 return new GetFieldNode(modPrimField, idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArrBuffer = node.Children[0]!.Accept(this);
@@ -46,7 +46,7 @@ class EvalVisitor : IVisitor
                 if (_getFromScopeStackIfNeeded(indexFromArrBuffer) is not ValueNode indexFromArr)
                     throw new Exception("Unexpected node type for index");
 
-                var arrFromArr = (ArrayVarNode) _getFromScopeStackIfNeeded(arrFromArrBuffer);
+                var arrFromArr = (ValueNode) _getFromScopeStackIfNeeded(arrFromArrBuffer);
 
                 return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:

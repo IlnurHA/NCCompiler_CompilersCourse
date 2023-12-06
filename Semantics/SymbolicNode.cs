@@ -518,13 +518,24 @@ public class ArrayVarNode : VarNode
 
 public class GetByIndexNode : ValueNode
 {
-    public ArrayVarNode ArrayVarNode { get; set; }
+    public ValueNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
 
-    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(varNode.Type.ElementTypeNode)
+    public TypeNode GetTypeNode()
+    {
+        if (ArrayVarNode is ArrayVarNode arrayVarNode) return arrayVarNode.Type.ElementTypeNode;
+        if (ArrayVarNode is GetByIndexNode getByIndexNode)
+            return ((ArrayTypeNode) getByIndexNode.GetTypeNode()).ElementTypeNode;
+        if (ArrayVarNode is GetFieldNode getFieldNode)
+            return ((ArrayTypeNode) getFieldNode.GetTypeNode()).ElementTypeNode;
+        throw new Exception($"Unexpected type: {ArrayVarNode.GetType()}");
+    }
+
+    public GetByIndexNode(ValueNode varNode, ValueNode index)
     {
         ArrayVarNode = varNode;
         Index = index;
+        Type = GetTypeNode();
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
@@ -589,9 +600,19 @@ public class StructVarNode : VarNode
 
 public class GetFieldNode : VarNode
 {
-    public StructVarNode StructVarNode { get; set; }
+    public ValueNode StructVarNode { get; set; }
     public string FieldName { get; set; }
     public VarNode? FieldNode { get; set; }
+
+    public TypeNode GetTypeNode()
+    {
+        if (StructVarNode is StructVarNode structVarNode) return structVarNode.GetField(FieldName).Type.GetFinalTypeNode();
+        if (StructVarNode is GetFieldNode getFieldNode)
+            return ((StructTypeNode) getFieldNode.GetTypeNode().GetFinalTypeNode()).StructFields[FieldName];
+        if (StructVarNode is GetByIndexNode getByIndexNode)
+            return ((StructTypeNode) getByIndexNode.GetTypeNode().GetFinalTypeNode()).StructFields[FieldName];
+        throw new Exception($"Unexpected type: {StructVarNode.GetType()}");
+    }
 
     public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.Name!)
     {
@@ -600,12 +621,12 @@ public class GetFieldNode : VarNode
         Type = structVarNode.GetField(fieldName).Type;
     }
 
-    public GetFieldNode(StructVarNode structVarNode, PrimitiveVarNode fieldNode) : base(structVarNode.Name!)
+    public GetFieldNode(ValueNode structVarNode, PrimitiveVarNode fieldNode)
     {
         StructVarNode = structVarNode;
-        FieldName = fieldNode.Name!;
+        FieldName = fieldNode.Name;
         FieldNode = fieldNode;
-        Type = structVarNode.GetField(fieldNode.Name).Type;
+        Type = GetTypeNode();
     }
 
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)

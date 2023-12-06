@@ -328,10 +328,18 @@ public class OperationCommand : BaseCommand
 
 public class SetElementByIndex : BaseCommand
 {
-    public SetElementByIndex(int index) : base(index) {}
+    public string Type { get; }
+
+    public SetElementByIndex(string type, int index) : base(index)
+    {
+        Type = type;
+    }
     public override string Translate()
     {
-        return FormattedIndex() + "stelem.i4";
+        string command = $"stelem\t{Type}";
+        if (Type == "int32") command = "stelem.i4";
+        if (Type == "float32") command = "stelem.r4";
+        return FormattedIndex() + command;
     }
 }
 
@@ -492,7 +500,10 @@ public class LoadByIndexCommand : BaseCommand
     }
     public override string Translate()
     {
-        return FormattedIndex() + "ldelem.i4";
+        string command = $"ldelema\t{Type}";
+        if (Type == "int32") command = "ldelem.i4";
+        if (Type == "float32") command = "ldelem.r4";
+        return FormattedIndex() + command;
     }
 }
 
