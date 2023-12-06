@@ -115,7 +115,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         // ... -> ..., array
         // pushing array to stack
-        getByIndexNode.ArrayVarNode.Accept(this, commands);
+        getByIndexNode.ArrayVarNode.AcceptByValue(this, commands);
 
         // ..., array -> ..., array, index
         // pushing index to stack
@@ -182,7 +182,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         else
         {
             // getting value on top of the stack
-            declarationNode.DeclarationValue.Accept(this, commands);
+            if (declarationNode.DeclarationValue is ArrayVarNode arrayVarNode) arrayVarNode.AcceptByValue(this, commands);
+            if (declarationNode.DeclarationValue is StructVarNode structVarNode) structVarNode.AcceptByValue(this, commands);
+            else declarationNode.DeclarationValue.Accept(this, commands);
         }
 
         // setting value to variable
@@ -603,7 +605,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 getFieldNode.AcceptSetField(this, commands);
 
                 // Pushing value to top of stack
-                value.Accept(this, commands);
+                if (value is ArrayVarNode arrayVarNode) arrayVarNode.AcceptByValue(this, commands);
+                else if (value is StructVarNode structVarNode) structVarNode.AcceptByValue(this, commands);
+                else value.Accept(this, commands);
 
                 // Setting to field command
                 var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type)!;
@@ -616,14 +620,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 getByIndexNode.AcceptSetByIndex(this, commands);
 
                 // Value to assign to top of stack
-                value.Accept(this, commands);
+                if (value is ArrayVarNode arrayVarNodeGetByIndex) arrayVarNodeGetByIndex.AcceptByValue(this, commands);
+                else if (value is StructVarNode structVarNodeGetByIndex) structVarNodeGetByIndex.AcceptByValue(this, commands);
+                else value.Accept(this, commands);
 
                 // Setting element by index
                 commands.Enqueue(new SetElementByIndex(commands.Count));
                 break;
             case VarNode varNode:
                 // Pushing to value to stack
-                value.Accept(this, commands);
+                if (value is ArrayVarNode arrayVar) arrayVar.AcceptByValue(this, commands);
+                else if (value is StructVarNode structVar) structVar.AcceptByValue(this, commands);
+                else value.Accept(this, commands);
 
                 // Getting name to set value
                 var name = varNode.Name!;
@@ -1003,6 +1011,25 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
         else commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+    }
+    
+    public void VisitStructVarByValueNode(StructVarNode structVarNode, Queue<BaseCommand> commands)
+    {
+        // Assuming that VarNode is declared variable
+        var name = structVarNode.Name!;
+        var isArgument = false;
+
+        var codeGenVar = ScopeStack.GetVariable(name);
+        if (codeGenVar is null)
+        {
+            codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+            isArgument = true;
+        }
+
+        if (codeGenVar is null) throw new Exception("Variable is not declared");
+
+        if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
+        else commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> commands)

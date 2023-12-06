@@ -57,9 +57,11 @@ public interface IVisitorCodeGeneration
     public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> commands);
     
     public void VisitArrayVarByValueNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> commands);
-    void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> commands);
-    void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue);
-    void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue);
-    void VisitVarNode(VarNode varNode, Queue<BaseCommand> commands);
-    void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> commands);
+    public void VisitStructVarNode(StructVarNode structVarNode, Queue<BaseCommand> commands);
+    
+    public void VisitStructVarByValueNode(StructVarNode structVarNode, Queue<BaseCommand> commands);
+    public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> queue);
+    public void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue);
+    public void VisitVarNode(VarNode varNode, Queue<BaseCommand> commands);
+    public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> commands);
 }

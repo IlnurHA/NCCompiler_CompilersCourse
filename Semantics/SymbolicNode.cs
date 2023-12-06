@@ -580,6 +580,11 @@ public class StructVarNode : VarNode
     {
         visitor.VisitStructVarNode(this, queue);
     }
+    
+    public void AcceptByValue(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitStructVarByValueNode(this, queue);
+    }
 }
 
 public class GetFieldNode : VarNode
