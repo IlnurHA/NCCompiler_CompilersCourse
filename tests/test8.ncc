@@ -1,5 +1,5 @@
 routine abs(a: real): real is
-    if a >= 0 then
+    if a >= 0.0 then
     else
         a := a * -1
     end

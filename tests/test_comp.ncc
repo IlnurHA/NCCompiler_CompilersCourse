@@ -1,31 +1,13 @@
-
-type struct is
-    record
-        var a: integer
-        var b: array[3]integer
+routine abs(int_var: integer): integer is
+    if int_var < 0 then
+        int_var := int_var * -1
     end
+    return int_var
+end
 
-type struct2 is 
-    record
-        var sub_struct: struct
-    end
 
 routine main() is
-    var a: struct
-    
-    var a_arr is [1, 2, 3]
-    a.b := a_arr
-    a.a := 5
-    
-    assert a.b[2], 2
-    
-    var b: struct2
-    b.sub_struct := a
-    
-    assert b.sub_struct.b[1], 1
-    
-    var struct_arr: array[1]struct
-    struct_arr[1] := a
-    
-    assert struct_arr[1].b[1], 1
+    var a is 5
+    var absed is abs(-4)
+    assert a, absed
 end
