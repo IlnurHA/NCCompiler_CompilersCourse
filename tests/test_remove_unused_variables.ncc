@@ -1,0 +1,5 @@
+routine main() is
+    return
+    var a: array[]integer is [1, 2, 3]
+    var b is a
+end

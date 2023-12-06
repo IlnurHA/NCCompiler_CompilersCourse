@@ -21,7 +21,7 @@ public class SemanticsScopeStack
         Scopes.RemoveAt(Scopes.Count - 1);
     }
 
-    public List<VarNode> GetUnusedVariablesInLastScope()
+    public HashSet<string> GetUnusedVariablesInLastScope()
     {
         return Scopes[^1].GetUnusedVariables();
     }

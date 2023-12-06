@@ -19,7 +19,7 @@
           mid := l + (r - l) / 2
  
           if arr[mid] = x then
-              return mid
+              break
           else 
       if arr[mid] < x then
                   l := mid + 1
@@ -28,6 +28,6 @@
       end
      end
   end
-  assert res, 3 // OK
+  assert mid, 3 // OK
   // mid should be 3
 end

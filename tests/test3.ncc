@@ -1,16 +1,17 @@
 ﻿/* Routine to convert decimal to binary */
-routine dec_to_bin(dec: integer): integer is
-  var bin: integer is 0
+routine dec_to_bin(dec: integer, mul: integer): integer is
+    if dec = 1 then
+        return (dec % 2) * mul
+    end
+    return ((dec % 2) * mul) + (dec_to_bin(dec / 2, mul * 10))
+end
 
-  while dec /= 0 loop
-    bin := 10 * bin + dec % 2
-    dec := dec / 2
-  end
-  return bin
+routine dec_to_bin_driver(dec: integer): integer is
+  return dec_to_bin(dec, 1)
 end
 
 routine main() is
-  assert dec_to_bin(31), 11111 // OK
-  assert dec_to_bin(15), 1111 // OK
-  assert dec_to_bin(32), 10000 // OK
+  assert dec_to_bin_driver(31), 11111 // OK
+  assert dec_to_bin_driver(15), 1111 // OK
+  assert dec_to_bin_driver(32), 100000 // OK
 end

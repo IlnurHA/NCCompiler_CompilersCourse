@@ -29,7 +29,7 @@ public class TypedSymbolicNode : SymbolicNode
 
 public class TypeNode : SymbolicNode
 {
-    public new MyType MyType { get; set; }
+    public virtual MyType MyType { get; set; }
 
     public TypeNode(MyType myType)
     {
@@ -107,7 +107,7 @@ public class ArrayTypeNode : TypeNode
     {
         if (anotherObject is not ArrayTypeNode tempObj) return false;
         return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj.ElementTypeNode) &&
-               ((Size == null && tempObj.Size == null) ||
+               (Size == null || tempObj.Size == null ||
                 (Size is not null && tempObj.Size is not null &&
                  (Size.Value is null && tempObj.Size.Value is null || 
                   (Size.Value is not null && Size.Value.Equals(tempObj.Size.Value)))));
@@ -139,11 +139,11 @@ public class StructTypeNode : TypeNode
             if (!field.Value.IsTheSame(tempObj.StructFields[field.Key])) return false;
         }
         
-        foreach (var (key, varNode) in DefaultValues)
-        {
-            if (!tempObj.DefaultValues.ContainsKey(key)) return false;
-            if (varNode.Value != tempObj.DefaultValues[key].Value) return false;
-        }
+        // foreach (var (key, varNode) in DefaultValues)
+        // {
+        //     if (!tempObj.DefaultValues.ContainsKey(key)) return false;
+        //     if (varNode.Value != tempObj.DefaultValues[key].Value) return false;
+        // }
 
         return true;
     }
@@ -157,7 +157,7 @@ public class UserDefinedTypeNode : TypeNode
 {
     public TypeNode Type { get; set; }
     public string Name { get; set; }
-    public new MyType MyType { get; set; } = MyType.DeclaredType;
+    public override MyType MyType { get; set; } = MyType.DeclaredType;
 
     public override bool IsTheSame(TypeNode anotherObject)
     {
@@ -425,14 +425,14 @@ public class AssignmentNode : StatementNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; }
+    public List<StatementNode> Statements { get; set; }
 
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
         Type = typeNode;
         Statements = statements;
     }
-    
+
     public BodyNode()
     {
         Statements = new List<StatementNode>();
@@ -443,10 +443,28 @@ public class BodyNode : TypedSymbolicNode
     {
         Statements.Add(statement);
     }
-    
+
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
         visitor.VisitBodyNode(this, queue);
+    }
+
+    public void Filter(HashSet<string> unusedVariables)
+    {
+        List<StatementNode> usedBodyStatements = new();
+        foreach (var statement in Statements)
+        {
+            if (statement is DeclarationNode || statement.GetType().IsSubclassOf(typeof(DeclarationNode)))
+            {
+                if (!unusedVariables.Contains(((DeclarationNode) statement).Variable.Name!))
+                    usedBodyStatements.Add(statement);
+            }
+            else
+                usedBodyStatements.Add(statement);
+            if (statement is ReturnNode) break;
+        }
+
+        Statements = usedBodyStatements;
     }
 }
 
@@ -509,22 +527,43 @@ public class ArrayVarNode : VarNode
     {
         visitor.VisitArrayVarNode(this, queue);
     }
+    
+    public void AcceptByValue(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitArrayVarByValueNode(this, queue);
+    }
 }
 
 public class GetByIndexNode : ValueNode
 {
-    public ArrayVarNode ArrayVarNode { get; set; }
+    public ValueNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
+    
+    public TypeNode GetTypeNode()
+    {
+        if (ArrayVarNode is ArrayVarNode arrayVarNode) return arrayVarNode.Type.ElementTypeNode;
+        if (ArrayVarNode is GetByIndexNode getByIndexNode)
+            return ((ArrayTypeNode) getByIndexNode.GetTypeNode()).ElementTypeNode;
+        if (ArrayVarNode is GetFieldNode getFieldNode)
+            return ((ArrayTypeNode) getFieldNode.GetTypeNode()).ElementTypeNode;
+        throw new Exception($"Unexpected type: {ArrayVarNode.GetType()}");
+    }
 
-    public GetByIndexNode(ArrayVarNode varNode, ValueNode index) : base(varNode.Type.ElementTypeNode)
+    public GetByIndexNode(ValueNode varNode, ValueNode index)
     {
         ArrayVarNode = varNode;
         Index = index;
+        Type = GetTypeNode();
     }
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
         visitor.VisitGetByIndexNode(this, queue);
+    }
+
+    public void AcceptSetByIndex(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitSetByIndex(this, queue);
     }
 }
 
@@ -571,36 +610,27 @@ public class StructVarNode : VarNode
         visitor.VisitStructVarNode(this, queue);
     }
     
-    // public static StructVarNode FromType(StructTypeNode structTypeNode, string StructName)
-    // {
-    //     var newDict = new Dictionary<string, VarNode>();
-    //
-    //     foreach (var (key, value) in structTypeNode.StructFields)
-    //     {
-    //         newDict[key] = value switch
-    //         {
-    //             ArrayTypeNode arrayTypeNode => new ArrayVarNode(arrayTypeNode)
-    //             {
-    //                 Name = $"{StructName}::{key}"
-    //             },
-    //             StructTypeNode structTypeNode2 => FromType(structTypeNode2, ),
-    //             { } node => new VarNode
-    //             {
-    //                 IsInitialized = false,
-    //                 Type = node,
-    //             }
-    //         };
-    //     }
-    //
-    //     return new StructVarNode(newDict, structTypeNode);
-    // }
+    public void AcceptByValue(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitStructVarByValueNode(this, queue);
+    }
 }
 
 public class GetFieldNode : VarNode
 {
-    public StructVarNode StructVarNode { get; set; }
+    public ValueNode StructVarNode { get; set; }
     public string FieldName { get; set; }
     public VarNode? FieldNode { get; set; }
+
+    public TypeNode GetTypeNode()
+    {
+        if (StructVarNode is StructVarNode structVarNode) return structVarNode.GetField(FieldName).Type.GetFinalTypeNode();
+        if (StructVarNode is GetFieldNode getFieldNode)
+            return ((StructTypeNode) getFieldNode.GetTypeNode().GetFinalTypeNode()).StructFields[FieldName];
+        if (StructVarNode is GetByIndexNode getByIndexNode)
+            return ((StructTypeNode) getByIndexNode.GetTypeNode().GetFinalTypeNode()).StructFields[FieldName];
+        throw new Exception($"Unexpected type: {StructVarNode.GetType()}");
+    }
 
     public GetFieldNode(StructVarNode structVarNode, string fieldName) : base(structVarNode.Name!)
     {
@@ -609,12 +639,12 @@ public class GetFieldNode : VarNode
         Type = structVarNode.GetField(fieldName).Type;
     }
 
-    public GetFieldNode(StructVarNode structVarNode, PrimitiveVarNode fieldNode) : base(structVarNode.Name!)
+    public GetFieldNode(ValueNode structVarNode, PrimitiveVarNode fieldNode)
     {
         StructVarNode = structVarNode;
-        FieldName = fieldNode.Name!;
+        FieldName = fieldNode.Name;
         FieldNode = fieldNode;
-        Type = structVarNode.GetField(fieldNode.Name).Type;
+        Type = GetTypeNode();
     }
 
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
@@ -696,7 +726,7 @@ public class ParameterNode : TypedSymbolicNode
 
 public class ParametersNode : SymbolicNode
 {
-    public List<ParameterNode> Parameters { get; }
+    public List<ParameterNode> Parameters { get; set; }
 
     public ParametersNode(List<ParameterNode> parameters)
     {
@@ -711,6 +741,11 @@ public class ParametersNode : SymbolicNode
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
         visitor.VisitParametersNode(this, queue);
+    }
+
+    public void Filter(HashSet<string> unusedVariables)
+    {
+        Parameters = Parameters.Where(parameter => !unusedVariables.Contains(parameter.Variable.Name!)).ToList();
     }
 }
 
@@ -904,16 +939,22 @@ public class ArrayConst : ValueNode
 
 public class ProgramNode : SymbolicNode
 {
-    public List<SymbolicNode> Declarations { get; }
-
-    public ProgramNode()
-    {
-        Declarations = new List<SymbolicNode>();
-    }
+    public List<SymbolicNode> Declarations { get; } = new();
+    private bool _hasMainFlag;
 
     public void AddDeclaration(SymbolicNode node)
     {
         Declarations.Add(node);
+    }
+
+    public bool HasMain()
+    {
+        return _hasMainFlag;
+    }
+    
+    public void SetHasMain()
+    {
+        _hasMainFlag = true;
     }
 
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)

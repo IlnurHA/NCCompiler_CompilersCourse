@@ -1,11 +1,19 @@
-routine main() is
-    var a is [1, 2, 3, 4, 5]
-    
-    var sum is 0
-    
-    for i in 1..a.size loop
-        sum := sum + a[i]
+type struct is
+    record
+        var a: integer
     end
+
+routine my_routine(a: struct) : struct is
+    a.a := a.a + 5
+    return a
+end
+
+routine main() is
+    var a: struct
+    a.a := 5
     
-    assert sum, 15
+    var b is my_routine(a)
+    
+    assert a.a, 5
+    assert b.a, 10
 end

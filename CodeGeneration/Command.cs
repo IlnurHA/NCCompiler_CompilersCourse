@@ -103,7 +103,11 @@ public class LoadLocalCommand : LocalVarCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + $"ldloca.s\t'{Name}'";
+        string command = $"ldloc.s\t{Index}";
+
+        if (Index < 4) command = $"ldloc.{Index}";
+        
+        return FormattedIndex() + command;
     }
 }
 
@@ -115,7 +119,10 @@ public class SetLocalCommand : LocalVarCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + $"stloc.s\t'{Name}'";
+        string command = $"stloc.s\t{Index}";
+        if (Index < 4) command = $"stloc.{Index}";
+        
+        return FormattedIndex() + command;
     }
 }
 
@@ -139,15 +146,17 @@ public class DuplicateCommand : BaseCommand
 public class LoadLocalAddressToStackCommand : BaseCommand
 {
     public string VarName { get; }
+    public int Index { get; }
 
-    public LoadLocalAddressToStackCommand(string varName, int index) : base(index)
+    public LoadLocalAddressToStackCommand(int index, string varName, int commandIndex) : base(commandIndex)
     {
         VarName = varName;
+        Index = index;
     }
 
     public override string Translate()
     {
-        return FormattedIndex() + "ldloc.s" + '\t' + $"'{VarName}'";
+        return FormattedIndex() + "ldloca.s" + '\t' + $"'{VarName}'";
     }
 }
 public class SetFieldCommand : BaseCommand
@@ -319,10 +328,28 @@ public class OperationCommand : BaseCommand
 
 public class SetElementByIndex : BaseCommand
 {
-    public SetElementByIndex(int index) : base(index) {}
+    public string Type { get; }
+
+    public SetElementByIndex(string type, int index) : base(index)
+    {
+        Type = type;
+    }
     public override string Translate()
     {
-        return FormattedIndex() + "stelem.i4";
+        string command = $"stelem\t{Type}";
+        if (Type == "int32") command = "stelem.i4";
+        if (Type == "float32") command = "stelem.r4";
+        return FormattedIndex() + command;
+    }
+}
+
+public class SetElementByIndexRef : BaseCommand
+{
+
+    public SetElementByIndexRef(int index) : base(index) { }
+    public override string Translate()
+    {
+        return FormattedIndex() + "stelem.ref";
     }
 }
 
@@ -339,6 +366,20 @@ public class LoadFunctionArgument : BaseCommand
         if (Index < 0) throw new Exception("Index for argument from function should be non-negative");
         if (Index < 10) return FormattedIndex() + $"ldarg.{Index}";
         return FormattedIndex() + $"ldarg.s\t{Index}";
+    }
+}
+
+public class LoadFunctionArgumentByAddress : BaseCommand
+{
+    public string Name;
+
+    public LoadFunctionArgumentByAddress(string name, int commandIndex) : base(commandIndex)
+    {
+        Name = name;
+    }
+    public override string Translate()
+    {
+        return FormattedIndex() + $"ldarga.s\t{Name}";
     }
 }
 
@@ -483,7 +524,20 @@ public class LoadByIndexCommand : BaseCommand
     }
     public override string Translate()
     {
-        return FormattedIndex() + "ldelem.i4";
+        string command = $"ldelema\t{Type}";
+        if (Type == "int32") command = "ldelem.i4";
+        if (Type == "float32") command = "ldelem.r4";
+        return FormattedIndex() + command;
+    }
+}
+
+public class LoadFromArrayRefCommand : BaseCommand
+{
+    public LoadFromArrayRefCommand(int index) : base(index) {}
+
+    public override string Translate()
+    {
+        return FormattedIndex() + "ldelem.ref";
     }
 }
 
