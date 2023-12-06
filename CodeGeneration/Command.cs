@@ -103,7 +103,11 @@ public class LoadLocalCommand : LocalVarCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + $"ldloca.s\t'{Name}'";
+        string command = $"ldloc.s\t{Index}";
+
+        if (Index < 4) command = $"ldloc.{Index}";
+        
+        return FormattedIndex() + command;
     }
 }
 
@@ -115,7 +119,10 @@ public class SetLocalCommand : LocalVarCommand
 
     public override string Translate()
     {
-        return FormattedIndex() + $"stloc.s\t'{Name}'";
+        string command = $"stloc.s\t{Index}";
+        if (Index < 4) command = $"stloc.{Index}";
+        
+        return FormattedIndex() + command;
     }
 }
 
@@ -139,15 +146,17 @@ public class DuplicateCommand : BaseCommand
 public class LoadLocalAddressToStackCommand : BaseCommand
 {
     public string VarName { get; }
+    public int Index { get; }
 
-    public LoadLocalAddressToStackCommand(string varName, int index) : base(index)
+    public LoadLocalAddressToStackCommand(int index, string varName, int commandIndex) : base(commandIndex)
     {
         VarName = varName;
+        Index = index;
     }
 
     public override string Translate()
     {
-        return FormattedIndex() + "ldloc.s" + '\t' + $"'{VarName}'";
+        return FormattedIndex() + "ldloca.s" + '\t' + $"'{VarName}'";
     }
 }
 public class SetFieldCommand : BaseCommand

@@ -96,7 +96,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         // ... -> ..., array
         // pushing array to stack
-        getByIndexNode.ArrayVarNode.Accept(this, commands);
+        getByIndexNode.ArrayVarNode.AcceptByValue(this, commands);
 
         // ..., array -> ..., array, index
         // pushing index to stack
@@ -110,7 +110,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // Getting from array and index then push value to stack 
         commands.Enqueue(new LoadByIndexCommand(_getTypeFromTypeNode(getByIndexNode.Type), commands.Count));
     }
-    
+
     public void VisitSetByIndex(GetByIndexNode getByIndexNode, Queue<BaseCommand> commands)
     {
         // ... -> ..., array
@@ -145,7 +145,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 var structVar = ScopeStack.GetByStructType(structType)!;
 
 
-                commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+                commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
                 commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
 
                 // Putting default values if any
@@ -164,7 +164,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 //         commands.Count));
                 // else
                 //     commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
-
                 return;
             }
 
@@ -173,6 +172,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 arrayTypeNode.Size!.Accept(this, commands);
                 commands.Enqueue(new NewArrayCommand(_getTypeFromTypeNode(arrayTypeNode.ElementTypeNode), commands.Count));
             }
+            else
+            {
+                return;
+            }
+            
+            
         }
         else
         {
@@ -927,7 +932,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var counter = 0;
         foreach (var elements in arrayConst.Expressions.Expressions)
         {
-            commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp, commands.Count));
+            commands.Enqueue(new LoadLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
             commands.Enqueue(new LoadConstantCommand(counter, commands.Count));
             elements.Accept(this, commands);
             commands.Enqueue(new SetElementByIndex(commands.Count));
@@ -935,7 +940,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             counter++;
         }
 
-        commands.Enqueue(new LoadLocalAddressToStackCommand(nameOfTemp, commands.Count));
+        commands.Enqueue(new LoadLocalCommand(specialVariable.Id, specialVariable.GetName(), commands.Count));
     }
 
     // Redundant Visit
@@ -947,6 +952,24 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitArrayVarNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> commands)
     {
         // Assuming that VarNode is declared variable
+        var name = arrayVarNode.Name!;
+        var isArgument = false;
+
+        var codeGenVar = ScopeStack.GetVariable(name);
+        if (codeGenVar is null)
+        {
+            codeGenVar = ScopeStack.GetArgumentInLastScope(name);
+            isArgument = true;
+        }
+
+        if (codeGenVar is null) throw new Exception("Variable is not declared");
+
+        if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
+        else commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+    }
+
+    public void VisitArrayVarByValueNode(ArrayVarNode arrayVarNode, Queue<BaseCommand> commands)
+    {
         var name = arrayVarNode.Name!;
         var isArgument = false;
 
@@ -979,7 +1002,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
         if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
-        else commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
+        else commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
     public void VisitArrayFunctions(ArrayFunctions arrayFunctions, Queue<BaseCommand> commands)

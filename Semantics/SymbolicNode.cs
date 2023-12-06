@@ -509,6 +509,11 @@ public class ArrayVarNode : VarNode
     {
         visitor.VisitArrayVarNode(this, queue);
     }
+    
+    public void AcceptByValue(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitArrayVarByValueNode(this, queue);
+    }
 }
 
 public class GetByIndexNode : ValueNode
