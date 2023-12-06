@@ -30,19 +30,19 @@ class Program
             var res = parser.Parse();
             Console.WriteLine($"Syntax analysis: {res}");
             
-            // if (res)
-            // {
-            //     var rootNode = parser.RootNode;
-            //     EvalVisitor visitor = new EvalVisitor();
-            //     var rootSymbolic = rootNode.Accept(visitor);
-            //     Console.WriteLine(res);
-            //
-            //     var codeGenVisit = new TranslationVisitorCodeGeneration();
-            //     rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
-            //     var programStr = codeGenVisit.ResultingProgram;
-            //     File.WriteAllText("compiledProgram.il", programStr);
-            //     Console.WriteLine("Code generated");
-            // }
+            if (res)
+            {
+                var rootNode = parser.RootNode;
+                EvalVisitor visitor = new EvalVisitor();
+                var rootSymbolic = rootNode.Accept(visitor);
+                Console.WriteLine(res);
+            
+                // var codeGenVisit = new TranslationVisitorCodeGeneration();
+                // rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
+                // var programStr = codeGenVisit.ResultingProgram;
+                // File.WriteAllText("compiledProgram.il", programStr);
+                // Console.WriteLine("Code generated");
+            }
         }
     }
 }

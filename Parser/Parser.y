@@ -129,7 +129,17 @@ RecordType  : RECORD LEFT_BRACKET VariableDeclarations RIGHT_BRACKET END    { $$
     ;
   
 VariableDeclarations : /* empty */ | VariableDeclarations VariableDeclaration
-    { $$ = Node.MakeComplexNode(NodeTag.VariableDeclarations, @$, $1, $2); }
+    { 
+    	if (@1 == null) 
+    	{
+    	    @$ = @2;
+    	} 
+    	else 
+    	{
+    	    @$ = @1.Merge(@2); 
+    	}
+    	$$ = Node.MakeComplexNode(NodeTag.VariableDeclarations, @$, $1, $2); 
+    }
     ;
 
 ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    { $$ = Node.MakeComplexNode(NodeTag.ArrayType, @$, $3,  $5); }
@@ -138,8 +148,30 @@ ArrayType : ARRAY LEFT_SQUARED_BRACKET Expression RIGHT_SQUARED_BRACKET Type    
     ;
 
 Body :  /* empty */
-        | Body SimpleDeclaration    { $$ = Node.MakeComplexNode(NodeTag.BodySimpleDeclaration, @$, $1, $2); }
-        | Body Statement            { $$ = Node.MakeComplexNode(NodeTag.BodyStatement, @$, $1, $2); }
+        | Body SimpleDeclaration    
+        { 
+        	if (@1 == null) 
+            {
+                @$ = @2;
+            } 
+            else 
+            {
+                @$ = @1.Merge(@2); 
+            }
+            $$ = Node.MakeComplexNode(NodeTag.BodySimpleDeclaration, @$, $1, $2);
+        }
+        | Body Statement            
+        {
+        	if (@1 == null) 
+            {
+                @$ = @2;
+            } 
+            else 
+            {
+                @$ = @1.Merge(@2); 
+            }
+            $$ = Node.MakeComplexNode(NodeTag.BodyStatement, @$, $1, $2);
+        }
         ;
 
 Statement   : Assignment    { $$ = $1; }

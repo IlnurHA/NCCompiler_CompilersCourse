@@ -159,7 +159,7 @@ public class ComplexNode : Node
                 return visitor.ExpressionVisit(this);
             case NodeTag.Print:
                 // TODO - implement print visitor
-                throw new Exception("Not implemented");
+                return visitor.PrintVisit(this);
             default:
                 throw new Exception($"Unexpected NodeTag {Tag} in the visit function");
         }

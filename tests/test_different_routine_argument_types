@@ -1,0 +1,8 @@
+﻿routine abs(a: real, b: boolean): real is
+    return a
+end
+
+routine main() is
+	var c : real
+    c := abs(1.5, false)
+end

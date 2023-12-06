@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.InteropServices.JavaScript;
@@ -10,6 +11,26 @@ namespace NCCompiler_CompilersCourse.Semantics;
 class EvalVisitor : IVisitor
 {
     public SemanticsScopeStack SemanticsScopeStack { get; set; } = new();
+
+    public SymbolicNode PrintVisit(ComplexNode node)
+    {
+        if (node.Tag != NodeTag.Print)
+        {
+            throw new UnreachableException();
+        }
+
+        var exprsPrintBuffer = node.Children[0]!.Accept(this);
+        if (exprsPrintBuffer is not (ExpressionsNode or ValueNode))
+            throw new Exception(
+                $"Unexpected node type. Expected Value node, got {exprsPrintBuffer.GetType()}");
+
+        var exprsPrint = exprsPrintBuffer is ExpressionsNode expressionsNode
+            ? expressionsNode
+            : new ExpressionsNode(new List<ValueNode>
+                { (ValueNode)_getFromScopeStackIfNeeded(exprsPrintBuffer) });
+
+        return new PrintNode(exprsPrint);
+    }
 
     public SymbolicNode ProgramVisit(ComplexNode node)
     {
@@ -39,7 +60,7 @@ class EvalVisitor : IVisitor
                     throw new Exception("Unexpected node type for field");
 
                 var modPrimField =
-                    (ValueNode) _getFromScopeStackIfNeeded(modPrimFieldBuffer);
+                    (ValueNode)_getFromScopeStackIfNeeded(modPrimFieldBuffer);
                 return new GetFieldNode(modPrimField, idField); // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArrBuffer = node.Children[0]!.Accept(this);
@@ -47,7 +68,7 @@ class EvalVisitor : IVisitor
 
                 if (_getFromScopeStackIfNeeded(indexFromArrBuffer) is not ValueNode indexFromArr)
                     throw new Exception("Unexpected node type for index");
-                var arrFromArr = (ValueNode) _getFromScopeStackIfNeeded(arrFromArrBuffer);
+                var arrFromArr = (ValueNode)_getFromScopeStackIfNeeded(arrFromArrBuffer);
 
                 return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
             case NodeTag.ArrayGetSorted:
@@ -534,7 +555,6 @@ class EvalVisitor : IVisitor
 
                 // Removing unused variables and arguments
                 var unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
-                if (parametersRoutineDecl != null) parametersRoutineDecl.Filter(unusedVariables);
                 bodyRoutineDeclFull.Filter(unusedVariables);
 
                 SemanticsScopeStack.DeleteScope();
@@ -636,7 +656,7 @@ class EvalVisitor : IVisitor
                 if (expressionContBuffer is not ValueNode expressionCont)
                     throw new Exception(
                         $"Unexpected node type. Expected ValueNode, got {expressionContBuffer.GetType()}");
-
+                expressionCont = (ValueNode)_getFromScopeStackIfNeeded(expressionCont);
                 var expressionsType = _isValidOperation(new ValueNode(expressionCont.Type),
                     new ValueNode(expressionsContNode.Expressions[^1].Type), OperationType.Assert);
 

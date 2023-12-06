@@ -797,6 +797,22 @@ public class ExpressionsNode : TypedSymbolicNode
     }
 }
 
+public class PrintNode : StatementNode
+{
+    public ExpressionsNode? Expressions { get; set; }
+    
+    public PrintNode(ExpressionsNode expressions)
+    {
+        Expressions = expressions;
+    }
+    
+    public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        // TODO - implement this method
+        // visitor.VisitPrintNode(this, queue);
+    }
+}
+
 public class RoutineCallNode : ValueNode
 {
     public RoutineDeclarationNode Routine { get; set; }
