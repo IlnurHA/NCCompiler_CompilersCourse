@@ -107,7 +107,7 @@ public class ArrayTypeNode : TypeNode
     {
         if (anotherObject is not ArrayTypeNode tempObj) return false;
         return MyType == tempObj.MyType && ElementTypeNode.IsTheSame(tempObj.ElementTypeNode) &&
-               ((Size == null && tempObj.Size == null) ||
+               (Size == null || tempObj.Size == null ||
                 (Size is not null && tempObj.Size is not null &&
                  (Size.Value is null && tempObj.Size.Value is null || 
                   (Size.Value is not null && Size.Value.Equals(tempObj.Size.Value)))));
