@@ -589,7 +589,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // ... -> ..., bool
         ifElseStatement.Condition.Accept(this, commands);
 
-        var jumpToElse = new JumpIfFalse(-1);
+        var jumpToElse = new JumpIfFalse(commands.Count);
         var jumpToEnd = new JumpCommand(commands.Count);
 
         // ..., bool -> ...
@@ -927,18 +927,19 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         {
             ExpressionsNode expressions = routineCallNode.Expressions;
             expressions.Accept(this, commands);
+
             foreach (var expression in expressions.Expressions)
             {
-                types.Add($"{CodeGenerationVariable.NodeToType(expression.Type)}");
+                types.Add($"{_getTypeFromTypeNode(expression.Type)}");
             }
         }
 
         var returnTypeString = routineCallNode.Routine.ReturnType == null
             ? "void"
-            : $"{CodeGenerationVariable.NodeToType(routineCallNode.Routine.ReturnType)}";
+            : $"{_getTypeFromTypeNode(routineCallNode.Routine.ReturnType)}";
         commands.Enqueue(new CallCommand(
             returnTypeString +
-            $" Program::{routineCallNode.Routine.Name}({string.Join(" ", types.ToArray())})", commands.Count));
+            $" Program::{routineCallNode.Routine.Name}({string.Join(", ", types.ToArray())})", commands.Count));
     }
 
     // Should be called only for routine call
@@ -947,7 +948,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     {
         foreach (ValueNode expression in expressionsNode.Expressions)
         {
-            expression.Accept(this, commands);
+            switch (expression)
+            {
+                case ArrayVarNode arrayVarNode:
+                    arrayVarNode.AcceptByValue(this, commands);
+                    break;
+                case StructVarNode structVarNode:
+                    structVarNode.AcceptByValue(this, commands);
+                    break;
+                default:
+                    expression.Accept(this, commands);
+                    break;
+            }
         }
     }
 
