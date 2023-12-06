@@ -425,14 +425,14 @@ public class AssignmentNode : StatementNode
 
 public class BodyNode : TypedSymbolicNode
 {
-    public List<StatementNode> Statements { get; }
+    public List<StatementNode> Statements { get; set; }
 
     public BodyNode(List<StatementNode> statements, TypeNode typeNode)
     {
         Type = typeNode;
         Statements = statements;
     }
-    
+
     public BodyNode()
     {
         Statements = new List<StatementNode>();
@@ -443,10 +443,27 @@ public class BodyNode : TypedSymbolicNode
     {
         Statements.Add(statement);
     }
-    
+
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
         visitor.VisitBodyNode(this, queue);
+    }
+
+    public void Filter(HashSet<string> unusedVariables)
+    {
+        List<StatementNode> usedBodyStatements = new();
+        foreach (var statement in Statements)
+        {
+            if (statement is DeclarationNode || statement.GetType().IsSubclassOf(typeof(DeclarationNode)))
+            {
+                if (!unusedVariables.Contains(((DeclarationNode) statement).Variable.Name!))
+                    usedBodyStatements.Add(statement);
+            }
+            else
+                usedBodyStatements.Add(statement);
+        }
+
+        Statements = usedBodyStatements;
     }
 }
 
@@ -520,7 +537,7 @@ public class GetByIndexNode : ValueNode
 {
     public ValueNode ArrayVarNode { get; set; }
     public ValueNode Index { get; set; }
-
+    
     public TypeNode GetTypeNode()
     {
         if (ArrayVarNode is ArrayVarNode arrayVarNode) return arrayVarNode.Type.ElementTypeNode;
@@ -708,7 +725,7 @@ public class ParameterNode : TypedSymbolicNode
 
 public class ParametersNode : SymbolicNode
 {
-    public List<ParameterNode> Parameters { get; }
+    public List<ParameterNode> Parameters { get; set; }
 
     public ParametersNode(List<ParameterNode> parameters)
     {
@@ -723,6 +740,11 @@ public class ParametersNode : SymbolicNode
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
         visitor.VisitParametersNode(this, queue);
+    }
+
+    public void Filter(HashSet<string> unusedVariables)
+    {
+        Parameters = Parameters.Where(parameter => !unusedVariables.Contains(parameter.Variable.Name!)).ToList();
     }
 }
 
@@ -916,16 +938,22 @@ public class ArrayConst : ValueNode
 
 public class ProgramNode : SymbolicNode
 {
-    public List<SymbolicNode> Declarations { get; }
-
-    public ProgramNode()
-    {
-        Declarations = new List<SymbolicNode>();
-    }
+    public List<SymbolicNode> Declarations { get; } = new();
+    private bool _hasMainFlag;
 
     public void AddDeclaration(SymbolicNode node)
     {
         Declarations.Add(node);
+    }
+
+    public bool HasMain()
+    {
+        return _hasMainFlag;
+    }
+    
+    public void SetHasMain()
+    {
+        _hasMainFlag = true;
     }
 
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
