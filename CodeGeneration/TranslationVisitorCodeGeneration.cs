@@ -80,7 +80,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitGetFieldNode(GetFieldNode getFieldNode, Queue<BaseCommand> commands)
     {
-        getFieldNode.StructVarNode.Accept(this, commands);
+        switch (getFieldNode.StructVarNode)
+        {
+            case StructVarNode structVarNode:
+                structVarNode.AcceptByValue(this, commands);
+                break;
+            case ArrayVarNode arrayVarNode:
+                arrayVarNode.AcceptByValue(this, commands);
+                break;
+            default:
+                getFieldNode.StructVarNode.Accept(this, commands);
+                break;
+        }
         var structName = ScopeStack.GetByStructType((StructTypeNode) getFieldNode.StructVarNode.Type.GetFinalTypeNode())!;
         commands.Enqueue(new LoadFieldCommand(_getTypeFromTypeNode(getFieldNode.Type),
             $"Program/{structName.GetName()}",
@@ -354,7 +365,19 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitValueReturnNode(ValueReturnNode valueReturnNode, Queue<BaseCommand> commands)
     {
-        valueReturnNode.Value.Accept(this, commands);
+        switch (valueReturnNode.Value)
+        {
+            case StructVarNode structVarNode:
+                structVarNode.AcceptByValue(this, commands);
+                break;
+            case ArrayVarNode arrayVarNode:
+                arrayVarNode.AcceptByValue(this, commands);
+                break;
+            default:
+                valueReturnNode.Value.Accept(this, commands);
+                break;
+        }
+
         commands.Enqueue(new ReturnCommand(commands.Count));
     }
 
@@ -737,45 +760,6 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             structDeclaration += $"\t\t.field {_getTypeFromTypeNode(type)} {name}\n";
         }
 
-        /*
-        // Default values
-        var commandCounter = 0;
-        var constructorString = "";
-        
-        foreach (var (key, varNode) in structTypeNode.DefaultValues)
-        {
-            varNode.Type.Accept(this, commands);
-            if (varNode.Value is null) continue;
-            constructorString += "\t\t" + new LoadFunctionArgument(0, commandCounter).Translate() + "\n";
-            commandCounter++;
-            if (varNode.Type is StructTypeNode structType)
-            {
-                var subStructVar = ScopeStack.GetByStructType(structType)!;
-                constructorString += "\t\t" + new NewObjectCommand($"Program/{subStructVar.GetName()}", commandCounter).Translate() + "\n";
-                commandCounter++;
-            } else
-            {
-                var tempCommand = new Queue<BaseCommand>();
-                ((ValueNode) varNode.Value!).Accept(this, tempCommand);
-                foreach (var command in tempCommand)
-                {
-                    command.CommandIndex = commandCounter;
-                    constructorString += "\t\t" + command.Translate() + "\n";
-                    commandCounter++;
-                }
-            }
-
-            constructorString += "\t\t" + new SetFieldCommand(_getTypeFromTypeNode(varNode.Type), $"Program/{structName}", key, commandCounter).Translate() + "\n";
-            commandCounter++;
-        }
-        if (constructorString != "")
-            structDeclaration += "\n\t.method public hidebysig specialname rtspecialname instance void" +
-                                 " \n\t\t.ctor() cil managed \n\t{\n" +
-                                 "\t\t.maxstack 50\n" +
-                                 $"{constructorString}" +
-                                 $"\t\t{new ReturnCommand(commandCounter).Translate()}\n" +
-                                 "\n\t}\n";
-        */
         structDeclaration += "\t}\n";
 
         _structDeclarations.Add(structDeclaration);
@@ -979,7 +963,18 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         foreach (var operand in operationNode.Operands)
         {
-            operand.Accept(this, commands);
+            switch (operand)
+            {
+                case ArrayVarNode arrayVarNode:
+                    arrayVarNode.AcceptByValue(this, commands);
+                    break;
+                case StructVarNode structVarNode:
+                    structVarNode.AcceptByValue(this, commands);
+                    break;
+                default:
+                    operand.Accept(this, commands);
+                    break;
+            }
         }
 
         foreach (var command in new OperationCommand(operationNode.OperationType, commands.Count).GetOperations())
@@ -1038,7 +1033,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
-        if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
+        if (isArgument) commands.Enqueue(new LoadFunctionArgumentByAddress(codeGenVar.GetName(), commands.Count));
         else commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
 
@@ -1075,7 +1070,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         if (codeGenVar is null) throw new Exception("Variable is not declared");
 
-        if (isArgument) commands.Enqueue(new LoadFunctionArgument(codeGenVar.Id, commands.Count));
+        if (isArgument) commands.Enqueue(new LoadFunctionArgumentByAddress(codeGenVar.GetName(), commands.Count));
         else commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
     }
     

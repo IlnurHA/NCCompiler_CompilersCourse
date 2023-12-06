@@ -369,6 +369,20 @@ public class LoadFunctionArgument : BaseCommand
     }
 }
 
+public class LoadFunctionArgumentByAddress : BaseCommand
+{
+    public string Name;
+
+    public LoadFunctionArgumentByAddress(string name, int commandIndex) : base(commandIndex)
+    {
+        Name = name;
+    }
+    public override string Translate()
+    {
+        return FormattedIndex() + $"ldarga.s\t{Name}";
+    }
+}
+
 public class StoreStructField : BaseCommand
 {
     public StoreStructField(int index) : base(index) {}

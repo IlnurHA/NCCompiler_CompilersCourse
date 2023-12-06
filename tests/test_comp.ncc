@@ -1,13 +1,19 @@
-routine abs(int_var: integer): integer is
-    if int_var < 0 then
-        int_var := int_var * -1
+type struct is
+    record
+        var a: integer
     end
-    return int_var
+
+routine my_routine(a: struct) : struct is
+    a.a := a.a + 5
+    return a
 end
 
-
 routine main() is
-    var a is 5
-    var absed is abs(-4)
-    assert a, absed
+    var a: struct
+    a.a := 5
+    
+    var b is my_routine(a)
+    
+    assert a.a, 5
+    assert b.a, 10
 end
