@@ -91,7 +91,7 @@ VariableDeclaration
     ;
 
 TypeDeclaration
-    : TYPE IDENTIFIER IS Type               { $$ = Node.MakeComplexNode(NodeTag.TypeDeclaration, @$, $2, $4); }
+    : TYPE IDENTIFIER IS Type               { $$ = Node.MakeComplexNode(NodeTag.TypeDeclaration, $2, $4); }
     ;
 
 RoutineDeclaration
@@ -233,24 +233,24 @@ SubExpression :
     | Cast
     ;
 
-Relation   : Simple {$$ = $1;}
-    | Relation EQ_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Eq, @$, $1, $3);}
-    | Relation GT_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Gt, @$, $1, $3);}
-    | Relation GE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Ge, @$, $1, $3);}
-    | Relation LT_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Lt, @$, $1, $3);}
-    | Relation LE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Le, @$, $1, $3);}
-    | Relation NE_COMPARISON Simple {$$ = Node.MakeComplexNode(NodeTag.Ne, @$, $1, $3);}
+Relation   : Factor {$$ = $1;}
+    | Relation EQ_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Eq, @$, $1, $3);}
+    | Relation GT_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Gt, @$, $1, $3);}
+    | Relation GE_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Ge, @$, $1, $3);}
+    | Relation LT_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Lt, @$, $1, $3);}
+    | Relation LE_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Le, @$, $1, $3);}
+    | Relation NE_COMPARISON Factor {$$ = Node.MakeComplexNode(NodeTag.Ne, @$, $1, $3);}
     ;
 
-Simple     : Factor {$$ = $1;}
-    | Simple MULTIPLY Factor {$$ = Node.MakeComplexNode(NodeTag.Mul, @$, $1, $3);}
-    | Simple DIVIDE Factor {$$ = Node.MakeComplexNode(NodeTag.Div, @$, $1, $3);}
-    | Simple REMAINDER Factor {$$ = Node.MakeComplexNode(NodeTag.Rem, @$, $1, $3);}
+Factor     : Simple { $$ = $1;}
+    | Factor PLUS Simple { $$ = Node.MakeComplexNode(NodeTag.Plus, @$, $1, $3);}
+    | Factor MINUS Simple { $$ = Node.MakeComplexNode(NodeTag.Minus, @$, $1, $3);}
     ;
 
-Factor     : Summand { $$ = $1;}
-    | Factor PLUS Summand { $$ = Node.MakeComplexNode(NodeTag.Plus, @$, $1, $3);}
-    | Factor MINUS Summand { $$ = Node.MakeComplexNode(NodeTag.Minus, @$, $1, $3);}
+Simple     : Summand {$$ = $1;}
+    | Simple MULTIPLY Summand {$$ = Node.MakeComplexNode(NodeTag.Mul, @$, $1, $3);}
+    | Simple DIVIDE Summand {$$ = Node.MakeComplexNode(NodeTag.Div, $1, $3);}
+    | Simple REMAINDER Summand {$$ = Node.MakeComplexNode(NodeTag.Rem, @$, $1, $3);}
     ;
 
 Summand : Primary { $$ = $1;}
