@@ -6,9 +6,9 @@
 
 .class private auto ansi beforefieldinit
   Program
-    extends [System.Runtime]System.Object
+    extends [mscorlib]System.Object
 {
-  .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor()
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor()
     = (01 00 00 00 )
 
   .method private hidebysig static void
@@ -30,7 +30,7 @@
     .maxstack 8
 
     IL_0000: ldarg.0      // this
-    IL_0001: call         instance void [System.Runtime]System.Object::.ctor()
+    IL_0001: call         instance void [mscorlib]System.Object::.ctor()
     IL_0006: nop
     IL_0007: ret
 
@@ -39,7 +39,7 @@
   .method assembly hidebysig static void
     '<<Main>$>g__Mai|0_0'() cil managed
   {
-    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor()
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor()
       = (01 00 00 00 )
     .maxstack 2
     .locals init (

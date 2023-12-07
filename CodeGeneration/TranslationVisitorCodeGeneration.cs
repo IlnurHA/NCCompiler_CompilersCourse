@@ -14,7 +14,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     public void VisitPrintNode(PrintNode printNode, Queue<BaseCommand> commands)
     {
         commands.Enqueue(new LoadConstantCommand(printNode.Expressions!.Expressions.Count, commands.Count));
-        commands.Enqueue(new NewArrayCommand("[System.Runtime]System.Object", commands.Count));
+        commands.Enqueue(new NewArrayCommand("[mscorlib]System.Object", commands.Count));
 
         int counter = 0;
         
@@ -47,9 +47,12 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var programString = "";
 
         // dependencies
-        programString += ".assembly extern System.Runtime {}\n";
-        programString += ".assembly extern System.Console {}\n";
-        programString += ".assembly compiledProgram{}\n";
+        // programString += ".assembly extern System.Runtime {}\n";
+        // programString += ".assembly extern System.Console {}\n";
+        // programString += ".assembly compiledProgram{}\n";
+        programString +=
+            ".assembly extern mscorlib {\n  .publickeytoken = (B7 7A 5C 56 19 34 E0 89)\n  .ver 4:0:0:0\n}";
+        programString += ".assembly compiledProgram {\n    .hash algorithm 0x00008004\n    .ver 1:0:0:0\n}";
         programString += ".module compiledProgram.dll\n";
 
         var mainClassName = "Program";
@@ -286,7 +289,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // + Declared special variable
         string type = _getTypeOfArrayElement(((ArrayTypeNode) sortedArrayNode.Type).ElementTypeNode);
         var (_, specialVar) = _makeCopyOfArrayAndPerformFunctionCall(
-            $"void [System.Runtime]System.Array::Sort<{type}>(!!0/*{type}*/[])",
+            $"void [mscorlib]System.Array::Sort<{type}>(!!0/*{type}*/[])",
             sortedArrayNode, commands);
         // Load for return
         commands.Enqueue(new LoadLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
@@ -331,7 +334,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // Clone
         commands.Enqueue(
-            new CallVirtualCommand("instance object [System.Runtime]System.Array::Clone()", commands.Count));
+            new CallVirtualCommand("instance object [mscorlib]System.Array::Clone()", commands.Count));
 
         // Cast
         commands.Enqueue(new CastClassCommand(_getTypeFromTypeNode(arrayFunctions.Type), commands.Count));
@@ -367,7 +370,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // + Declared special variable
         string type = _getTypeOfArrayElement(((ArrayTypeNode) reversedArrayNode.Type).ElementTypeNode);
         var (_, specialVar) = _makeCopyOfArrayAndPerformFunctionCall(
-            $"void [System.Runtime]System.Array::Reverse<{type}>(!!0/*{type}*/[])",
+            $"void [mscorlib]System.Array::Reverse<{type}>(!!0/*{type}*/[])",
             reversedArrayNode, commands);
         // Load for return
         commands.Enqueue(new LoadLocalCommand(specialVar.Id, specialVar.GetName(), commands.Count));
@@ -392,7 +395,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         assertNode.RightExpression.Accept(this, commands);
         commands.Enqueue(new OperationCommand(OperationType.Eq, commands.Count));
         commands.Enqueue(new LoadStringCommand("Assertion error", commands.Count));
-        commands.Enqueue(new CallCommand("void [System.Runtime]System.Diagnostics.Debug::Assert(bool, string)",
+        commands.Enqueue(new CallCommand("void [mscorlib]System.Diagnostics.Debug::Assert(bool, string)",
             commands.Count));
     }
 
@@ -791,7 +794,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         ScopeStack.GetGlobalScope().AddStruct(structName, structTypeNode, structCounter);
 
         var structDeclaration =
-            $"\t.class nested public sealed sequential ansi beforefieldinit {structName} extends [System.Runtime]System.ValueType";
+            $"\t.class nested public sealed sequential ansi beforefieldinit {structName} extends [mscorlib]System.ValueType";
 
         // fields
         structDeclaration += "{\n";
