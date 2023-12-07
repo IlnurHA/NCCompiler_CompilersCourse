@@ -1020,7 +1020,6 @@ class EvalVisitor : IVisitor
                     }
                 }
                 
-                // TODO check expressions types
 
                 return new ArrayConst(expressions)
                 {
