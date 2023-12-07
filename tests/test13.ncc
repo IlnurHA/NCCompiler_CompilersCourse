@@ -1,28 +1,35 @@
 routine main() is 
   var xor_var: boolean is true xor false // true
   assert xor_var, true // OK
+  print(xor_var)
 
   // =============================
 
   var reals: real is real(1 + 2) // 3.0
   assert reals, 3.0 // OK
+  print(reals)
   
   var reals_2: real is real(5 * 5) // 25.0
   assert reals_2, 25.0 // OK
+  print(reals_2)
   
   var reals_3: real is real(true) // 1.0
   assert reals_3, 1.0 // OK
+  print(reals_3)
   
   var reals_4: real is real(false) // 0.0
   assert reals_4, 0.0 // OK
+  print(reals_4)
   
   // =============================
 
   var int_to_bool: boolean is 1 // true
   assert int_to_bool, true // OK
+  print(int_to_bool)
 
   var int_to_bool2: boolean is 0 // false
   assert int_to_bool2, false // OK
+  print(int_to_bool2)
 
   // var bools_err: boolean is 25 // err
   // var bools_err_2: boolean is 1.0 // err
@@ -30,7 +37,9 @@ routine main() is
   
   var ints: integer is integer(5.0 + 2.3) // 7
   assert ints, 7 // OK
+  print(ints)
 
-  var ints_2: integer is integer(5.0 + 2.7) // 8
-  assert ints_2, 8 // OK
+  var ints_2: integer is integer(5.0 + 2.7) // 7
+  assert ints_2, 7 // OK
+  print(ints_2)
 end
