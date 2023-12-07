@@ -671,8 +671,6 @@ class EvalVisitor : IVisitor
                     throw new SemanticException(
                         $"Unexpected node type. Expected ValueNode, got {expressionContBuffer.GetType()}", node.LexLocation);
                 expressionCont = (ValueNode)_getFromScopeStackIfNeeded(expressionCont);
-                var expressionsType = _isValidOperation(new ValueNode(expressionCont.Type),
-                    new ValueNode(expressionsContNode.Expressions[^1].Type), OperationType.Assert, node.LexLocation);
 
                 expressionsContNode.AddExpression(expressionCont);
                 expressionsContNode.LexLocation = node.LexLocation;
@@ -1021,6 +1019,8 @@ class EvalVisitor : IVisitor
                         throw new SemanticException($"Cannot conform types: {expr.Type.GetType()}, {typeExpr.GetType()}", node.LexLocation);
                     }
                 }
+                
+                // TODO check expressions types
 
                 return new ArrayConst(expressions)
                 {
