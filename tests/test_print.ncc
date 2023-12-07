@@ -15,5 +15,4 @@
     print(3 + 6 * 4)
     // expressions printing
     print(n, m, 2+2, b)
-    print(n, q)
 end

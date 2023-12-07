@@ -158,6 +158,7 @@ Body :  /* empty */
             {
                 @$ = @1.Merge(@2); 
             }
+            Console.WriteLine(@$);
             $$ = Node.MakeComplexNode(NodeTag.BodySimpleDeclaration, @$, $1, $2);
         }
         | Body Statement            

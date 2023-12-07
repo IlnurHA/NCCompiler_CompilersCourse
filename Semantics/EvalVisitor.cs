@@ -4,7 +4,9 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.InteropServices.JavaScript;
 using Microsoft.VisualBasic.CompilerServices;
+using NCCompiler_CompilersCourse.Exceptions;
 using NCCompiler_CompilersCourse.Parser;
+using QUT.Gppg;
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
@@ -21,15 +23,14 @@ class EvalVisitor : IVisitor
 
         var exprsPrintBuffer = node.Children[0]!.Accept(this);
         if (exprsPrintBuffer is not (ExpressionsNode or ValueNode))
-            throw new Exception(
-                $"Unexpected node type. Expected Value node, got {exprsPrintBuffer.GetType()}");
+            throw new SemanticException(
+                $"Unexpected node type. Expected Value node, got {exprsPrintBuffer.GetType()}", node.LexLocation);
 
         var exprsPrint = exprsPrintBuffer is ExpressionsNode expressionsNode
             ? expressionsNode
             : new ExpressionsNode(new List<ValueNode>
                 { (ValueNode)_getFromScopeStackIfNeeded(exprsPrintBuffer) });
-
-        return new PrintNode(exprsPrint);
+        return new PrintNode(exprsPrint) {LexLocation = node.LexLocation};
     }
 
     public SymbolicNode ProgramVisit(ComplexNode node)
@@ -42,9 +43,10 @@ class EvalVisitor : IVisitor
                 if (node.Tag == NodeTag.ProgramRoutineDeclaration &&
                     ((RoutineDeclarationNode)declaration).Name == "main") progs.SetHasMain();
                 progs.AddDeclaration(declaration);
+                progs.LexLocation = node.LexLocation;
                 return progs;
             default:
-                throw new Exception($"Unexpected node tag {node.Tag}");
+                throw new SemanticException($"Unexpected node tag {node.Tag}", node.LexLocation);
         }
     }
 
@@ -57,53 +59,53 @@ class EvalVisitor : IVisitor
                 var idFieldBuffer = node.Children[1]!.Accept(this);
 
                 if (idFieldBuffer is not PrimitiveVarNode idField)
-                    throw new Exception("Unexpected node type for field");
+                    throw new SemanticException("Unexpected node type for field", node.LexLocation);
 
                 var modPrimField =
                     (ValueNode)_getFromScopeStackIfNeeded(modPrimFieldBuffer);
-                return new GetFieldNode(modPrimField, idField); // return VarNode
+                return new GetFieldNode(modPrimField, idField) {LexLocation = node.LexLocation}; // return VarNode
             case NodeTag.ModifiablePrimaryGettingValueFromArray:
                 var arrFromArrBuffer = node.Children[0]!.Accept(this);
                 var indexFromArrBuffer = node.Children[1]!.Accept(this);
 
                 if (_getFromScopeStackIfNeeded(indexFromArrBuffer) is not ValueNode indexFromArr)
-                    throw new Exception("Unexpected node type for index");
+                    throw new SemanticException("Unexpected node type for index", node.LexLocation);
                 var arrFromArr = (ValueNode)_getFromScopeStackIfNeeded(arrFromArrBuffer);
 
-                return new GetByIndexNode(arrFromArr, indexFromArr); // return VarNode
+                return new GetByIndexNode(arrFromArr, indexFromArr) {LexLocation = node.LexLocation}; // return VarNode
             case NodeTag.ArrayGetSorted:
                 var arrGetSortedBuffer = node.Children[0]!.Accept(this);
                 var arrGetSorted = (ValueNode)_getFromScopeStackIfNeeded(arrGetSortedBuffer);
 
                 if (arrGetSorted.Type is not ArrayTypeNode arrGetSortedType)
-                    throw new Exception($"Cannot sort {arrGetSorted.Type.GetType()}");
+                    throw new SemanticException($"Cannot sort {arrGetSorted.Type.GetType()}", node.LexLocation);
 
                 if (arrGetSortedType.ElementTypeNode.MyType == MyType.CompoundType)
                 {
-                    throw new Exception("Cannot sort compound types!");
+                    throw new SemanticException("Cannot sort compound types!", node.LexLocation);
                 }
 
-                return new SortedArrayNode(arrGetSorted); // TODO return VarNode
+                return new SortedArrayNode(arrGetSorted) {LexLocation = node.LexLocation}; // TODO return VarNode
             case NodeTag.ArrayGetSize:
                 var arrGetSizeBuffer = node.Children[0]!.Accept(this);
                 var arrGetSize = (VarNode)_getFromScopeStackIfNeeded(arrGetSizeBuffer);
 
                 if (arrGetSize.Type is not ArrayTypeNode)
-                    throw new Exception($"Cannot sort {arrGetSize.Type.GetType()}");
+                    throw new SemanticException($"Cannot sort {arrGetSize.Type.GetType()}", node.LexLocation);
 
-                return new ArraySizeNode(arrGetSize); // TODO return VarNode
+                return new ArraySizeNode(arrGetSize) {LexLocation = node.LexLocation}; // TODO return VarNode
             case NodeTag.ArrayGetReversed:
                 var arrGetReversedBuffer = node.Children[0]!.Accept(this);
                 var arrGetReversed =
                     (ValueNode)_getFromScopeStackIfNeeded(arrGetReversedBuffer);
 
                 if (arrGetReversed.Type is not ArrayTypeNode)
-                    throw new Exception($"Cannot sort {arrGetReversed.Type.GetType()}");
+                    throw new SemanticException($"Cannot sort {arrGetReversed.Type.GetType()}", node.LexLocation);
 
-                return new ReversedArrayNode(arrGetReversed); // TODO return VarNode
+                return new ReversedArrayNode(arrGetReversed) {LexLocation = node.LexLocation}; // TODO return VarNode
         }
 
-        throw new Exception("Unimplemented");
+        throw new UnreachableException("Unimplemented");
     }
 
     private object _getFromScopeStackIfNeeded(SymbolicNode node)
@@ -113,7 +115,6 @@ class EvalVisitor : IVisitor
             var foundVar = SemanticsScopeStack.FindVariable(varNode.Name);
             return foundVar;
         }
-
         return node;
     }
 
@@ -147,12 +148,12 @@ class EvalVisitor : IVisitor
                 }
 
                 if (variableIdentifierBuffer is not PrimitiveVarNode variableIdentifier)
-                    throw new Exception("Unexpected node type for name of identifier");
+                    throw new SemanticException("Unexpected node type for name of identifier", node.LexLocation);
 
                 using (var scope = SemanticsScopeStack.GetLastScope())
                 {
                     if (!scope.IsFree(variableIdentifier.Name!))
-                        throw new Exception($"Given name {variableIdentifier.Name} is not free");
+                        throw new SemanticException($"Given name {variableIdentifier.Name} is not free", node.LexLocation);
 
                     if (valueBuffer is null)
                     {
@@ -161,6 +162,7 @@ class EvalVisitor : IVisitor
                         var typeDeclarationNode = new TypeVariableDeclaration(variableIdentifier, typeDeclTypeVar);
                         var typeDeclIdVar = typeDeclarationNode.Variable;
                         SemanticsScopeStack.AddVariable(typeDeclIdVar);
+                        typeDeclarationNode.LexLocation = node.LexLocation;
                         return typeDeclarationNode;
                     }
 
@@ -170,6 +172,7 @@ class EvalVisitor : IVisitor
                         var valueDeclarationNode = new ValueVariableDeclaration(variableIdentifier, value);
                         var valueDeclIdVar = valueDeclarationNode.Variable;
                         SemanticsScopeStack.AddVariable(valueDeclIdVar);
+                        valueDeclarationNode.LexLocation = node.LexLocation;
                         return valueDeclarationNode;
                     }
 
@@ -177,10 +180,11 @@ class EvalVisitor : IVisitor
                     var fullDeclValue = (ValueNode)_getFromScopeStackIfNeeded(valueBuffer);
 
                     if (!fullDeclValue.Type.IsConvertibleTo(fullDeclType))
-                        throw new Exception($"Cannot convert type {fullDeclValue.Type} to {fullDeclType}");
+                        throw new SemanticException($"Cannot convert type {fullDeclValue.Type} to {fullDeclType}", node.LexLocation);
 
                     var fullDeclNode = new FullVariableDeclaration(variableIdentifier, fullDeclType, fullDeclValue);
                     SemanticsScopeStack.AddVariable(fullDeclNode.Variable);
+                    fullDeclNode.LexLocation = node.LexLocation;
                     return fullDeclNode;
                 }
             case NodeTag.VariableDeclarations:
@@ -190,6 +194,7 @@ class EvalVisitor : IVisitor
                 var decl = (DeclarationNode)node.Children[1]!.Accept(this);
                 declarationsDecl.AddDeclaration(decl.Variable);
                 declarationsDecl.DeclarationNodes.Add(decl);
+                declarationsDecl.LexLocation = node.LexLocation;
                 return declarationsDecl;
             case NodeTag.TypeDeclaration:
                 var typeIdentifierBuffer = node.Children[0]!.Accept(this);
@@ -201,8 +206,8 @@ class EvalVisitor : IVisitor
                 using (var scope = SemanticsScopeStack.GetLastScope())
                 {
                     if (!scope.IsFree(typeIdentifier.Name!))
-                        throw new Exception(
-                            $"The user type with name {typeIdentifier.Name} already exists in this scope!");
+                        throw new SemanticException(
+                            $"The user type with name {typeIdentifier.Name} already exists in this scope!", node.LexLocation);
 
                     var newTypeVar = new TypeDeclarationNode(typeIdentifier, typeSynonym);
                     scope.AddType(newTypeVar.DeclaredType);
@@ -212,8 +217,8 @@ class EvalVisitor : IVisitor
 
             case NodeTag.Break:
                 if (!SemanticsScopeStack.HasLoopScope())
-                    throw new Exception("Unexpected context for 'break' statement");
-                return new BreakNode();
+                    throw new SemanticException("Unexpected context for 'break' statement", node.LexLocation);
+                return new BreakNode() {LexLocation = node.LexLocation};
             case NodeTag.Assert:
                 var leftAssertExpressionBuffer = node.Children[0]!.Accept(this);
                 var rightAssertExpressionBuffer = node.Children[1]!.Accept(this);
@@ -223,16 +228,16 @@ class EvalVisitor : IVisitor
 
                 if (!leftAssertExpression.Type.IsTheSame(rightAssertExpression.Type))
                 {
-                    _isValidOperation(leftAssertExpression, rightAssertExpression, operationType: OperationType.Assert);
+                    _isValidOperation(leftAssertExpression, rightAssertExpression, operationType: OperationType.Assert, node.LexLocation);
                 }
 
-                return new AssertNode(leftAssertExpression, rightAssertExpression);
+                return new AssertNode(leftAssertExpression, rightAssertExpression) {LexLocation = node.LexLocation};
             case NodeTag.Return:
-                if (node.Children.Length == 0) return new EmptyReturnNode();
+                if (node.Children.Length == 0) return new EmptyReturnNode() {LexLocation = node.LexLocation};
                 var returnValueBuffer = node.Children[0]!.Accept(this);
                 var returnValue = (ValueNode)_getFromScopeStackIfNeeded(returnValueBuffer);
 
-                return new ValueReturnNode(returnValue);
+                return new ValueReturnNode(returnValue) {LexLocation = node.LexLocation};
             case NodeTag.Range or NodeTag.RangeReverse:
                 var leftBoundBuffer = node.Children[0]!.Accept(this);
                 var rightBoundBuffer = node.Children[1]!.Accept(this);
@@ -243,15 +248,15 @@ class EvalVisitor : IVisitor
                 var integerType = new TypeNode(MyType.Integer);
                 if (!leftBound.Type.IsConvertibleTo(integerType))
                 {
-                    throw new Exception($"Cannot convert {leftBound.Type.MyType} to integer type");
+                    throw new SemanticException($"Cannot convert {leftBound.Type.MyType} to integer type", node.LexLocation);
                 }
 
                 if (!rightBound.Type.IsConvertibleTo(integerType))
                 {
-                    throw new Exception($"Cannot convert {rightBound.Type.MyType} to integer type");
+                    throw new SemanticException($"Cannot convert {rightBound.Type.MyType} to integer type", node.LexLocation);
                 }
 
-                return new RangeNode(leftBound, rightBound, node.Tag == NodeTag.RangeReverse);
+                return new RangeNode(leftBound, rightBound, node.Tag == NodeTag.RangeReverse) {LexLocation = node.LexLocation};
 
             case NodeTag.ForLoop:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.Loop);
@@ -274,7 +279,8 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
                 return new ForLoopNode(idForLoop, rangeForLoop, bodyForLoop)
                 {
-                    Type = bodyForLoop.Type
+                    Type = bodyForLoop.Type,
+                    LexLocation = node.LexLocation
                 };
 
             case NodeTag.ForeachLoop:
@@ -298,15 +304,16 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
                 return new ForEachLoopNode(idForEach, fromForEach, bodyForEach)
                 {
-                    Type = bodyForEach.Type
+                    Type = bodyForEach.Type,
+                    LexLocation = node.LexLocation
                 };
             case NodeTag.WhileLoop:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.Loop);
                 var condExprWhile = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condExprWhile.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
-                    throw new Exception(
-                        $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean");
+                    throw new SemanticException(
+                        $"Unexpected type for while loop condition: Got {condExprWhile.Type.MyType}, expected boolean", node.LexLocation);
                 }
 
                 var bodyWhile = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
@@ -316,7 +323,8 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
                 return new WhileLoopNode(condExprWhile, bodyWhile)
                 {
-                    Type = bodyWhile.Type
+                    Type = bodyWhile.Type,
+                    LexLocation = node.LexLocation
                 };
 
             case NodeTag.IfStatement:
@@ -324,8 +332,8 @@ class EvalVisitor : IVisitor
                 var condIf = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condIf.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
-                    throw new Exception(
-                        $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean");
+                    throw new SemanticException(
+                        $"Unexpected type for if statement condition: Got {condIf.Type.MyType}, expected boolean", node.LexLocation);
                 }
 
                 var bodyIf = node.Children[1] is null ? new BodyNode() : (BodyNode)node.Children[1]!.Accept(this);
@@ -335,7 +343,8 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
                 return new IfStatement(condIf, bodyIf)
                 {
-                    Type = bodyIf.Type
+                    Type = bodyIf.Type,
+                    LexLocation = node.LexLocation
                 };
 
             case NodeTag.IfElseStatement:
@@ -343,8 +352,8 @@ class EvalVisitor : IVisitor
                 var condIfElse = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 if (!condIfElse.Type.IsConvertibleTo(new TypeNode(MyType.Boolean)))
                 {
-                    throw new Exception(
-                        $"Unexpected type for if statement condition: Got {condIfElse.Type.MyType}, expected boolean");
+                    throw new SemanticException(
+                        $"Unexpected type for if statement condition: Got {condIfElse.Type.MyType}, expected boolean", node.LexLocation);
                 }
 
                 var bodyIfElse = node.Children[1] is null
@@ -364,7 +373,7 @@ class EvalVisitor : IVisitor
                 else if (!bodyElse.Type.IsTheSame(undefinedTypeIf) && !bodyIfElse.Type.IsTheSame(bodyElse.Type))
                 {
                     newType = _isValidOperation(new ValueNode(bodyElse.Type), new ValueNode(bodyIfElse.Type),
-                        OperationType.Assert);
+                        OperationType.Assert, node.LexLocation);
                 }
 
                 unusedVariables = SemanticsScopeStack.GetUnusedVariablesInLastScope();
@@ -373,7 +382,8 @@ class EvalVisitor : IVisitor
                 SemanticsScopeStack.DeleteScope();
                 return new IfElseStatement(condIfElse, bodyIfElse, bodyElse)
                 {
-                    Type = newType
+                    Type = newType,
+                    LexLocation = node.LexLocation
                 };
 
             case NodeTag.BodyStatement or NodeTag.BodySimpleDeclaration:
@@ -395,11 +405,12 @@ class EvalVisitor : IVisitor
                 if (!bodyStatement.Type.IsTheSame(bodyCont.Type))
                 {
                     newTypeBody = _isValidOperation(new ValueNode(bodyCont.Type), new ValueNode(bodyStatement.Type),
-                        OperationType.Assert);
+                        OperationType.Assert, node.LexLocation);
                 }
 
                 bodyCont.Type = newTypeBody;
                 bodyCont.AddStatement(bodyStatement);
+                bodyCont.LexLocation = node.LexLocation;
                 return bodyCont;
 
             case NodeTag.Assignment:
@@ -419,27 +430,27 @@ class EvalVisitor : IVisitor
                     case VarNode:
                         break;
                     default:
-                        throw new Exception($"Unexpected type of node {idAssignment.GetType()}");
+                        throw new SemanticException($"Unexpected type of node {idAssignment.GetType()}", node.LexLocation);
                 }
 
                 if (!idAssignment.Type.IsTheSame(exprAssignment.Type) &&
                     !exprAssignment.Type.IsConvertibleTo(idAssignment.Type))
                 {
-                    throw new Exception(
-                        $"Unexpected type. Got {exprAssignment.Type.GetType()}, expected {idAssignment.Type.GetType()}");
+                    throw new SemanticException(
+                        $"Unexpected type. Got {exprAssignment.Type.GetType()}, expected {idAssignment.Type.GetType()}", node.LexLocation);
                 }
 
-                return new AssignmentNode(idAssignment, exprAssignment);
+                return new AssignmentNode(idAssignment, exprAssignment) {LexLocation = node.LexLocation};
 
             case NodeTag.ArrayType:
                 var size = (ValueNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
                 var type = (TypeNode)_getFromScopeStackIfNeeded(node.Children[1]!.Accept(this));
 
-                return new ArrayTypeNode(type, size);
+                return new ArrayTypeNode(type, size) {LexLocation = node.LexLocation};
             case NodeTag.ArrayTypeWithoutSize:
                 var typeWithoutSize =
                     (TypeNode)_getFromScopeStackIfNeeded(node.Children[0]!.Accept(this));
-                return new ArrayTypeNode(typeWithoutSize);
+                return new ArrayTypeNode(typeWithoutSize) {LexLocation = node.LexLocation};
 
             case NodeTag.RecordType:
                 SemanticsScopeStack.NewScope(SemanticsScope.ScopeContext.RecordDeclaration);
@@ -461,7 +472,7 @@ class EvalVisitor : IVisitor
                         case TypeVariableDeclaration when !withDefaultValues:
                             continue;
                         default:
-                            throw new Exception("All record field should be either with default value or without it");
+                            throw new SemanticException("All record field should be either with default value or without it", node.LexLocation);
                     }
                 }
 
@@ -472,7 +483,8 @@ class EvalVisitor : IVisitor
 
                 return new StructTypeNode(fields)
                 {
-                    DefaultValues = variableScope.GetVariables()
+                    DefaultValues = variableScope.GetVariables(),
+                    LexLocation = node.LexLocation
                 };
 
             case NodeTag.Cast:
@@ -483,12 +495,12 @@ class EvalVisitor : IVisitor
                 var typeValue = (ValueNode)_getFromScopeStackIfNeeded(typeValueBuffer);
 
                 if (!typeValue.Type.IsConvertibleTo(typeCast))
-                    throw new Exception($"Cannot convert {typeValue.Type} to {typeCast}");
+                    throw new SemanticException($"Cannot convert {typeValue.Type} to {typeCast}", node.LexLocation);
 
-                return new CastNode(typeCast, typeValue);
+                return new CastNode(typeCast, typeValue) {LexLocation = node.LexLocation};
 
             default:
-                throw new Exception($"Unexpected node tag: {node.Tag}");
+                throw new SemanticException($"Unexpected node tag: {node.Tag}", node.LexLocation);
         }
     }
 
@@ -532,7 +544,7 @@ class EvalVisitor : IVisitor
                         bodyIndex = 1;
                         break;
                     default:
-                        throw new Exception($"Unexpected state in Routine declaration: {node.Tag}");
+                        throw new SemanticException($"Unexpected state in Routine declaration: {node.Tag}", node.LexLocation);
                 }
 
                 var returnType = new TypeNode(MyType.Undefined);
@@ -549,8 +561,8 @@ class EvalVisitor : IVisitor
 
                 if (!bodyRoutineDeclFull.Type.IsConvertibleTo(returnType))
                 {
-                    throw new Exception(
-                        $"Unexpected return type. Got {bodyRoutineDeclFull.Type.MyType}, expected {returnType.MyType}");
+                    throw new SemanticException(
+                        $"Unexpected return type. Got {bodyRoutineDeclFull.Type.MyType}, expected {returnType.MyType}", node.LexLocation);
                 }
 
                 // Removing unused variables and arguments
@@ -561,6 +573,7 @@ class EvalVisitor : IVisitor
                 var funcDecl = new RoutineDeclarationNode(funcNameRoutineDecl, parametersRoutineDecl,
                     returnTypeRoutineDecl, bodyRoutineDeclFull);
                 SemanticsScopeStack.AddVariable(funcDecl);
+                funcDecl.LexLocation = node.LexLocation;
                 return funcDecl;
 
             case NodeTag.ParameterDeclaration:
@@ -570,15 +583,15 @@ class EvalVisitor : IVisitor
                 var idParDecl = DeclarationNode.GetAppropriateVarNode(idParDeclBuffer, typeParDecl, null);
 
                 if (!SemanticsScopeStack.isFreeInLastScope(idParDecl.Name!))
-                    throw new Exception($"Variable with the given name has already declared: {idParDecl.Name}");
+                    throw new SemanticException($"Variable with the given name has already declared: {idParDecl.Name}", node.LexLocation);
                 SemanticsScopeStack.AddVariable(idParDecl);
-                return new ParameterNode(idParDecl, typeParDecl);
+                return new ParameterNode(idParDecl, typeParDecl) {LexLocation = node.LexLocation};
 
             case NodeTag.ParametersContinuous:
                 if (node.Children.Length == 1)
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)node.Children[0]!.Accept(this) });
+                        { (ParameterNode)node.Children[0]!.Accept(this) }) {LexLocation = node.LexLocation};
                 }
 
                 var parametersDecl = node.Children[0]!.Accept(this);
@@ -587,11 +600,12 @@ class EvalVisitor : IVisitor
                 if (parametersDecl.GetType() == typeof(ParameterNode))
                 {
                     return new ParametersNode(new List<ParameterNode>
-                        { (ParameterNode)parametersDecl, (ParameterNode)parameterDecl });
+                        { (ParameterNode)parametersDecl, (ParameterNode)parameterDecl }) {LexLocation = node.LexLocation};
                 }
 
                 var returnParametersDecl = (ParametersNode)parametersDecl;
                 returnParametersDecl.AddParameter((ParameterNode)parameterDecl);
+                returnParametersDecl.LexLocation = node.LexLocation;
                 return returnParametersDecl;
 
             case NodeTag.RoutineCall:
@@ -603,17 +617,17 @@ class EvalVisitor : IVisitor
                 if (function.Parameters is null)
                 {
                     if (node.Children.Length == 2)
-                        throw new Exception("Unexpected number of arguments. Expected zero arguments");
-                    return new RoutineCallNode(function, new ExpressionsNode());
+                        throw new SemanticException("Unexpected number of arguments. Expected zero arguments", node.LexLocation);
+                    return new RoutineCallNode(function, new ExpressionsNode()) {LexLocation = node.LexLocation};
                 }
 
                 if (node.Children.Length == 1)
-                    throw new Exception(
-                        $"Unexpected number of arguments. Got 0, expected {function.Parameters.Parameters.Count}.");
+                    throw new SemanticException(
+                        $"Unexpected number of arguments. Got 0, expected {function.Parameters.Parameters.Count}.", node.LexLocation);
                 var exprsRoutineCallBuffer = node.Children[1]!.Accept(this);
                 if (exprsRoutineCallBuffer is not (ExpressionsNode or ValueNode))
-                    throw new Exception(
-                        $"Unexpected node type. Expected Value node, got {exprsRoutineCallBuffer.GetType()}");
+                    throw new SemanticException(
+                        $"Unexpected node type. Expected Value node, got {exprsRoutineCallBuffer.GetType()}", node.LexLocation);
 
                 var exprsRoutineCall = exprsRoutineCallBuffer is ExpressionsNode expressionsNode
                     ? expressionsNode
@@ -622,8 +636,8 @@ class EvalVisitor : IVisitor
 
                 if (exprsRoutineCall.Expressions.Count != function.Parameters.Parameters.Count)
                 {
-                    throw new Exception(
-                        $"Unexpected number of arguments. Got {exprsRoutineCall.Expressions.Count}, expected {function.Parameters.Parameters.Count}.");
+                    throw new SemanticException(
+                        $"Unexpected number of arguments. Got {exprsRoutineCall.Expressions.Count}, expected {function.Parameters.Parameters.Count}.", node.LexLocation);
                 }
 
                 for (var counter = 0; counter < exprsRoutineCall.Expressions.Count; counter++)
@@ -633,12 +647,12 @@ class EvalVisitor : IVisitor
 
                     if (!nodeExpr.Type.IsConvertibleTo(functionParam.Type))
                     {
-                        throw new Exception(
-                            $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {functionParam.Type.MyType}");
+                        throw new SemanticException(
+                            $"Unexpected type. Got {nodeExpr.Type.MyType}, expected {functionParam.Type.MyType}", node.LexLocation);
                     }
                 }
 
-                return new RoutineCallNode(function, exprsRoutineCall);
+                return new RoutineCallNode(function, exprsRoutineCall) {LexLocation = node.LexLocation};
             case NodeTag.ExpressionsContinuous:
                 var expressionsContBuffer = node.Children[0]!.Accept(this);
                 var expressionContBuffer = node.Children[1]!.Accept(this);
@@ -650,31 +664,32 @@ class EvalVisitor : IVisitor
                 }
                 else if (expressionsContBuffer is ExpressionsNode exprNode) expressionsContNode = exprNode;
                 else
-                    throw new Exception(
-                        $"Unexpected node type. Expected either ValueNode or ExpressionsNode, got {expressionsContBuffer.GetType()}");
+                    throw new SemanticException(
+                        $"Unexpected node type. Expected either ValueNode or ExpressionsNode, got {expressionsContBuffer.GetType()}", node.LexLocation);
 
                 if (expressionContBuffer is not ValueNode expressionCont)
-                    throw new Exception(
-                        $"Unexpected node type. Expected ValueNode, got {expressionContBuffer.GetType()}");
+                    throw new SemanticException(
+                        $"Unexpected node type. Expected ValueNode, got {expressionContBuffer.GetType()}", node.LexLocation);
                 expressionCont = (ValueNode)_getFromScopeStackIfNeeded(expressionCont);
                 var expressionsType = _isValidOperation(new ValueNode(expressionCont.Type),
-                    new ValueNode(expressionsContNode.Expressions[^1].Type), OperationType.Assert);
+                    new ValueNode(expressionsContNode.Expressions[^1].Type), OperationType.Assert, node.LexLocation);
 
                 expressionsContNode.AddExpression(expressionCont);
+                expressionsContNode.LexLocation = node.LexLocation;
                 return expressionsContNode;
             default:
-                throw new Exception($"Unexpected Name Tag: {node.Tag}");
+                throw new SemanticException($"Unexpected Name Tag: {node.Tag}", node.LexLocation);
         }
     }
 
-    private TypeNode _isValidUnaryOperation(ValueNode operand, OperationType operationType)
+    private TypeNode _isValidUnaryOperation(ValueNode operand, OperationType operationType, LexLocation lexLocation)
     {
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
         if (operand.Type is StructTypeNode or ArrayTypeNode)
         {
-            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+            throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
         }
 
         switch (operationType)
@@ -684,32 +699,33 @@ class EvalVisitor : IVisitor
                 if (!(operand.Type.IsTheSame(booleanType) || operand.Type.IsTheSame(integerType) ||
                       operand.Type.IsTheSame(realType)))
                 {
-                    throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                    throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                 }
 
                 break;
             case OperationType.Not:
                 if (!(operand.Type.IsTheSame(booleanType) || operand.Type.IsTheSame(integerType)))
                 {
-                    throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                    throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                 }
 
                 break;
             default:
-                throw new Exception($"Invalid operation tag: {operationType}");
+                throw new UnreachableException($"Invalid operation tag: {operationType}");
         }
 
         return operand.Type;
     }
 
-    private TypeNode _isValidOperation(ValueNode operand1, ValueNode operand2, OperationType operationType)
+    private TypeNode _isValidOperation(ValueNode operand1, ValueNode operand2, OperationType operationType,
+        LexLocation lexLocation)
     {
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
         var integerType = new TypeNode(MyType.Integer);
         if (operand1.Type is StructTypeNode or ArrayTypeNode || operand2.Type is StructTypeNode or ArrayTypeNode)
         {
-            throw new Exception($"Can't perform operation {operationType}: incorrect types");
+            throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
         }
 
         switch (operationType)
@@ -719,7 +735,7 @@ class EvalVisitor : IVisitor
             case OperationType.Xor:
                 if (!(operand1.Type.IsConvertibleTo(booleanType) && operand2.Type.IsConvertibleTo(booleanType)))
                 {
-                    throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                    throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                 }
 
                 return booleanType;
@@ -733,13 +749,13 @@ class EvalVisitor : IVisitor
                 {
                     if (!(operand1.Type.IsConvertibleTo(realType) && operand2.Type.IsConvertibleTo(realType)))
                     {
-                        throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                        throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                     }
                 }
 
                 if (!(operand1.Type.IsConvertibleTo(integerType) && operand2.Type.IsConvertibleTo(integerType)))
                 {
-                    throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                    throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                 }
 
                 return booleanType;
@@ -753,7 +769,7 @@ class EvalVisitor : IVisitor
                 {
                     if (!(operand1.Type.IsConvertibleTo(realType) && operand2.Type.IsConvertibleTo(realType)))
                     {
-                        throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                        throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                     }
 
                     return realType;
@@ -761,12 +777,12 @@ class EvalVisitor : IVisitor
 
                 if (!(operand1.Type.IsConvertibleTo(integerType) && operand2.Type.IsConvertibleTo(integerType)))
                 {
-                    throw new Exception($"Can't perform operation {operationType}: incorrect types");
+                    throw new SemanticException($"Can't perform operation {operationType}: incorrect types", lexLocation);
                 }
 
                 return integerType;
             default:
-                throw new Exception($"Invalid operation tag: {operationType}");
+                throw new SemanticException($"Invalid operation tag: {operationType}", lexLocation);
         }
     }
 
@@ -813,17 +829,17 @@ class EvalVisitor : IVisitor
                     {
                         "-" => OperationType.UnaryMinus,
                         "+" => OperationType.UnaryPlus,
-                        _ => throw new Exception($"Unexpected unary operation: {leafNode.Value}")
+                        _ => throw new UnreachableException($"Unexpected unary operation: {leafNode.Value}")
                     },
-                    _ => throw new Exception("SignToNumber has first child unexpected type")
+                    _ => throw new UnreachableException("SignToNumber has first child unexpected type")
                 };
             default:
-                throw new Exception($"Invalid operation tag: {node.Tag}");
+                throw new UnreachableException($"Invalid operation tag: {node.Tag}");
         }
     }
 
     private ConstNode _performOperation(ConstNode operand1, ConstNode operand2, TypeNode resultType,
-        Func<dynamic, dynamic, dynamic> operation)
+        Func<dynamic, dynamic, dynamic> operation, LexLocation lexLocation)
     {
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
@@ -846,10 +862,10 @@ class EvalVisitor : IVisitor
                 operation(Convert.ToBoolean(operand1.Value), Convert.ToBoolean(operand2.Value)));
         }
 
-        throw new Exception($"resultType {resultType} is neither boolean, integer nor real");
+        throw new SemanticException($"resultType {resultType} is neither boolean, integer nor real", lexLocation);
     }
 
-    private ConstNode _performOperation(ConstNode operand, TypeNode resultType, Func<dynamic, dynamic> operation)
+    private ConstNode _performOperation(ConstNode operand, TypeNode resultType, Func<dynamic, dynamic> operation, LexLocation lexLocation)
     {
         var booleanType = new TypeNode(MyType.Boolean);
         var realType = new TypeNode(MyType.Real);
@@ -869,27 +885,27 @@ class EvalVisitor : IVisitor
             return new ConstNode(resultType, operation(Convert.ToBoolean(operand.Value)));
         }
 
-        throw new Exception($"resultType {resultType} is neither boolean, integer nor real");
+        throw new SemanticException($"resultType {resultType} is neither boolean, integer nor real", lexLocation);
     }
 
-    private ConstNode _simplifyOperation(ConstNode operand, TypeNode resultType, OperationType operationType)
+    private ConstNode _simplifyOperation(ConstNode operand, TypeNode resultType, OperationType operationType, LexLocation lexLocation)
     {
         return operationType switch
         {
             OperationType.UnaryMinus => PerformOperation((a) => -a),
             OperationType.UnaryPlus => PerformOperation((a) => +a),
             OperationType.Not => PerformOperation((a) => !Convert.ToBoolean(a)),
-            _ => throw new Exception("Something is wrong in _simplifyUnaryOperation")
+            _ => throw new SemanticException("Something is wrong in _simplifyUnaryOperation", lexLocation)
         };
 
         ConstNode PerformOperation(Func<dynamic, dynamic> operation)
         {
-            return _performOperation(operand, resultType, operation);
+            return _performOperation(operand, resultType, operation, lexLocation);
         }
     }
 
     private ConstNode _simplifyOperation(ConstNode operand1, ConstNode operand2, TypeNode resultType,
-        OperationType operationType)
+        OperationType operationType, LexLocation lexLocation)
     {
         return operationType switch
         {
@@ -908,25 +924,25 @@ class EvalVisitor : IVisitor
             // TODO division by 0
             OperationType.Div => PerformOperation((a, b) => a / b),
             OperationType.Rem => PerformOperation((a, b) => a % b),
-            _ => throw new Exception("Unknown operation")
+            _ => throw new UnreachableException("Unknown operation")
         };
 
         ConstNode PerformOperation(Func<dynamic, dynamic, dynamic> operation)
         {
-            return _performOperation(operand1, operand2, resultType, operation);
+            return _performOperation(operand1, operand2, resultType, operation, lexLocation);
         }
     }
 
-    private ValueNode _getVarForIdentifier(ValueNode identifier)
+    private ValueNode _getVarForIdentifier(ValueNode identifier, LexLocation lexLocation)
     {
         if (identifier is not PrimitiveVarNode varNode1) return identifier;
         var value1 = SemanticsScopeStack.FindVariable(varNode1.Name);
         return value1 switch
         {
-            TypeNode typeNode => throw new Exception(
-                $"Can't perform operation on user-defined type {typeNode.MyType}"),
-            VarNode { Type.MyType: MyType.Undefined } => throw new Exception(
-                "Can't perform operation on undefined type"),
+            TypeNode typeNode => throw new SemanticException(
+                $"Can't perform operation on user-defined type {typeNode.MyType}", lexLocation),
+            VarNode { Type.MyType: MyType.Undefined } => throw new SemanticException(
+                "Can't perform operation on undefined type", lexLocation),
             VarNode varNode => varNode,
             _ => identifier
         };
@@ -952,17 +968,18 @@ class EvalVisitor : IVisitor
             case NodeTag.Rem:
                 var operand1 = (ValueNode)node.Children[0]!.Accept(this);
                 var operand2 = (ValueNode)node.Children[1]!.Accept(this);
-                operand1 = _getVarForIdentifier(operand1);
-                operand2 = _getVarForIdentifier(operand2);
+                operand1 = _getVarForIdentifier(operand1, node.LexLocation);
+                operand2 = _getVarForIdentifier(operand2, node.LexLocation);
                 var operationType = _nodeTagToOperationType(node);
-                var resultType = _isValidOperation(operand1, operand2, operationType);
+                var resultType = _isValidOperation(operand1, operand2, operationType, node.LexLocation);
                 if (operand1 is ConstNode constNode1 && operand2 is ConstNode constNode2)
                 {
-                    var simplifiedConstNode = _simplifyOperation(constNode1, constNode2, resultType, operationType);
+                    var simplifiedConstNode = _simplifyOperation(constNode1, constNode2, resultType, operationType, node.LexLocation);
+                    simplifiedConstNode.LexLocation = node.LexLocation;
                     return simplifiedConstNode;
                 }
 
-                return new OperationNode(operationType, new List<ValueNode> { operand1, operand2 }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> { operand1, operand2 }, resultType) {LexLocation = node.LexLocation};
             case NodeTag.NotExpression:
             case NodeTag.SignToInteger:
             case NodeTag.SignToDouble:
@@ -970,13 +987,15 @@ class EvalVisitor : IVisitor
                 if (node.Tag == NodeTag.NotExpression) operand = (ValueNode)node.Children[0]!.Accept(this);
                 else operand = (ValueNode)node.Children[1]!.Accept(this);
                 operationType = _nodeTagToOperationType(node);
-                resultType = _isValidUnaryOperation(operand, operationType);
+                resultType = _isValidUnaryOperation(operand, operationType, node.LexLocation);
                 if (operand is ConstNode constNode)
                 {
-                    return _simplifyOperation(constNode, resultType, operationType);
+                    var result = _simplifyOperation(constNode, resultType, operationType, node.LexLocation);
+                    result.LexLocation = node.LexLocation;
+                    return result;
                 }
 
-                return new OperationNode(operationType, new List<ValueNode> { operand }, resultType);
+                return new OperationNode(operationType, new List<ValueNode> { operand }, resultType) {LexLocation = node.LexLocation};
             case NodeTag.ArrayConst:
                 var expressionsBuffer = node.Children[0]!.Accept(this);
 
@@ -999,21 +1018,22 @@ class EvalVisitor : IVisitor
 
                     if (expr.Type.MyType == MyType.CompoundType && !typeExpr.IsTheSame(expr.Type))
                     {
-                        throw new Exception($"Cannot conform types: {expr.Type.GetType()}, {typeExpr.GetType()}");
+                        throw new SemanticException($"Cannot conform types: {expr.Type.GetType()}, {typeExpr.GetType()}", node.LexLocation);
                     }
                 }
 
                 return new ArrayConst(expressions)
                 {
+                    LexLocation = node.LexLocation,
                     Type = new ArrayTypeNode(typeExpr)
                     {
                         Size = new ConstNode(integerType, expressions.Expressions.Count),
                     }
                 };
             case NodeTag.EmptyArrayConst:
-                return new ArrayConst(new ExpressionsNode()) { Type = new ArrayTypeNode(new TypeNode()) };
+                return new ArrayConst(new ExpressionsNode()) { Type = new ArrayTypeNode(new TypeNode()), LexLocation = node.LexLocation};
             default:
-                throw new Exception($"Invalid operation tag: {node.Tag}");
+                throw new UnreachableException($"Invalid operation tag: {node.Tag}");
         }
     }
 
@@ -1022,21 +1042,21 @@ class EvalVisitor : IVisitor
         switch (node.Tag)
         {
             case NodeTag.BooleanLiteral:
-                return new ConstNode(new TypeNode(MyType.Boolean), node.Value!);
+                return new ConstNode(new TypeNode(MyType.Boolean), node.Value!) {LexLocation = node.LexLocation};
             case NodeTag.IntegerLiteral:
-                return new ConstNode(new TypeNode(MyType.Integer), node.Value!);
+                return new ConstNode(new TypeNode(MyType.Integer), node.Value!) {LexLocation = node.LexLocation};
             case NodeTag.RealLiteral:
-                return new ConstNode(new TypeNode(MyType.Real), node.Value!);
+                return new ConstNode(new TypeNode(MyType.Real), node.Value!) {LexLocation = node.LexLocation};
             case NodeTag.Identifier:
-                return new PrimitiveVarNode((node.Value! as string)!);
+                return new PrimitiveVarNode((node.Value! as string)!) {LexLocation = node.LexLocation};
             case NodeTag.PrimitiveType:
-                return new TypeNode(_getPrimitiveType((node.Value! as string)!));
+                return new TypeNode(_getPrimitiveType((node.Value! as string)!)) {LexLocation = node.LexLocation};
             case NodeTag.Unary:
                 return new OperationNode((node.Value! as string)! == "-"
                     ? OperationType.UnaryMinus
-                    : OperationType.UnaryPlus);
+                    : OperationType.UnaryPlus) {LexLocation = node.LexLocation};
             default:
-                throw new Exception($"Unexpected node tag for visiting Leaf node {node.Tag}");
+                throw new UnreachableException($"Unexpected node tag for visiting Leaf node {node.Tag}");
         }
     }
 
@@ -1047,7 +1067,7 @@ class EvalVisitor : IVisitor
             "integer" => MyType.Integer,
             "boolean" => MyType.Boolean,
             "real" => MyType.Real,
-            _ => throw new Exception($"Unexpected type of primitive type {primitiveType}")
+            _ => throw new UnreachableException($"Unexpected type of primitive type {primitiveType}")
         };
     }
 }

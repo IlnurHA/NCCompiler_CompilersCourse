@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
 using NCCompiler_CompilersCourse.CodeGeneration;
+using QUT.Gppg;
 
 namespace NCCompiler_CompilersCourse.Semantics;
 
 public abstract class SymbolicNode
 {
+    public LexLocation? LexLocation { get; set; }
     public abstract void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue);
 }
 
