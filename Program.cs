@@ -24,7 +24,7 @@ class Program
             //         $"Token: {token.Type}, Lexeme: {token.Lexeme}, Value: {token.Value}, Span: {token.Span}"
             //     );
             // }
-
+    
             Lexer.Scanner scanner = new Lexer.Scanner(lexer);
             Parser.Parser parser = new Parser.Parser(scanner);
             var res = parser.Parse();
@@ -37,11 +37,11 @@ class Program
                 var rootSymbolic = rootNode.Accept(visitor);
                 Console.WriteLine(res);
             
-                // var codeGenVisit = new TranslationVisitorCodeGeneration();
-                // rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
-                // var programStr = codeGenVisit.ResultingProgram;
-                // File.WriteAllText("compiledProgram.il", programStr);
-                // Console.WriteLine("Code generated");
+                var codeGenVisit = new TranslationVisitorCodeGeneration();
+                rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
+                var programStr = codeGenVisit.ResultingProgram;
+                File.WriteAllText("compiledProgram.il", programStr);
+                Console.WriteLine("Code generated");
             }
         }
     }

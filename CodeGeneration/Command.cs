@@ -555,3 +555,10 @@ public class LoadStringCommand : BaseCommand
         return FormattedIndex() + $"ldstr\t\"{String}\"";
     }
 }
+
+public class PrintCommand : CallCommand
+{
+    public PrintCommand(int index) : base("void Program::Print(object[])", index)
+    {
+    }
+}

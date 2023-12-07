@@ -4,15 +4,15 @@
 	n := 10
     print(n)
     // real printing
-    var m: real
-    m := 3.5
-    print(m)
+    // var m: real
+    // m := 3.5
+    // print(m)
     // boolean printing
-    var b: boolean
-    b := true
-    print(b)
+    // var b: boolean
+    // b := true
+    // print(b)
     // expression printing
-    print(3 + 6 * 4)
+    // print(3 + 6 * 4)
     // expressions printing
-    print(n, m, 2+2, b)
+    // print(n, m, 2+2, b)
 end

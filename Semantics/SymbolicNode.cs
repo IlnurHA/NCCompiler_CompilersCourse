@@ -810,8 +810,7 @@ public class PrintNode : StatementNode
     
     public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
     {
-        // TODO - implement this method
-        // visitor.VisitPrintNode(this, queue);
+        visitor.VisitPrintNode(this, queue);
     }
 }
 

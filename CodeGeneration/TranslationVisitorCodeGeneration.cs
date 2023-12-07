@@ -11,6 +11,25 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
     private List<string> _routinesCode = new();
     public string ResultingProgram = "";
 
+    public void VisitPrintNode(PrintNode printNode, Queue<BaseCommand> commands)
+    {
+        foreach (var expr in printNode.Expressions.Expressions)
+        {
+            if (expr is StructVarNode structVarNode)
+            {
+                structVarNode.AcceptByValue(this, commands);
+            } else if (expr is ArrayVarNode arrayVarNode)
+            {
+                arrayVarNode.AcceptByValue(this, commands);
+            }
+            else
+            {
+                expr.Accept(this, commands);
+            }
+        }
+        commands.Enqueue(new PrintCommand(commands.Count));
+    }
+
     public void VisitProgramNode(ProgramNode programNode, Queue<BaseCommand> commands)
     {
         var programString = "";
@@ -39,6 +58,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
         // Structs
         programString += "{\n";
+        
+        programString += StandardLibraryUtils.getPrintFunction();
 
         foreach (var structStr in _structDeclarations)
         {

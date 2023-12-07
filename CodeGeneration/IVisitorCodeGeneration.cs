@@ -64,4 +64,5 @@ public interface IVisitorCodeGeneration
     public void VisitEmptyReturnNode(EmptyReturnNode emptyReturnNode, Queue<BaseCommand> queue);
     public void VisitVarNode(VarNode varNode, Queue<BaseCommand> commands);
     public void VisitStructFieldNode(VarNode varNode, Queue<BaseCommand> commands);
+    public void VisitPrintNode(PrintNode printNode, Queue<BaseCommand> commands);
 }
