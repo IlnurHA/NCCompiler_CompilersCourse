@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotNetGraph" Version="3.0.0" />
     <PackageReference Include="ILAsm" Version="4.700.2" />
   </ItemGroup>
 

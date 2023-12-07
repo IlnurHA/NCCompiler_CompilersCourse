@@ -36,7 +36,7 @@ class Program
             if (res)
             {
                 var rootNode = parser.RootNode;
-                EvalVisitor visitor = new EvalVisitor();
+                EvalVisitor visitor = new EvalVisitor(true);
                 ProgramNode rootSymbolic = (ProgramNode) rootNode.Accept(visitor);
                 var graph = rootSymbolic.BuildGraph();
                 await using var writer = new StringWriter();
