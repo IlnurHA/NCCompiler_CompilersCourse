@@ -1,4 +1,7 @@
-﻿using NCCompiler_CompilersCourse.CodeGeneration;
+﻿using DotNetGraph.Compilation;
+using DotNetGraph.Core;
+using DotNetGraph.Extensions;
+using NCCompiler_CompilersCourse.CodeGeneration;
 using NCCompiler_CompilersCourse.Lexer;
 using NCCompiler_CompilersCourse.Semantics;
 
@@ -6,7 +9,7 @@ namespace NCCompiler_CompilersCourse;
 
 class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         while (true)
         {
@@ -34,9 +37,14 @@ class Program
             {
                 var rootNode = parser.RootNode;
                 EvalVisitor visitor = new EvalVisitor();
-                var rootSymbolic = rootNode.Accept(visitor);
-                Console.WriteLine(res);
-            
+                ProgramNode rootSymbolic = (ProgramNode) rootNode.Accept(visitor);
+                var graph = rootSymbolic.BuildGraph();
+                await using var writer = new StringWriter();
+                var context = new CompilationContext(writer, new CompilationOptions());
+                await graph.CompileAsync(context);
+                var result = writer.GetStringBuilder().ToString();
+                File.WriteAllText("graph.dot", result);     
+                
                 var codeGenVisit = new TranslationVisitorCodeGeneration();
                 rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());
                 var programStr = codeGenVisit.ResultingProgram;
