@@ -1,4 +1,9 @@
+routine assertion_routine() is 
+    assert 1, 1
+end
+
 routine main() is
+    assertion_routine()
     return
     var a: array[]integer is [1, 2, 3]
     var b is a
