@@ -562,3 +562,18 @@ public class PrintCommand : CallCommand
     {
     }
 }
+
+public class BoxCommand : BaseCommand
+{
+    public string Type { get; }
+
+    public BoxCommand(string type, int index) : base(index)
+    {
+        Type = type;
+    }
+
+    public override string Translate()
+    {
+        return FormattedIndex() + $"box\t{Type}";
+    }
+}

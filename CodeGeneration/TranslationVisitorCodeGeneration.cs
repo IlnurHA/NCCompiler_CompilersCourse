@@ -13,8 +13,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
 
     public void VisitPrintNode(PrintNode printNode, Queue<BaseCommand> commands)
     {
+        commands.Enqueue(new LoadConstantCommand(printNode.Expressions!.Expressions.Count, commands.Count));
+        commands.Enqueue(new NewArrayCommand("[System.Runtime]System.Object", commands.Count));
+
+        int counter = 0;
+        
         foreach (var expr in printNode.Expressions.Expressions)
         {
+            commands.Enqueue(new DuplicateCommand(commands.Count));
+            commands.Enqueue(new LoadConstantCommand(counter, commands.Count));
             if (expr is StructVarNode structVarNode)
             {
                 structVarNode.AcceptByValue(this, commands);
@@ -26,6 +33,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             {
                 expr.Accept(this, commands);
             }
+            
+            commands.Enqueue(new BoxCommand(_getTypeFromTypeNode(expr.Type), commands.Count));
+            commands.Enqueue(new SetElementByIndexRef(commands.Count));
+
+            counter++;
         }
         commands.Enqueue(new PrintCommand(commands.Count));
     }
@@ -35,7 +47,8 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         var programString = "";
 
         // dependencies
-        programString += ".assembly extern System.Runtime\n{\n\t.ver 7:0:0:0\n}\n";
+        programString += ".assembly extern System.Runtime {}\n";
+        programString += ".assembly extern System.Console {}\n";
         programString += ".assembly compiledProgram{}\n";
         programString += ".module compiledProgram.dll\n";
 
