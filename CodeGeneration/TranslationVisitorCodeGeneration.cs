@@ -51,8 +51,9 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         // programString += ".assembly extern System.Console {}\n";
         // programString += ".assembly compiledProgram{}\n";
         programString +=
-            ".assembly extern mscorlib {\n  .publickeytoken = (B7 7A 5C 56 19 34 E0 89)\n  .ver 4:0:0:0\n}";
-        programString += ".assembly compiledProgram {\n    .hash algorithm 0x00008004\n    .ver 1:0:0:0\n}";
+            ".assembly extern mscorlib {\n  .publickeytoken = (B7 7A 5C 56 19 34 E0 89)\n  .ver 4:0:0:0\n}\n";
+        programString += ".assembly extern System {}\n";
+        programString += ".assembly compiledProgram {\n    .hash algorithm 0x00008004\n    .ver 1:0:0:0\n}\n";
         programString += ".module compiledProgram.dll\n";
 
         var mainClassName = "Program";
@@ -395,7 +396,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         assertNode.RightExpression.Accept(this, commands);
         commands.Enqueue(new OperationCommand(OperationType.Eq, commands.Count));
         commands.Enqueue(new LoadStringCommand("Assertion error", commands.Count));
-        commands.Enqueue(new CallCommand("void [mscorlib]System.Diagnostics.Debug::Assert(bool, string)",
+        commands.Enqueue(new CallCommand("void [System]System.Diagnostics.Debug::Assert(bool, string)",
             commands.Count));
     }
 

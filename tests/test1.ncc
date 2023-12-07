@@ -24,8 +24,12 @@ end
 
 routine main() is
   assert fac(5), 120 // OK
+  print(fac(5))
   assert fac(4), 24 // OK
+  print(fac(4))
   assert fac(3), 6 // OK 
+  print(fac(3))
   assert fac(1), 1 // OK
+  print(fac(1))
 end
 

@@ -6,4 +6,5 @@ type struct is
 
 routine main() is
     var a: struct
+    print(a)
 end
