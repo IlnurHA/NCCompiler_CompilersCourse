@@ -8,6 +8,9 @@ end
 
 routine main() is
     assert abs(-4.4), 4.4 // OK
+    print(abs(-4.4))
     assert abs(0.0), 0.0 // OK
+    print(abs(0.0))
     assert abs(3.14), 3.14 // OK
+    print(abs(3.14))
 end

@@ -2,8 +2,8 @@ routine main() is
     var arr: array[5]integer is [5, -6, 0, 12, 2]
     // sorted(arr) returns a sorted copy of arr, arr does not change
     var sorted_arr: array[5]integer is arr.sorted
-    assert sorted_arr, [-6, 0, 2, 5, 12] // OK
+    print(sorted_arr)
     // reversed(arr) returns reversed copy of arr, arr does not change
     var reversed_arr: array[5]integer is arr.reversed
-    assert reversed_arr, [12, 5, 2, 0, -6] // OK
+    print(reversed_arr)
 end

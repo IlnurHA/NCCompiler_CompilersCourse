@@ -29,5 +29,6 @@
      end
   end
   assert mid, 3 // OK
+  print(mid)
   // mid should be 3
 end

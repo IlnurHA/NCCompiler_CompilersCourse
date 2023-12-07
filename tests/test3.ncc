@@ -12,6 +12,9 @@ end
 
 routine main() is
   assert dec_to_bin_driver(31), 11111 // OK
+  print(dec_to_bin_driver(31))
   assert dec_to_bin_driver(15), 1111 // OK
+  print(dec_to_bin_driver(15))
   assert dec_to_bin_driver(32), 100000 // OK
+  print(dec_to_bin_driver(32))
 end

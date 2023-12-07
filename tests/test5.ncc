@@ -47,4 +47,5 @@ routine main() is
   
   var result is find(first, 1)
   assert result.val, 1 // OK
+  print(result.val)
 end

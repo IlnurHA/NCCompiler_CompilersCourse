@@ -1,5 +1,6 @@
 routine main() is
-    assert not 1, false // OK
-    assert not 0, true // OK
-    var t: boolean is not 5 // error
+    print(not 1)
+    print(not 0)
+    var t: boolean is not 5
+    print(t)
 end

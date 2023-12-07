@@ -24,5 +24,6 @@ routine main() is
    var b: node
    var new_arr is b.a.sorted
    var arrayOfArrays: array[4]array[4]integer
-   arrayOfArrays[0] := b.a.reversed
+   arrayOfArrays[1] := b.a.reversed
+   print(new_arr, arrayOfArrays[1])
 end
