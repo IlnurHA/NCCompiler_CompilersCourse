@@ -119,8 +119,11 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
             case StructVarNode structVarNode:
                 structVarNode.AcceptByValue(this, commands);
                 break;
-            case ArrayVarNode arrayVarNode:
-                arrayVarNode.AcceptByValue(this, commands);
+            case GetFieldNode subGetFieldNode:
+                subGetFieldNode.Accept(this, commands);
+                break;
+            case GetByIndexNode subGetByIndexNode:
+                subGetByIndexNode.Accept(this, commands);
                 break;
             default:
                 getFieldNode.StructVarNode.Accept(this, commands);
@@ -223,18 +226,15 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
                 foreach (var (_, varNode) in structType.DefaultValues)
                 {
                     if (varNode.Value is not ValueNode valueNode) break;
-                    commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
-                    valueNode.Accept(this, commands);
+                    commands.Enqueue(new LoadLocalAddressToStackCommand(codeGenVar.Id, codeGenVar.GetName(),
+                        commands.Count));
+                    if (valueNode is ArrayVarNode arrayVarNode) arrayVarNode.AcceptByValue(this, commands);
+                    if (valueNode is StructVarNode structVarNode) structVarNode.AcceptByValue(this, commands);
+                    else valueNode.Accept(this, commands);
                     commands.Enqueue(new SetFieldCommand(_getTypeFromTypeNode(valueNode.Type),
                         $"Program/{structVar.GetName()}", varNode.Name!, commands.Count));
                 }
 
-                // commands.Enqueue(new LoadLocalCommand(codeGenVar.Id, codeGenVar.GetName(), commands.Count));
-                // if (withDefaultValue)
-                //     commands.Enqueue(new CallCommand($"instance void Program/{structVar.GetName()}::.ctor()",
-                //         commands.Count));
-                // else
-                //     commands.Enqueue(new InitObjectCommand($"Program/{structVar.GetName()}", commands.Count));
                 return;
             }
 
@@ -799,7 +799,7 @@ public class TranslationVisitorCodeGeneration : IVisitorCodeGeneration
         foreach (var (name, type) in structTypeNode.StructFields)
         {
             type.Accept(this, commands);
-            structDeclaration += $"\t\t.field {_getTypeFromTypeNode(type)} {name}\n";
+            structDeclaration += $"\t\t.field public {_getTypeFromTypeNode(type)} {name}\n";
         }
 
         structDeclaration += "\t}\n";
