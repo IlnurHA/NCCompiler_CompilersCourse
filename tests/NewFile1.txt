@@ -1,0 +1,9 @@
+type struct is
+    record
+        var a is 5
+        var b is [1, 2, 3]
+    end
+
+routine main() is
+    var a: struct
+end

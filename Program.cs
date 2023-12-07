@@ -36,6 +36,8 @@ class Program
                 EvalVisitor visitor = new EvalVisitor();
                 var rootSymbolic = rootNode.Accept(visitor);
                 Console.WriteLine(res);
+
+                // if (!((ProgramNode) rootSymbolic).HasMain()) throw new Exception("No main function in code");
             
                 var codeGenVisit = new TranslationVisitorCodeGeneration();
                 rootSymbolic.Accept(codeGenVisit, new Queue<BaseCommand>());

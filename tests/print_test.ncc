@@ -1,0 +1,16 @@
+type struct is
+    record
+        var a is 5
+        var b is [true, false]
+    end
+
+routine main() is
+    var n is 5
+    var a is [1, 2, 3]
+    
+    var b: struct
+    
+    b.a := 7
+    
+    print(5, a, b)
+end
