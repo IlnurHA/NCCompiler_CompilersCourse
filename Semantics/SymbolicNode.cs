@@ -1451,6 +1451,21 @@ public class RoutineCallNode : ValueNode
     }
 }
 
+public class RoutineCallStatementNode : StatementNode
+{
+    public RoutineCallNode RoutineCallNode { get; }
+
+    public RoutineCallStatementNode(RoutineCallNode routineCallNode)
+    {
+        RoutineCallNode = routineCallNode;
+    }
+    
+    public override void Accept(IVisitorCodeGeneration visitor, Queue<BaseCommand> queue)
+    {
+        visitor.VisitRoutineCallNode(RoutineCallNode, queue);
+    }
+}
+
 public class RangeNode : SymbolicNode
 {
     public ValueNode LeftBound { get; }
