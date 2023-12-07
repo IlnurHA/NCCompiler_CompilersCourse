@@ -1,0 +1,3 @@
+﻿routine main() is 
+	print(1.5)
+end

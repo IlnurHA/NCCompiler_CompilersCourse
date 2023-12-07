@@ -6,7 +6,7 @@
     // real printing
     var m: real
     m := 3.5
-    // print(m)
+    print(m)
     // boolean printing
     var b: boolean
     b := true
@@ -14,5 +14,5 @@
     // expression printing
     print(3 + 6 * 4)
     // expressions printing
-    // print(n, m, 2+2, b)
+    print(n, m, 2+2, b)
 end
